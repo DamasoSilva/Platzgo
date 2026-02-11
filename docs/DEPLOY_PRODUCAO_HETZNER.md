@@ -1,6 +1,6 @@
 # Deploy em produção (Hetzner + Cloudflare + GitHub)
 
-Guia para subir **um novo site** no mesmo servidor que já possui outro site em produção. Usa Docker e Caddy como reverse proxy, com múltiplos domínios.
+Guia para subir o **PlatzGo** no servidor. Usa Docker e Caddy como reverse proxy.
 
 ---
 
@@ -32,8 +32,8 @@ cd /opt/apps
 
 ## 4) Clonar o projeto (via GitHub)
 ```bash
-git clone <URL_DO_REPO> playhubfit
-cd playhubfit
+git clone <URL_DO_REPO> platzgo
+cd platzgo
 ```
 
 ---
@@ -41,8 +41,8 @@ cd playhubfit
 ## 5) Criar .env de produção
 Crie `.env` baseado no `.env.example`:
 ```
-DATABASE_URL=postgresql://playhub:playhubpass@db:5432/playhubfit?schema=public
-NEXTAUTH_URL=https://app.seudominio.com
+DATABASE_URL=postgresql://platzgo:platzgopass@db:5432/platzgo?schema=public
+NEXTAUTH_URL=https://platzgo.com.br
 NEXTAUTH_SECRET=...
 
 PAYMENTS_ENABLED=1
@@ -73,7 +73,7 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /app ./
-EXPOSE 3000
+EXPOSE 3001
 CMD ["npm","run","start"]
 ```
 
@@ -86,30 +86,32 @@ version: "3.9"
 services:
   db:
     image: postgres:16
-    container_name: playhubfit_db
+    container_name: platzgo_db
     restart: always
     environment:
-      POSTGRES_USER: playhub
-      POSTGRES_PASSWORD: playhubpass
-      POSTGRES_DB: playhubfit
+      POSTGRES_USER: platzgo
+      POSTGRES_PASSWORD: platzgopass
+      POSTGRES_DB: platzgo
     volumes:
-      - playhubfit_db:/var/lib/postgresql/data
+      - platzgo_db:/var/lib/postgresql/data
     networks:
       - proxy
 
   app:
     build: .
-    container_name: playhubfit_app
+    container_name: platzgo_app
     restart: always
     env_file:
       - .env
+    environment:
+      PORT: 3001
     depends_on:
       - db
     networks:
       - proxy
 
 volumes:
-  playhubfit_db:
+  platzgo_db:
 
 networks:
   proxy:
@@ -118,17 +120,13 @@ networks:
 
 ---
 
-## 8) Reverse proxy (Caddy) com múltiplos domínios
-Se já existe um Caddy rodando para outro site, apenas **adicione** um novo bloco no Caddyfile.
+## 8) Reverse proxy (Caddy)
+Se voce nao usa Caddy no site antigo, suba o Caddy apenas para o PlatzGo.
 
-Exemplo de Caddyfile com **dois sites**:
+Exemplo de Caddyfile:
 ```caddyfile
-site-antigo.com {
-  reverse_proxy localhost:3001
-}
-
 platzgo.com.br {
-  reverse_proxy playhubfit_app:3000
+  reverse_proxy platzgo_app:3001
 }
 ```
 
@@ -137,12 +135,8 @@ platzgo.com.br {
 docker network create proxy
 
 cat <<'EOF' > /opt/caddy/Caddyfile
-site-antigo.com {
-  reverse_proxy localhost:3001
-}
-
 platzgo.com.br {
-  reverse_proxy playhubfit_app:3000
+  reverse_proxy platzgo_app:3001
 }
 EOF
 
@@ -180,7 +174,7 @@ sudo docker compose up -d
 
 ## 9) Subir o app
 ```bash
-cd /opt/apps/playhubfit
+cd /opt/apps/platzgo
 sudo docker compose up -d --build
 ```
 
@@ -188,33 +182,33 @@ sudo docker compose up -d --build
 
 ## 10) Rodar migrations
 ```bash
-sudo docker exec -it playhubfit_app npx prisma migrate deploy
+sudo docker exec -it platzgo_app npx prisma migrate deploy
 ```
 
 ---
 
 ## 11) Testar
-- Acesse: `https://app.seudominio.com`
+- Acesse: `https://platzgo.com.br`
 - Logs:
 ```bash
-sudo docker logs -f playhubfit_app
+sudo docker logs -f platzgo_app
 ```
 
 ---
 
 ## 12) Atualização (pull + rebuild)
 ```bash
-cd /opt/apps/playhubfit
+cd /opt/apps/platzgo
 git pull
 sudo docker compose up -d --build
-sudo docker exec -it playhubfit_app npx prisma migrate deploy
+sudo docker exec -it platzgo_app npx prisma migrate deploy
 ```
 
 ---
 
 ## 13) Backup rápido do banco
 ```bash
-sudo docker exec -t playhubfit_db pg_dump -U playhub playhubfit > /opt/backups/playhubfit_$(date +%F).sql
+sudo docker exec -t platzgo_db pg_dump -U platzgo platzgo > /opt/backups/platzgo_$(date +%F).sql
 ```
 
 ---
