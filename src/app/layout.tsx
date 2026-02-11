@@ -11,6 +11,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "PlatzGo!",
   description: "SaaS de quadras: encontre e agende",
+  icons: {
+    icon: "/icon.png",
+  },
 };
 
 export const dynamic = "force-dynamic";

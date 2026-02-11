@@ -6,6 +6,7 @@ import type { Role } from "@/generated/prisma/enums";
 
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, clearAttempts, recordFailure } from "@/lib/antifraud";
+import { getEffectiveSmtpConfig } from "@/lib/systemSettings";
 
 const prismaAdapter = PrismaAdapter(prisma as unknown as Parameters<typeof PrismaAdapter>[0]);
 
@@ -49,7 +50,10 @@ export const authOptions: NextAuthOptions = {
         }
 
         if (!user.emailVerified) {
-          throw new Error("EMAIL_NOT_VERIFIED");
+          const smtpConfig = await getEffectiveSmtpConfig();
+          if (smtpConfig) {
+            throw new Error("EMAIL_NOT_VERIFIED");
+          }
         }
 
         if (user.is_active === false) {

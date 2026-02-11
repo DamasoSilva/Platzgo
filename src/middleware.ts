@@ -18,6 +18,12 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  if ((req.method === "GET" || req.method === "HEAD") && req.nextUrl.search) {
+    const url = req.nextUrl.clone();
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
   if (process.env.MAINTENANCE_MODE === "1" && pathname !== "/maintenance") {
     const url = req.nextUrl.clone();
     url.pathname = "/maintenance";
