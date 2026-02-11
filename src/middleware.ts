@@ -18,6 +18,13 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  if (process.env.MAINTENANCE_MODE === "1" && pathname !== "/maintenance") {
+    const url = req.nextUrl.clone();
+    url.pathname = "/maintenance";
+    url.search = "";
+    return NextResponse.rewrite(url);
+  }
+
   const secret = process.env.ACCESS_LOG_SECRET?.trim();
   if (!secret) return NextResponse.next();
 
