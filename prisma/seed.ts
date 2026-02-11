@@ -6,6 +6,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "../src/generated/prisma/client";
 import { Role, SportType } from "../src/generated/prisma/enums";
+import { slugify } from "../src/lib/utils/slug";
 
 function requireEnv(name: string): string {
   const v = process.env[name];
@@ -98,6 +99,7 @@ async function main() {
             where: { id: existingEst.id },
             data: {
               name: "PlayHub Arena",
+              slug: slugify("PlayHub Arena"),
               description: "Estabelecimento de exemplo para testes.",
               whatsapp_number: "+55 11 99999-9999",
               address_text: "Av. Paulista, 1000 - São Paulo, SP",
@@ -112,6 +114,7 @@ async function main() {
             data: {
               ownerId: admin.id,
               name: "PlayHub Arena",
+              slug: slugify("PlayHub Arena"),
               description: "Estabelecimento de exemplo para testes.",
               whatsapp_number: "+55 11 99999-9999",
               address_text: "Av. Paulista, 1000 - São Paulo, SP",

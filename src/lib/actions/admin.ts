@@ -8,6 +8,7 @@ import type { SportType } from "@/generated/prisma/enums";
 import { enqueueEmail } from "@/lib/emailQueue";
 import { courtValidatedEmailToOwner, getAppUrl } from "@/lib/emailTemplates";
 import { getNotificationSettings } from "@/lib/notificationSettings";
+import { slugify } from "@/lib/utils/slug";
 
 function isVideoUrl(url: string): boolean {
   return /\.(mp4|webm)(\?|#|$)/i.test(url);
@@ -72,6 +73,27 @@ function clampInt(value: unknown, fallback: number, min: number, max: number): n
   return Math.min(max, Math.max(min, Math.round(n)));
 }
 
+async function buildUniqueEstablishmentSlug(name: string, excludeId?: string): Promise<string> {
+  const base = slugify(name);
+  let candidate = base;
+  let attempt = 2;
+
+  while (true) {
+    const existing = await prisma.establishment.findFirst({
+      where: {
+        slug: candidate,
+        ...(excludeId ? { id: { not: excludeId } } : {}),
+      },
+      select: { id: true },
+    });
+
+    if (!existing) return candidate;
+
+    candidate = `${base}-${attempt}`;
+    attempt += 1;
+  }
+}
+
 export type UpsertEstablishmentInput = {
   name: string;
   description?: string;
@@ -129,11 +151,14 @@ export async function upsertMyEstablishment(input: UpsertEstablishmentInput) {
     select: { id: true },
   });
 
+  const slug = await buildUniqueEstablishmentSlug(input.name, existing?.id);
+
   const saved = existing
     ? await prisma.establishment.update({
         where: { id: existing.id },
         data: {
           name: input.name,
+          slug,
           description: input.description ?? null,
           whatsapp_number: input.whatsapp_number,
           contact_number:
@@ -164,6 +189,7 @@ export async function upsertMyEstablishment(input: UpsertEstablishmentInput) {
         data: {
           ownerId: session.user.id,
           name: input.name,
+          slug,
           description: input.description ?? null,
           whatsapp_number: input.whatsapp_number,
           contact_number: input.contact_number?.trim() || null,
@@ -502,10 +528,13 @@ export async function updateMyEstablishmentSettings(input: UpdateMyEstablishment
       ? undefined
       : clampInt(input.booking_buffer_minutes, 0, 0, 240);
 
+  const slug = input.name ? await buildUniqueEstablishmentSlug(input.name, existing.id) : undefined;
+
   await prisma.establishment.update({
     where: { id: existing.id },
     data: {
       name: input.name ? input.name.trim() : undefined,
+      slug,
       whatsapp_number: input.whatsapp_number ? input.whatsapp_number.trim() : undefined,
       contact_number:
         input.contact_number === undefined

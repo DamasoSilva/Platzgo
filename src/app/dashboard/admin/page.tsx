@@ -11,6 +11,7 @@ export default async function AdminDashboardPage() {
       id: true,
       ownerId: true,
       name: true,
+      slug: true,
       description: true,
       whatsapp_number: true,
       contact_number: true,

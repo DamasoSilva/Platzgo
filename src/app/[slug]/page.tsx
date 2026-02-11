@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
+import { notFound, redirect } from "next/navigation";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -9,27 +9,62 @@ import { CustomerHeader } from "@/components/CustomerHeader";
 import { formatBRLFromCents } from "@/lib/utils/currency";
 import { toWaMeLink } from "@/lib/utils/whatsapp";
 import { ThemedBackground } from "@/components/ThemedBackground";
+import { slugify } from "@/lib/utils/slug";
 
-import { DayPickerClient } from "./DayPickerClient";
-import { EngagementClient } from "./EngagementClient";
+import { DayPickerClient } from "@/app/establishments/[id]/DayPickerClient";
+import { EngagementClient } from "@/app/establishments/[id]/EngagementClient";
 import { formatSportLabel } from "@/lib/utils/sport";
 
+async function resolveEstablishmentIdBySlug(rawSlug: string): Promise<string | null> {
+  const normalized = slugify(rawSlug);
+
+  const direct = await prisma.establishment.findFirst({
+    where: { slug: normalized },
+    select: { id: true },
+  });
+
+  if (direct) return direct.id;
+
+  const candidates = await prisma.establishment.findMany({
+    select: { id: true, name: true, slug: true },
+  });
+
+  const matches = candidates.filter((c) => slugify(c.name) === normalized);
+  if (matches.length !== 1) return null;
+
+  const match = matches[0];
+  if (!match.slug) {
+    try {
+      await prisma.establishment.update({
+        where: { id: match.id },
+        data: { slug: normalized },
+      });
+    } catch {
+      // Ignore slug update conflicts.
+    }
+  }
+
+  return match.id;
+}
+
 export async function generateMetadata(props: {
-  params: { id: string } | Promise<{ id: string }>;
+  params: { slug: string } | Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const params = await Promise.resolve(props.params);
+  const estId = await resolveEstablishmentIdBySlug(params.slug);
+
+  if (!estId) return { title: "Estabelecimento" };
+
   const est = await prisma.establishment.findUnique({
-    where: { id: params.id },
+    where: { id: estId },
     select: { name: true, description: true },
   });
 
-  if (!est) {
-    return { title: "Estabelecimento" };
-  }
+  if (!est) return { title: "Estabelecimento" };
 
   return {
     title: `${est.name} • PlatzGo!`,
-    description: est.description ?? `Agende horários em ${est.name}.`,
+    description: est.description ?? `Agende horarios em ${est.name}.`,
   };
 }
 
@@ -42,8 +77,8 @@ function coerceDay(value: unknown): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-export default async function EstablishmentPage(props: {
-  params: { id: string } | Promise<{ id: string }>;
+export default async function EstablishmentSlugPage(props: {
+  params: { slug: string } | Promise<{ slug: string }>;
   searchParams?: { day?: string } | Promise<{ day?: string }>;
 }) {
   const session = await getServerSession(authOptions);
@@ -53,13 +88,21 @@ export default async function EstablishmentPage(props: {
   const searchParams = props.searchParams ? await Promise.resolve(props.searchParams) : undefined;
   const day = coerceDay(searchParams?.day);
 
-  const callbackUrl = `/establishments/${params.id}?day=${encodeURIComponent(day)}`;
+  const normalizedSlug = slugify(params.slug);
+  const estId = await resolveEstablishmentIdBySlug(params.slug);
+
+  if (!estId) {
+    notFound();
+  }
+
+  const basePath = `/${normalizedSlug}`;
+  const callbackUrl = `${basePath}?day=${encodeURIComponent(day)}`;
   if (!userId) {
     redirect(`/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`);
   }
 
   const est = await prisma.establishment.findUnique({
-    where: { id: params.id },
+    where: { id: estId },
     select: {
       id: true,
       name: true,
@@ -87,7 +130,7 @@ export default async function EstablishmentPage(props: {
   });
 
   if (!est) {
-    redirect("/");
+    notFound();
   }
 
   const [reviews, stats, favorite] = await Promise.all([
@@ -137,7 +180,7 @@ export default async function EstablishmentPage(props: {
 
         <div className="mx-auto max-w-5xl px-6 pb-12">
           <div>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400">Selecione a quadra para ver os horários disponíveis</p>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400">Selecione a quadra para ver os horarios disponiveis</p>
             <h1 className="mt-1 text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">{est.name}</h1>
             <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{est.address_text}</p>
             {instagramUrl ? (
@@ -153,7 +196,7 @@ export default async function EstablishmentPage(props: {
           </div>
 
           <div className="mt-6">
-            <DayPickerClient establishmentId={est.id} initialDay={day} basePath={`/establishments/${est.id}`} />
+            <DayPickerClient establishmentId={est.id} initialDay={day} basePath={basePath} />
           </div>
 
           {coverUrl ? (
@@ -167,10 +210,7 @@ export default async function EstablishmentPage(props: {
             {est.courts.map((c) => {
               const courtCover = (c.photo_urls ?? []).find((u) => (u ?? "").trim()) ?? coverUrl;
               return (
-                <div
-                  key={c.id}
-                  className="overflow-hidden rounded-3xl ph-surface"
-                >
+                <div key={c.id} className="overflow-hidden rounded-3xl ph-surface">
                   {courtCover ? (
                     <div className="h-44 w-full bg-black/20 dark:bg-black/30">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -185,11 +225,8 @@ export default async function EstablishmentPage(props: {
                     </p>
 
                     <div className="mt-4 flex flex-wrap items-center gap-2">
-                      <Link
-                        href={{ pathname: `/courts/${c.id}`, query: { day } }}
-                        className="ph-button-sm"
-                      >
-                        Ver horários
+                      <Link href={{ pathname: `/courts/${c.id}`, query: { day } }} className="ph-button-sm">
+                        Ver horarios
                       </Link>
 
                       <a

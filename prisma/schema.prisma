@@ -195,6 +195,7 @@ model Establishment {
   id                           String   @id @default(cuid())
   ownerId                      String
   name                         String
+  slug                         String?  @unique
   description                  String?
   whatsapp_number              String
   contact_number               String?

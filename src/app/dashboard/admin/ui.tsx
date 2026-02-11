@@ -16,6 +16,7 @@ import { deleteMyEstablishmentHoliday, upsertMyEstablishmentHoliday } from "@/li
 import { formatBRLFromCents } from "@/lib/utils/currency";
 import { formatSportLabel } from "@/lib/utils/sport";
 import { SportType } from "@/generated/prisma/enums";
+import { slugify } from "@/lib/utils/slug";
 
 const PROFILE_MAX_PHOTOS = 7;
 const PROFILE_MAX_VIDEOS = 2;
@@ -182,6 +183,7 @@ type EstablishmentWithCourts = {
   id: string;
   ownerId: string;
   name: string;
+  slug: string | null;
   description: string | null;
   whatsapp_number: string;
   contact_number: string | null;
@@ -229,6 +231,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
 
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
+  const [copyStatus, setCopyStatus] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
   const viewerNav =
@@ -277,6 +280,11 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
     cancel_fee_type: (props.establishment?.cancel_fee_fixed_cents ?? 0) > 0 ? "fixed" : "percent",
     booking_buffer_minutes: props.establishment?.booking_buffer_minutes ?? 0,
   }));
+
+  const publicSlug = useMemo(() => {
+    if (props.establishment?.slug) return props.establishment.slug;
+    return form.name.trim() ? slugify(form.name) : "";
+  }, [form.name, props.establishment?.slug]);
 
   const profileCounts = useMemo(() => countMedia(form.photo_urls), [form.photo_urls]);
 
@@ -343,6 +351,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
 
   async function onSaveEstablishment() {
     setMessage(null);
+    setCopyStatus(null);
     startTransition(async () => {
       try {
         if (!form.name.trim()) throw new Error("Nome é obrigatório");
@@ -390,6 +399,33 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
         setMessage(e instanceof Error ? e.message : "Erro ao salvar");
       }
     });
+  }
+
+  async function onCopyPublicLink() {
+    setCopyStatus(null);
+    if (!publicSlug) {
+      setCopyStatus("Defina o nome do estabelecimento primeiro.");
+      return;
+    }
+
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const url = `${origin}/${publicSlug}`;
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const temp = document.createElement("input");
+        temp.value = url;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand("copy");
+        temp.remove();
+      }
+      setCopyStatus("Link copiado.");
+    } catch {
+      setCopyStatus("Nao foi possivel copiar o link.");
+    }
   }
 
   async function onSaveHoliday() {
@@ -449,6 +485,25 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
       <div className="grid gap-6 lg:grid-cols-12">
         <section className="lg:col-span-7 ph-card p-6">
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Estabelecimento</h2>
+
+          <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Link publico</p>
+                <p className="mt-2 break-all text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                  {publicSlug ? `/${publicSlug}` : "Defina o nome do estabelecimento"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={onCopyPublicLink}
+                className="rounded-full bg-[#CCFF00] px-4 py-2 text-xs font-bold text-black"
+              >
+                Copiar link
+              </button>
+            </div>
+            {copyStatus ? <p className="mt-2 text-xs text-zinc-500">{copyStatus}</p> : null}
+          </div>
 
           <div className="mt-5 space-y-4">
             <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">

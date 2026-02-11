@@ -7,7 +7,7 @@ function isYMD(v: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(v);
 }
 
-export function DayPickerClient(props: { establishmentId: string; initialDay: string }) {
+export function DayPickerClient(props: { establishmentId: string; initialDay: string; basePath?: string }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -26,7 +26,8 @@ export function DayPickerClient(props: { establishmentId: string; initialDay: st
             setDay(next);
             if (!isYMD(next)) return;
             startTransition(() => {
-              router.push(`/establishments/${props.establishmentId}?day=${encodeURIComponent(next)}`);
+              const base = props.basePath ?? `/establishments/${props.establishmentId}`;
+              router.push(`${base}?day=${encodeURIComponent(next)}`);
             });
           }}
           className="ph-input w-[220px]"

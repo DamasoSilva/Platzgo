@@ -35,6 +35,10 @@ function countSelectedMedia(files: File[]): { photos: number; videos: number } {
   return { photos, videos };
 }
 
+function isValidEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
 function UploadPickerButton(props: {
   label: string;
   accept: string;
@@ -103,6 +107,7 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
   const [verificationCode, setVerificationCode] = useState<string>("");
 
   const selectedCounts = useMemo(() => countSelectedMedia(photoFiles), [photoFiles]);
+  const canUploadOwnerMedia = useMemo(() => isValidEmail(email), [email]);
 
   useEffect(() => {
     // Gera previews e limpa URLs antigas
@@ -119,6 +124,8 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         prefix: "establishments",
+        email,
+        roleIntent: "OWNER",
         files: files.map((f) => ({ name: f.name, type: f.type, size: f.size })),
       }),
     });
@@ -412,7 +419,7 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
                       label={photoFiles.length ? "Adicionar mais arquivos" : "Adicionar arquivos"}
                       accept="image/*,video/mp4,video/webm"
                       multiple
-                      disabled={isPending}
+                      disabled={isPending || !canUploadOwnerMedia}
                       onFiles={(files) => {
                         try {
                           validateMediaFiles(files);
@@ -434,6 +441,11 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
                     </div>
                   </div>
                   <p className="ph-help mt-2">Pelo menos 1 mídia é obrigatória. Vídeos: MP4/WebM.</p>
+                  {!canUploadOwnerMedia ? (
+                    <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                      Informe um e-mail válido para habilitar o upload.
+                    </p>
+                  ) : null}
 
                   {ownerPhotoPreviews.length ? (
                     <div className="mt-3 grid grid-cols-3 gap-2">
