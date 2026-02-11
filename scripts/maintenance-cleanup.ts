@@ -23,7 +23,9 @@ async function main() {
       where: { createdAt: { lt: auditCutoff } },
     }),
     prisma.notification.deleteMany({
-      where: { deletedAt: { not: null }, deletedAt: { lt: notificationCutoff } },
+      where: {
+        AND: [{ deletedAt: { not: null } }, { deletedAt: { lt: notificationCutoff } }],
+      },
     }),
   ]);
 
