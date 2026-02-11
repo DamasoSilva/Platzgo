@@ -30,14 +30,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  const establishmentRoutes = establishments.map((e) => ({
+  const establishmentRoutes: MetadataRoute.Sitemap = establishments.map((e): MetadataRoute.Sitemap[number] => ({
     url: `${baseUrl}/establishments/${e.id}`,
     lastModified: e.createdAt,
     changeFrequency: "weekly",
     priority: 0.7,
   }));
 
-  const courtRoutes = courts.map((c) => ({
+  const courtRoutes: MetadataRoute.Sitemap = courts.map((c): MetadataRoute.Sitemap[number] => ({
     url: `${baseUrl}/courts/${c.id}`,
     lastModified: c.createdAt,
     changeFrequency: "weekly",
