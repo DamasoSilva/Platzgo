@@ -10,10 +10,12 @@ services:
       MINIO_ROOT_PASSWORD: minioadmin
       # CORS: permite upload via browser a partir do Next.js local
       # (origem do navegador é `http://localhost:3000`)
-      MINIO_API_CORS_ALLOW_ORIGIN: "http://localhost:3000,http://127.0.0.1:3000"
+      MINIO_API_CORS_ALLOW_ORIGIN: "http://localhost:3000,http://127.0.0.1:3000,https://platzgo.com.br,https://www.platzgo.com.br"
     command: server /data --console-address ":9001"
     volumes:
       - playhub_minio_data:/data
+    networks:
+      - proxy
 
   minio-init:
     image: minio/mc:RELEASE.2025-01-17T23-25-50Z
@@ -34,6 +36,12 @@ services:
           mc anonymous set download local/playhub-uploads
           echo "MinIO bucket + CORS ready."
     restart: "no"
+    networks:
+      - proxy
 
 volumes:
   playhub_minio_data:
+
+networks:
+  proxy:
+    external: true
