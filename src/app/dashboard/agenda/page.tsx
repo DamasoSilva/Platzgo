@@ -177,6 +177,9 @@ export default async function DashboardAgendaPage({
         monthlyPasses: monthlyPasses.map((p) => ({
           id: p.id,
           month: p.month,
+          weekday: p.weekday,
+          start_time: p.start_time,
+          end_time: p.end_time,
           status: p.status,
           price_cents: p.price_cents,
           terms_snapshot: p.terms_snapshot,
