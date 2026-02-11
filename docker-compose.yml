@@ -6,9 +6,9 @@ services:
     container_name: playhubfit_db
     restart: always
     environment:
-      POSTGRES_USER: playhub
-      POSTGRES_PASSWORD: playhubpass
-      POSTGRES_DB: playhubfit
+      POSTGRES_USER: Platzgouser
+      POSTGRES_PASSWORD: 161201Neto.
+      POSTGRES_DB: platzgodb
     volumes:
       - playhubfit_db:/var/lib/postgresql/data
     networks:
