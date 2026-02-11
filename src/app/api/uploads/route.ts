@@ -3,8 +3,11 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import path from "path";
 
+import { getServerSession } from "next-auth";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { getStorageConfig } from "@/lib/storage";
 import { logError, logInfo } from "@/lib/logger";
 
@@ -47,6 +50,14 @@ function buildPublicUrl(base: string, key: string): string {
   return `${base.replace(/\/+$/, "")}/${key.replace(/^\/+/, "")}`;
 }
 
+function sanitizeEmailFolder(email: string, fallback: string): string {
+  const safe = email
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return safe || fallback;
+}
+
 function getS3Client() {
   const { region, accessKeyId, secretAccessKey, endpoint } = getStorageConfig();
 
@@ -60,6 +71,21 @@ function getS3Client() {
 
 export async function POST(req: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?.id;
+    if (!userId) {
+      return NextResponse.json({ error: "Nao autenticado" }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, role: true },
+    });
+
+    if (!user?.email) {
+      return NextResponse.json({ error: "Usuario invalido" }, { status: 400 });
+    }
+
     const body = (await req.json().catch(() => null)) as
       | null
       | {
@@ -81,6 +107,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Prefixo inválido" }, { status: 400 });
     }
 
+    const roleFolder =
+      user.role === "ADMIN" ? "owners" : user.role === "CUSTOMER" ? "customers" : "sysadmins";
+    const userFolder = sanitizeEmailFolder(user.email, userId);
+    const scopedPrefix = `${prefix}/${roleFolder}/${userFolder}`;
+
     const s3 = getS3Client();
 
     const items = await Promise.all(
@@ -99,7 +130,7 @@ export async function POST(req: Request) {
         }
 
         const ext = sanitizeExt(file.name, file.type);
-        const key = `${prefix}/${crypto.randomUUID()}${ext}`;
+        const key = `${scopedPrefix}/${crypto.randomUUID()}${ext}`;
 
         const cmd = new PutObjectCommand({
           Bucket: bucket,
@@ -120,7 +151,7 @@ export async function POST(req: Request) {
       })
     );
 
-    logInfo("upload.presign.ok", { count: items.length, prefix });
+    logInfo("upload.presign.ok", { count: items.length, prefix: scopedPrefix });
     return NextResponse.json({ items });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Erro ao fazer upload";
