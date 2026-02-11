@@ -6,16 +6,24 @@ import { getAppUrl } from "@/lib/emailTemplates";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = getAppUrl();
 
-  const [establishments, courts] = await Promise.all([
-    prisma.establishment.findMany({
-      select: { id: true, createdAt: true },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.court.findMany({
-      select: { id: true, createdAt: true },
-      orderBy: { createdAt: "desc" },
-    }),
-  ]);
+  let establishments: Array<{ id: string; createdAt: Date }> = [];
+  let courts: Array<{ id: string; createdAt: Date }> = [];
+
+  try {
+    const result = await Promise.all([
+      prisma.establishment.findMany({
+        select: { id: true, createdAt: true },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.court.findMany({
+        select: { id: true, createdAt: true },
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
+    [establishments, courts] = result;
+  } catch {
+    // Avoid build-time failures when the database is not reachable.
+  }
 
   const staticRoutes: MetadataRoute.Sitemap = [
     {
