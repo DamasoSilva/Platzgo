@@ -16,6 +16,11 @@ export default async function SysadminHomePage() {
           <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">SMTP, senha e utilitários</p>
         </Link>
 
+        <Link className="ph-card p-5 hover:border-[#CCFF00]/40 transition" href="/sysadmin/payments">
+          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Pagamentos e webhooks</p>
+          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Retornos das APIs e eventos</p>
+        </Link>
+
         <Link className="ph-card p-5 hover:border-[#CCFF00]/40 transition" href="/sysadmin/search-options">
           <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Opções de quadras</p>
           <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Modalidades (ex.: Futsal, Padel)</p>

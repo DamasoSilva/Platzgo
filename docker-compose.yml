@@ -1,0 +1,33 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: playhubfit_db
+    restart: always
+    environment:
+      POSTGRES_USER: playhub
+      POSTGRES_PASSWORD: playhubpass
+      POSTGRES_DB: playhubfit
+    volumes:
+      - playhubfit_db:/var/lib/postgresql/data
+    networks:
+      - proxy
+
+  app:
+    build: .
+    container_name: playhubfit_app
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - db
+    networks:
+      - proxy
+
+volumes:
+  playhubfit_db:
+
+networks:
+  proxy:
+    external: true

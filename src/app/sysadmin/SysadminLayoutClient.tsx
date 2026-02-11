@@ -100,6 +100,7 @@ function SysadminLayoutShell(props: {
       { href: "/sysadmin/users", label: "Usuários" },
       { href: "/sysadmin/approvals", label: "Aprovações", badge: props.pendingApprovalsCount ?? 0 },
       { href: "/sysadmin/settings", label: "Sistema" },
+      { href: "/sysadmin/payments", label: "Pagamentos" },
       { href: "/sysadmin/sistema", label: "Monitoramento" },
       { href: "/sysadmin/search-options", label: "Opções de quadras" },
       { href: "/sysadmin/reasons", label: "Motivos" },
