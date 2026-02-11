@@ -1,0 +1,567 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+  SYSADMIN
+}
+
+enum SportType {
+  TENNIS
+  BEACH_TENNIS
+  FUTSAL
+  PADEL
+  POLIESPORTIVA
+  SOCIETY
+  SQUASH
+  TABLE_TENNIS
+  BADMINTON
+  VOLLEYBALL
+  BASKETBALL
+  GOLF
+  RACQUETBALL
+  HANDBALL
+  CAMPO
+  PISCINA
+  CUSTOM
+  OTHER
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum MonthlyPassStatus {
+  PENDING
+  ACTIVE
+  CANCELLED
+}
+
+enum NotificationType {
+  BOOKING_CONFIRMED
+  BOOKING_CANCELLED
+  BOOKING_PENDING
+  BOOKING_RESCHEDULED
+  BOOKING_AUTO_CANCELLED
+  MONTHLY_PASS_PENDING
+  AVAILABILITY_ALERT
+}
+
+enum PaymentProvider {
+  MERCADOPAGO
+  ASAAS
+}
+
+enum PaymentStatus {
+  PENDING
+  AUTHORIZED
+  PAID
+  CANCELLED
+  REFUNDED
+  FAILED
+}
+
+enum OutboundEmailStatus {
+  PENDING
+  SENDING
+  SENT
+  FAILED
+}
+
+enum EstablishmentApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum EmailVerificationPurpose {
+  SIGNUP_CUSTOMER
+  SIGNUP_OWNER
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password_hash String
+  role          Role      @default(CUSTOMER)
+  is_active     Boolean   @default(true)
+  inactive_reason String?
+  inactivatedAt DateTime?
+  inactivatedById String?
+  whatsapp_number String?
+  asaas_customer_id String?
+  address_text    String?
+  latitude        Float?
+  longitude       Float?
+  createdAt     DateTime  @default(now())
+
+  establishments Establishment[]
+  approvedEstablishments Establishment[] @relation("EstablishmentApprover")
+  bookings       Booking[]
+  courtBlocks    CourtBlock[]
+  monthlyPasses  MonthlyPass[]
+  createdCourtInactivationReasons CourtInactivationReason[]
+  createdSearchSportOptions SearchSportOption[]
+  passwordResetTokens PasswordResetToken[]
+  notifications  Notification[]
+  establishmentReviews EstablishmentReview[]
+  establishmentFavorites EstablishmentFavorite[]
+  auditLogs      AuditLog[]
+  availabilityAlerts AvailabilityAlert[]
+  accessLogs    AccessLog[]
+  emailVerificationCodes EmailVerificationCode[]
+  inactivatedBy User? @relation("UserInactivatedBy", fields: [inactivatedById], references: [id])
+  inactivatedUsers User[] @relation("UserInactivatedBy")
+
+  accounts Account[]
+  sessions Session[]
+
+  @@index([is_active])
+  @@index([inactivatedById])
+}
+
+model EmailVerificationCode {
+  id         String   @id @default(cuid())
+  userId     String
+  code_hash  String
+  purpose    EmailVerificationPurpose
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([expiresAt])
+  @@index([consumedAt])
+}
+
+model PasswordResetToken {
+  id         String   @id @default(cuid())
+  userId     String
+  token_hash String   @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([expiresAt])
+  @@index([usedAt])
+}
+
+model SystemSetting {
+  key       String   @id
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SearchSportOption {
+  id        String   @id @default(cuid())
+  public_id Int      @unique
+  sport_type SportType @unique
+  label     String
+  is_active Boolean  @default(true)
+  createdById String?
+  createdAt DateTime @default(now())
+
+  createdBy User? @relation(fields: [createdById], references: [id])
+
+  @@index([is_active])
+  @@index([createdById])
+}
+
+model Establishment {
+  id                           String   @id @default(cuid())
+  ownerId                      String
+  name                         String
+  description                  String?
+  whatsapp_number              String
+  contact_number               String?
+  instagram_url                String?
+  photo_urls                    String[] @default([])
+  requires_booking_confirmation Boolean  @default(true)
+  address_text                 String
+  latitude                     Float
+  longitude                    Float
+  open_weekdays                 Int[]    @default([0, 1, 2, 3, 4, 5, 6])
+  opening_time                 String
+  closing_time                 String
+  opening_time_by_weekday      String[] @default([])
+  closing_time_by_weekday      String[] @default([])
+  cancel_min_hours             Int      @default(2)
+  cancel_fee_percent           Int      @default(0)
+  cancel_fee_fixed_cents       Int      @default(0)
+  booking_buffer_minutes       Int      @default(0)
+  approval_status              EstablishmentApprovalStatus @default(APPROVED)
+  approval_note                String?
+  approvedAt                   DateTime?
+  approvedById                 String?
+  createdAt                    DateTime @default(now())
+
+  owner  User    @relation(fields: [ownerId], references: [id])
+  courts Court[]
+  holidays EstablishmentHoliday[]
+  reviews EstablishmentReview[]
+  favorites EstablishmentFavorite[]
+  accessLogs AccessLog[]
+  approvedBy User? @relation("EstablishmentApprover", fields: [approvedById], references: [id])
+
+  @@index([ownerId])
+  @@index([latitude, longitude])
+}
+
+model Court {
+  id              String    @id @default(cuid())
+  establishmentId String
+  name            String
+  sport_type      SportType
+  price_per_hour  Int
+  discount_percentage_over_90min Int @default(0)
+  amenities       String[]  @default([])
+  monthly_price_cents Int?
+  monthly_terms      String?
+  photo_urls      String[]
+  is_active       Boolean   @default(true)
+  inactive_reason_id String?
+  inactive_reason_note String?
+  createdAt       DateTime  @default(now())
+
+  establishment Establishment @relation(fields: [establishmentId], references: [id])
+  bookings      Booking[]
+  blocks        CourtBlock[]
+  accessLogs    AccessLog[]
+  monthlyPasses MonthlyPass[]
+  inactive_reason CourtInactivationReason? @relation(fields: [inactive_reason_id], references: [id])
+  availabilityAlerts AvailabilityAlert[]
+
+  @@index([establishmentId])
+}
+
+model MonthlyPass {
+  id              String            @id @default(cuid())
+  courtId         String
+  customerId      String
+  month           String            // YYYY-MM
+  weekday         Int?
+  start_time      String?
+  end_time        String?
+  status          MonthlyPassStatus @default(PENDING)
+  price_cents     Int
+  terms_snapshot  String?
+  createdAt       DateTime          @default(now())
+
+  court    Court @relation(fields: [courtId], references: [id])
+  customer User  @relation(fields: [customerId], references: [id])
+  payments Payment[]
+
+  @@unique([courtId, customerId, month])
+  @@index([courtId, month])
+  @@index([courtId, month, weekday])
+  @@index([customerId, month])
+}
+
+model CourtBlock {
+  id          String   @id @default(cuid())
+  courtId     String
+  start_time  DateTime
+  end_time    DateTime
+  note        String?
+  createdById String
+  createdAt   DateTime @default(now())
+
+  court     Court @relation(fields: [courtId], references: [id])
+  createdBy User  @relation(fields: [createdById], references: [id])
+
+  @@index([courtId, start_time])
+  @@index([createdById])
+}
+
+model AvailabilityAlert {
+  id        String   @id @default(cuid())
+  userId    String
+  courtId   String
+  start_time DateTime
+  end_time   DateTime
+  is_active Boolean  @default(true)
+  notifiedAt DateTime?
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  court Court @relation(fields: [courtId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([courtId, start_time])
+  @@unique([userId, courtId, start_time, end_time])
+}
+
+model CourtInactivationReason {
+  id          String   @id @default(cuid())
+  title       String
+  is_active   Boolean  @default(true)
+  createdById String
+  createdAt   DateTime @default(now())
+
+  createdBy User  @relation(fields: [createdById], references: [id])
+  courts    Court[]
+
+  @@index([createdById])
+  @@index([is_active])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actorRole  Role?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([actorId, createdAt])
+  @@index([entityType, entityId])
+}
+
+model AccessLog {
+  id              String   @id @default(cuid())
+  userId          String?
+  establishmentId String?
+  courtId         String?
+  method          String
+  path            String
+  ip              String?
+  userAgent       String?
+  referer         String?
+  createdAt       DateTime @default(now())
+
+  user          User?         @relation(fields: [userId], references: [id])
+  establishment Establishment? @relation(fields: [establishmentId], references: [id])
+  court         Court?        @relation(fields: [courtId], references: [id])
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([establishmentId, createdAt])
+  @@index([courtId, createdAt])
+}
+
+model Booking {
+  id               String        @id @default(cuid())
+  customerId       String?
+  courtId          String
+  start_time       DateTime
+  end_time         DateTime
+  total_price_cents Int
+  status           BookingStatus @default(PENDING)
+  cancel_reason    String?
+  cancel_fee_cents Int           @default(0)
+  customer_name    String?
+  customer_email   String?
+  customer_phone   String?
+  rescheduledFromId String?       @unique
+  createdAt        DateTime      @default(now())
+
+  notifications Notification[]
+
+  customer User? @relation(fields: [customerId], references: [id])
+  court    Court @relation(fields: [courtId], references: [id])
+  rescheduledFrom Booking? @relation("BookingReschedule", fields: [rescheduledFromId], references: [id])
+  rescheduledTo   Booking? @relation("BookingReschedule")
+  payments Payment[]
+
+  @@index([customerId])
+  @@index([courtId, start_time])
+  @@index([courtId, status, start_time])
+  @@index([courtId, start_time, end_time])
+  @@index([customerId, status, start_time])
+}
+
+model Payment {
+  id                   String          @id @default(cuid())
+  bookingId            String?
+  monthlyPassId        String?
+  provider             PaymentProvider
+  status               PaymentStatus   @default(PENDING)
+  amount_cents         Int
+  currency             String          @default("BRL")
+  provider_payment_id  String?
+  checkout_url         String?
+  idempotency_key      String?
+  expires_at           DateTime?
+  requires_confirmation Boolean        @default(false)
+  metadata             Json?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  booking     Booking?     @relation(fields: [bookingId], references: [id])
+  monthlyPass MonthlyPass? @relation(fields: [monthlyPassId], references: [id])
+  events      PaymentEvent[]
+
+  @@index([bookingId])
+  @@index([monthlyPassId])
+  @@index([provider, status])
+  @@index([provider_payment_id])
+}
+
+model PaymentEvent {
+  id               String   @id @default(cuid())
+  paymentId        String
+  provider_event_id String?
+  type             String
+  payload          Json?
+  createdAt        DateTime @default(now())
+
+  payment Payment @relation(fields: [paymentId], references: [id])
+
+  @@index([paymentId])
+  @@index([provider_event_id])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  bookingId String?
+  type      NotificationType
+  title     String
+  body      String
+  readAt    DateTime?
+  deletedAt DateTime?
+  deletedById String?
+  createdAt DateTime         @default(now())
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([bookingId])
+  @@index([readAt])
+  @@index([deletedAt])
+  @@index([userId, deletedAt])
+}
+
+model OutboundEmail {
+  id            String              @id @default(cuid())
+  to            String
+  subject       String
+  text          String
+  html          String?
+  dedupeKey     String?
+  status        OutboundEmailStatus @default(PENDING)
+  attempts      Int                 @default(0)
+  maxAttempts   Int                 @default(8)
+  lastError     String?
+  providerMessageId String?
+  nextAttemptAt DateTime            @default(now())
+  createdAt     DateTime            @default(now())
+  sentAt        DateTime?
+
+  @@index([status, nextAttemptAt])
+  @@index([createdAt])
+  @@unique([dedupeKey])
+}
+
+model EstablishmentHoliday {
+  id              String   @id @default(cuid())
+  establishmentId String
+  date            String
+  is_open         Boolean  @default(false)
+  opening_time    String?
+  closing_time    String?
+  note            String?
+  createdAt       DateTime @default(now())
+
+  establishment Establishment @relation(fields: [establishmentId], references: [id])
+
+  @@unique([establishmentId, date])
+  @@index([establishmentId, date])
+}
+
+model EstablishmentReview {
+  id              String   @id @default(cuid())
+  establishmentId String
+  userId          String
+  rating          Int
+  comment         String?
+  createdAt       DateTime @default(now())
+
+  establishment Establishment @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([establishmentId, userId])
+  @@index([establishmentId, createdAt])
+}
+
+model EstablishmentFavorite {
+  id              String   @id @default(cuid())
+  establishmentId String
+  userId          String
+  createdAt       DateTime @default(now())
+
+  establishment Establishment @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([establishmentId, userId])
+  @@index([userId, createdAt])
+}
+
+// NextAuth / Auth.js (Prisma Adapter)
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}

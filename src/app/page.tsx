@@ -1,65 +1,130 @@
-import Image from "next/image";
+import type { Metadata } from "next";
+import { getServerSession } from "next-auth";
 
-export default function Home() {
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { SearchClient } from "@/components/SearchClient";
+import { SportType } from "@/generated/prisma/enums";
+
+export const metadata: Metadata = {
+  title: "PlatzGo! • Encontre e agende quadras",
+  description: "Busque quadras por localização, veja disponibilidade e finalize o agendamento.",
+};
+
+function parseNumber(v: unknown, fallback: number): number {
+  const n = typeof v === "string" ? Number(v) : NaN;
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function parseDay(v: unknown): string {
+  if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function parseSport(v: unknown): SportType | "ALL" {
+  if (v === "ALL") return "ALL";
+  if (typeof v !== "string") return "ALL";
+  return (Object.values(SportType) as string[]).includes(v) ? (v as SportType) : "ALL";
+}
+
+export default async function Home(props: {
+  searchParams?:
+    | {
+        lat?: string;
+        lng?: string;
+        radiusKm?: string;
+        sport?: string;
+        day?: string;
+        q?: string;
+        maxPrice?: string;
+        minRating?: string;
+        onlyFavorites?: string;
+      }
+    | Promise<{
+        lat?: string;
+        lng?: string;
+        radiusKm?: string;
+        sport?: string;
+        day?: string;
+        q?: string;
+        maxPrice?: string;
+        minRating?: string;
+        onlyFavorites?: string;
+      }>;
+}) {
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
+
+  const session = await getServerSession(authOptions);
+  const viewerUserId = session?.user?.id ?? null;
+  const isLoggedIn = Boolean(viewerUserId);
+
+  const searchParams = props.searchParams ? await Promise.resolve(props.searchParams) : undefined;
+  const latFromQuery = typeof searchParams?.lat === "string" ? parseNumber(searchParams.lat, NaN) : NaN;
+  const lngFromQuery = typeof searchParams?.lng === "string" ? parseNumber(searchParams.lng, NaN) : NaN;
+
+  let userLat: number | null = null;
+  let userLng: number | null = null;
+  let userAddress: string | null = null;
+  let userName: string | null = null;
+  let userImage: string | null = null;
+  if (viewerUserId) {
+    const user = await prisma.user.findUnique({
+      where: { id: viewerUserId },
+      select: { latitude: true, longitude: true, address_text: true, name: true, image: true },
+    });
+    userLat = typeof user?.latitude === "number" ? user.latitude : null;
+    userLng = typeof user?.longitude === "number" ? user.longitude : null;
+    userAddress = typeof user?.address_text === "string" ? user.address_text : null;
+    userName = typeof user?.name === "string" ? user.name : null;
+    userImage = typeof user?.image === "string" ? user.image : null;
+  }
+
+  const hasCoordsFromQuery = Number.isFinite(latFromQuery) && Number.isFinite(lngFromQuery);
+  const hasCoordsFromUser = typeof userLat === "number" && typeof userLng === "number";
+
+  const lat = hasCoordsFromQuery ? latFromQuery : hasCoordsFromUser ? userLat! : -23.55052;
+  const lng = hasCoordsFromQuery ? lngFromQuery : hasCoordsFromUser ? userLng! : -46.633308;
+  const radiusKm = parseNumber(searchParams?.radiusKm, 20);
+  const sport = parseSport(searchParams?.sport);
+  const day = parseDay(searchParams?.day);
+  const maxPrice = parseNumber(searchParams?.maxPrice, 0);
+  const minRating = parseNumber(searchParams?.minRating, 0);
+  const onlyFavorites = searchParams?.onlyFavorites === "1";
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <SearchClient
+      apiKey={apiKey}
+      hero={{
+        title: "O jeito mais rápido de encontrar e agendar sua próxima partida.",
+        description: "Busque quadras por localização, veja disponibilidade e finalize o agendamento.",
+      }}
+      showOwnerCtaOnLoggedOut={!isLoggedIn}
+      showMarketingCardsOnLoggedOut={!isLoggedIn}
+      showFooter
+      viewer={{
+        userId: viewerUserId,
+        isLoggedIn,
+        role: session?.user?.role ?? null,
+        name: session?.user?.name ?? userName,
+        image: session?.user?.image ?? userImage,
+      }}
+      initial={{
+        lat,
+        lng,
+        address: userAddress ?? undefined,
+        radiusKm,
+        sport,
+        day,
+        q: searchParams?.q,
+        maxPrice: maxPrice > 0 ? maxPrice : null,
+        minRating: minRating > 0 ? minRating : null,
+        onlyFavorites,
+        locationSource: hasCoordsFromQuery ? "query" : hasCoordsFromUser ? "user" : "default",
+      }}
+    />
   );
 }

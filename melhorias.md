@@ -1,0 +1,14 @@
+- Cadastro do dono: incluir link do Instagram (visível ao cliente).
+- Notificações (futuro): e‑mail/WhatsApp/SMS com confirmação, lembrete e cancelamento.
+	- Regras para SMS e WhatsApp e opção de ativar/desativar a qualquer momento.
+- Política e regras: multas, prazos de cancelamento, bloqueios e feriados.
+	- Feriados: informar funcionamento da quadra e atualizar no calendário.
+- Experiência do cliente: avaliações, favoritos, recomendação e busca por filtros.
+- Acessibilidade e SEO: melhorias de UX, desempenho e mobile.
+
+- Pagamentos: integração com gateway, repasse, reembolso e taxa de no‑show.
+- Agenda avançada: recorrência, bloqueios administrativos, buffer entre reservas.
+- Operação do dono: relatórios (ocupação/receita), exportação e dashboard financeiro.
+- Segurança: rate limit, antifraude básico, logs e auditoria de ações.
+- Infraestrutura: storage de mídia estável (S3/MinIO em produção), backups e monitoramento.
+- Multi‑tenant: planos, limites por estabelecimento, convites de equipe e permissões.

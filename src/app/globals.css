@@ -8,8 +8,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -20,7 +19,104 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+}
+
+@layer base {
+  ::selection {
+    background: rgba(204, 255, 0, 0.35);
+    color: #0a0a0a;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  .ph-container {
+    @apply mx-auto max-w-7xl px-6;
+  }
+
+  .ph-page {
+    @apply relative isolate min-h-screen overflow-hidden bg-white dark:bg-[#121212];
+    background-image: radial-gradient(600px circle at 10% 10%, rgba(204, 255, 0, 0.08), transparent 45%),
+      radial-gradient(520px circle at 90% 0%, rgba(99, 102, 241, 0.08), transparent 45%);
+  }
+
+  .ph-card {
+    @apply rounded-3xl border border-zinc-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.06)] transition-shadow;
+    @apply hover:shadow-[0_24px_70px_rgba(15,23,42,0.12)];
+    @apply dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-[0_24px_70px_rgba(0,0,0,0.35)];
+  }
+
+  .ph-card-glass {
+    @apply rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl;
+  }
+
+  .ph-surface {
+    @apply rounded-3xl border border-zinc-200 bg-white/80 backdrop-blur;
+    @apply shadow-[0_14px_40px_rgba(15,23,42,0.06)];
+    @apply dark:border-zinc-800 dark:bg-zinc-950/60 dark:shadow-[0_18px_50px_rgba(0,0,0,0.35)];
+  }
+
+  .ph-input {
+    @apply w-full rounded-xl border border-transparent bg-zinc-100 px-4 py-3 text-sm text-zinc-900 outline-none;
+    @apply placeholder:text-zinc-500 focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00];
+    @apply dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder:text-zinc-500/80;
+  }
+
+  .ph-textarea {
+    @apply w-full rounded-xl border border-transparent bg-zinc-100 px-4 py-3 text-sm text-zinc-900 outline-none;
+    @apply placeholder:text-zinc-500 focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00];
+    @apply dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder:text-zinc-500/80;
+  }
+
+  .ph-select {
+    @apply w-full rounded-xl border border-transparent bg-zinc-100 px-4 py-3 text-sm text-zinc-900 outline-none;
+    @apply focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00];
+    @apply dark:bg-zinc-800 dark:text-zinc-100;
+  }
+
+  .ph-button {
+    @apply inline-flex items-center justify-center rounded-full bg-[#CCFF00] px-6 py-3 text-sm font-bold text-black transition-all;
+    @apply hover:scale-105 hover:shadow-[0_12px_40px_rgba(204,255,0,0.22)] disabled:opacity-60;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#CCFF00] focus-visible:ring-offset-2 focus-visible:ring-offset-white;
+    @apply dark:focus-visible:ring-offset-[#121212];
+  }
+
+  .ph-button-secondary {
+    @apply inline-flex items-center justify-center rounded-full border border-zinc-200 bg-white/70 px-6 py-3 text-sm font-semibold text-zinc-900 backdrop-blur;
+    @apply hover:bg-white/90 hover:border-zinc-300 hover:shadow-sm;
+    @apply dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-100 dark:hover:bg-zinc-950/60;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#CCFF00] focus-visible:ring-offset-2 focus-visible:ring-offset-white;
+    @apply dark:focus-visible:ring-offset-[#121212];
+  }
+
+  .ph-button-sm {
+    @apply inline-flex h-10 items-center justify-center rounded-full bg-[#CCFF00] px-4 text-sm font-bold text-black transition-all;
+    @apply hover:scale-105 hover:shadow-[0_12px_40px_rgba(204,255,0,0.22)] disabled:opacity-60;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#CCFF00] focus-visible:ring-offset-2 focus-visible:ring-offset-white;
+    @apply dark:focus-visible:ring-offset-[#121212];
+  }
+
+  .ph-button-secondary-sm {
+    @apply inline-flex h-10 items-center justify-center rounded-full border border-zinc-200 bg-white/70 px-4 text-sm font-semibold text-zinc-900 backdrop-blur;
+    @apply hover:bg-white/90 hover:border-zinc-300 hover:shadow-sm;
+    @apply dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-100 dark:hover:bg-zinc-950/60;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#CCFF00] focus-visible:ring-offset-2 focus-visible:ring-offset-white;
+    @apply dark:focus-visible:ring-offset-[#121212];
+  }
+
+  .ph-button-secondary-xs {
+    @apply inline-flex h-9 items-center justify-center rounded-full border border-zinc-200 bg-white/70 px-3 text-xs font-bold text-zinc-900 backdrop-blur;
+    @apply hover:bg-white/90 hover:border-zinc-300 hover:shadow-sm;
+    @apply dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-100 dark:hover:bg-zinc-950/60;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#CCFF00] focus-visible:ring-offset-2 focus-visible:ring-offset-white;
+    @apply dark:focus-visible:ring-offset-[#121212];
+  }
+
+  .ph-help {
+    @apply text-xs text-black dark:text-zinc-400;
+  }
 }
