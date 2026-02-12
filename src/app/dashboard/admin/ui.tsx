@@ -22,14 +22,16 @@ const PROFILE_MAX_PHOTOS = 7;
 const PROFILE_MAX_VIDEOS = 2;
 
 const weekdayLabels = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"] as const;
-const PAYMENT_OPTIONS = [
+type PaymentProviderKey = "asaas" | "mercadopago";
+
+const PAYMENT_OPTIONS: Array<{ id: PaymentProviderKey; label: string }> = [
   { id: "asaas", label: "Asaas" },
   { id: "mercadopago", label: "MercadoPago" },
-] as const;
+];
 
-function providerToKey(value: string | null | undefined): "asaas" | "mercadopago" | "" {
+function providerToKey(value: string | null | undefined): PaymentProviderKey | null {
   const v = (value ?? "").toLowerCase();
-  return v === "asaas" || v === "mercadopago" ? v : "";
+  return v === "asaas" || v === "mercadopago" ? v : null;
 }
 
 function isVideoUrl(url: string): boolean {
@@ -235,11 +237,13 @@ type EstablishmentWithCourts = {
 function buildFormState(establishment: EstablishmentWithCourts) {
   return {
     name: establishment?.name ?? "",
-    payment_provider: providerToKey(establishment?.payment_provider) || "asaas",
+    payment_provider: providerToKey(establishment?.payment_provider) ?? "asaas",
     payment_providers: (() => {
-      const list = (establishment?.payment_providers ?? []).map((p) => providerToKey(p)).filter(Boolean);
+      const list = (establishment?.payment_providers ?? [])
+        .map((p) => providerToKey(p))
+        .filter(Boolean) as PaymentProviderKey[];
       if (list.length) return list;
-      const fallback = providerToKey(establishment?.payment_provider) || "asaas";
+      const fallback = providerToKey(establishment?.payment_provider) ?? "asaas";
       return [fallback];
     })(),
     asaas_wallet_id: establishment?.asaas_wallet_id ?? "",
@@ -603,7 +607,10 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                 <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Provider padrão</label>
                 <select
                   value={form.payment_provider}
-                  onChange={(e) => setForm((s) => ({ ...s, payment_provider: e.target.value }))}
+                  onChange={(e) => {
+                    const next = e.target.value as PaymentProviderKey;
+                    setForm((s) => ({ ...s, payment_provider: next }));
+                  }}
                   className="ph-input mt-2"
                 >
                   {PAYMENT_OPTIONS.filter((opt) => form.payment_providers.includes(opt.id)).map((opt) => (
