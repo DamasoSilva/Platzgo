@@ -672,6 +672,12 @@ export function CourtDetailsClient(props: {
                   </p>
                 </div>
 
+                {!data.paymentsEnabled && data.paymentsEnabledReason ? (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+                    {data.paymentsEnabledReason}
+                  </div>
+                ) : null}
+
                 {data.paymentsEnabled ? (
                   <label className="flex items-start gap-2 text-xs text-zinc-700 dark:text-zinc-300">
                     <input

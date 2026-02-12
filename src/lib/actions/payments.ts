@@ -304,7 +304,15 @@ export async function startPaymentForBooking(input: { bookingId: string; provide
       court: {
         select: {
           name: true,
-          establishment: { select: { requires_booking_confirmation: true, asaas_wallet_id: true } },
+          establishment: {
+            select: {
+              requires_booking_confirmation: true,
+              asaas_wallet_id: true,
+              online_payments_enabled: true,
+              payment_provider: true,
+              payment_providers: true,
+            },
+          },
         },
       },
     },
@@ -327,16 +335,31 @@ export async function startPaymentForBooking(input: { bookingId: string; provide
     return { paymentId: existing.id, provider: existing.provider, checkoutUrl: existing.checkout_url ?? null };
   }
 
+  if (!booking.court.establishment.online_payments_enabled) {
+    throw new Error("Pagamento online desativado para este estabelecimento");
+  }
+
+  const globalProviders = config.providersEnabled;
+  const establishmentProvidersRaw = booking.court.establishment.payment_providers ?? [];
+  const establishmentProviders = establishmentProvidersRaw
+    .map((p) => p.toLowerCase())
+    .filter((p): p is "asaas" | "mercadopago" => p === "asaas" || p === "mercadopago");
+  const baseProviders = establishmentProviders.length
+    ? establishmentProviders.filter((p) => globalProviders.includes(p))
+    : globalProviders;
+  const hasAsaasWallet = Boolean(booking.court.establishment.asaas_wallet_id?.trim());
+  const allowedProviders = baseProviders.filter((p) => (p === "asaas" ? hasAsaasWallet : true));
+
   const requested = input.provider ?? null;
-  const fallbackProvider = config.providersEnabled.includes(config.provider as "asaas" | "mercadopago")
+  const fallbackProvider = allowedProviders.includes(config.provider as "asaas" | "mercadopago")
     ? (config.provider as "asaas" | "mercadopago")
-    : config.providersEnabled[0] ?? null;
+    : allowedProviders[0] ?? null;
   const selected = requested || fallbackProvider;
 
   if (!selected) {
     throw new Error("Nenhum provedor de pagamento disponível");
   }
-  if (!config.providersEnabled.includes(selected)) {
+  if (!allowedProviders.includes(selected)) {
     throw new Error("Provedor de pagamento indisponível");
   }
 

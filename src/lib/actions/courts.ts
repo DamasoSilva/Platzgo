@@ -69,6 +69,8 @@ export async function getCourtBookingsForDay(params: { courtId: string; day: Dat
             name: true,
             payment_provider: true,
             payment_providers: true,
+            online_payments_enabled: true,
+            asaas_wallet_id: true,
             description: true,
             photo_urls: true,
             whatsapp_number: true,
@@ -180,16 +182,33 @@ export async function getCourtBookingsForDay(params: { courtId: string; day: Dat
 
   const globalProviders = paymentConfig.providersEnabled.map((p) => p.toUpperCase());
   const establishmentProviders = court.establishment.payment_providers ?? [];
-  const allowedProviders = establishmentProviders.length
+  const baseProviders = establishmentProviders.length
     ? establishmentProviders.filter((p) => globalProviders.includes(p))
     : globalProviders;
+  const hasAsaasWallet = Boolean(court.establishment.asaas_wallet_id?.trim());
+  const allowedProviders = baseProviders.filter((p) => (p === "ASAAS" ? hasAsaasWallet : true));
   const paymentDefaultProvider = allowedProviders.includes(court.establishment.payment_provider)
     ? court.establishment.payment_provider
     : allowedProviders.find((p) => p.toLowerCase() === paymentConfig.provider) ?? null;
+  const paymentsEnabled =
+    paymentConfig.enabled && court.establishment.online_payments_enabled && allowedProviders.length > 0;
+  let paymentsEnabledReason: string | null = null;
+  if (!paymentConfig.enabled || globalProviders.length === 0) {
+    paymentsEnabledReason = "Pagamento online indisponivel no momento.";
+  } else if (!court.establishment.online_payments_enabled) {
+    paymentsEnabledReason = "Pagamento online desativado pelo estabelecimento.";
+  } else if (baseProviders.length === 0) {
+    paymentsEnabledReason = "Nenhum provedor de pagamento configurado.";
+  } else if (baseProviders.includes("ASAAS") && !hasAsaasWallet) {
+    paymentsEnabledReason = "Pagamento online indisponivel: wallet Asaas nao configurado.";
+  } else if (allowedProviders.length === 0) {
+    paymentsEnabledReason = "Nenhum provedor de pagamento disponivel.";
+  }
 
   return {
     court,
-    paymentsEnabled: paymentConfig.enabled && allowedProviders.length > 0,
+    paymentsEnabled,
+    paymentsEnabledReason: paymentsEnabled ? null : paymentsEnabledReason,
     paymentProviders: allowedProviders.map((p) => p.toLowerCase()),
     paymentDefaultProvider: paymentDefaultProvider?.toLowerCase() ?? null,
     dayInfo: {

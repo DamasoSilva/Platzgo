@@ -17,6 +17,7 @@ export default async function AdminDashboardPage() {
       payment_provider: true,
       payment_providers: true,
       asaas_wallet_id: true,
+      online_payments_enabled: true,
       description: true,
       whatsapp_number: true,
       contact_number: true,

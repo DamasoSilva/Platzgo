@@ -9,6 +9,7 @@ import { EstablishmentApprovalStatus, NotificationType, Role } from "@/generated
 import { enqueueEmail } from "@/lib/emailQueue";
 import { courtValidatedEmailToOwner, getAppUrl, sysadminApprovalTaskEmail } from "@/lib/emailTemplates";
 import { getNotificationSettings } from "@/lib/notificationSettings";
+import { getPaymentConfig } from "@/lib/payments";
 import { slugify } from "@/lib/utils/slug";
 
 function isVideoUrl(url: string): boolean {
@@ -123,6 +124,7 @@ export type UpsertEstablishmentInput = {
   payment_provider?: string;
   payment_providers?: string[];
   asaas_wallet_id?: string | null;
+  online_payments_enabled?: boolean;
   address_text: string;
   latitude: number;
   longitude: number;
@@ -200,6 +202,8 @@ export async function upsertMyEstablishment(input: UpsertEstablishmentInput) {
           payment_provider: paymentProvider,
           payment_providers: paymentProviders,
           asaas_wallet_id: input.asaas_wallet_id === undefined ? undefined : (input.asaas_wallet_id?.trim() || null),
+          online_payments_enabled:
+            typeof input.online_payments_enabled === "boolean" ? input.online_payments_enabled : undefined,
           address_text: input.address_text,
           latitude: input.latitude,
           longitude: input.longitude,
@@ -231,6 +235,8 @@ export async function upsertMyEstablishment(input: UpsertEstablishmentInput) {
           payment_provider: paymentProvider,
           payment_providers: paymentProviders,
           asaas_wallet_id: input.asaas_wallet_id?.trim() || null,
+          online_payments_enabled:
+            typeof input.online_payments_enabled === "boolean" ? input.online_payments_enabled : false,
           address_text: input.address_text,
           latitude: input.latitude,
           longitude: input.longitude,
@@ -519,6 +525,7 @@ export type UpdateMyEstablishmentSettingsInput = {
   photo_urls?: string[];
   payment_provider?: string;
   payment_providers?: string[];
+  online_payments_enabled?: boolean;
   open_weekdays?: number[];
   opening_time?: string;
   closing_time?: string;
@@ -590,6 +597,8 @@ export async function updateMyEstablishmentSettings(input: UpdateMyEstablishment
       photo_urls,
       payment_provider: paymentProvider,
       payment_providers: paymentProviders,
+      online_payments_enabled:
+        typeof input.online_payments_enabled === "boolean" ? input.online_payments_enabled : undefined,
       open_weekdays,
       opening_time: input.opening_time,
       closing_time: input.closing_time,
@@ -669,5 +678,35 @@ export async function resubmitMyEstablishmentApproval() {
 
   revalidatePath("/dashboard/admin");
   revalidatePath("/dashboard");
+  return { ok: true };
+}
+
+export async function testMyAsaasWallet() {
+  const session = await requireRole("ADMIN");
+
+  const establishment = await prisma.establishment.findFirst({
+    where: { ownerId: session.user.id },
+    select: { id: true, asaas_wallet_id: true },
+  });
+
+  if (!establishment) throw new Error("Estabelecimento nao encontrado");
+
+  const walletId = establishment.asaas_wallet_id?.trim();
+  if (!walletId) throw new Error("Wallet ID nao configurado");
+
+  const config = await getPaymentConfig();
+  if (!config.asaas.apiKey) throw new Error("Asaas nao configurado");
+
+  const baseUrl = config.asaas.baseUrl ?? "https://sandbox.asaas.com/api/v3";
+  const res = await fetch(`${baseUrl}/wallets/${walletId}`, {
+    headers: { access_token: config.asaas.apiKey },
+  });
+
+  if (!res.ok) {
+    const data = (await res.json().catch(() => null)) as null | { message?: string; error?: string; errors?: Array<{ description?: string }> };
+    const detail = data?.errors?.[0]?.description || data?.message || data?.error || null;
+    throw new Error(detail ? `Wallet Asaas invalido: ${detail}` : "Wallet Asaas invalido ou nao encontrado");
+  }
+
   return { ok: true };
 }

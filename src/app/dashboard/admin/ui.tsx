@@ -11,7 +11,7 @@ import {
   toBrazilNationalDigitsFromAnyPhone,
 } from "@/components/BrazilPhoneInput";
 import { AddressMapPicker } from "@/components/AddressMapPicker";
-import { resubmitMyEstablishmentApproval, upsertMyEstablishment } from "@/lib/actions/admin";
+import { resubmitMyEstablishmentApproval, testMyAsaasWallet, upsertMyEstablishment } from "@/lib/actions/admin";
 import { deleteMyEstablishmentHoliday, upsertMyEstablishmentHoliday } from "@/lib/actions/holidays";
 import { formatBRLFromCents } from "@/lib/utils/currency";
 import { formatSportLabel } from "@/lib/utils/sport";
@@ -200,6 +200,7 @@ type EstablishmentWithCourts = {
   payment_provider: import("@/generated/prisma/enums").PaymentProvider;
   payment_providers: Array<import("@/generated/prisma/enums").PaymentProvider>;
   asaas_wallet_id: string | null;
+  online_payments_enabled: boolean;
   description: string | null;
   whatsapp_number: string;
   contact_number: string | null;
@@ -249,6 +250,7 @@ function buildFormState(establishment: EstablishmentWithCourts) {
       return [fallback];
     })(),
     asaas_wallet_id: establishment?.asaas_wallet_id ?? "",
+    online_payments_enabled: establishment?.online_payments_enabled ?? false,
     description: establishment?.description ?? "",
     whatsapp_digits: toBrazilNationalDigitsFromAnyPhone(establishment?.whatsapp_number ?? ""),
     contact_digits: toBrazilNationalDigitsFromAnyPhone(establishment?.contact_number ?? ""),
@@ -410,6 +412,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
           payment_provider: form.payment_provider,
           payment_providers: form.payment_providers,
           asaas_wallet_id: form.asaas_wallet_id,
+          online_payments_enabled: form.online_payments_enabled,
           description: form.description || undefined,
           whatsapp_number: toBrazilE164FromNationalDigits(form.whatsapp_digits),
           contact_number: form.contact_digits.trim()
@@ -435,6 +438,18 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
         router.refresh();
       } catch (e) {
         setMessage(e instanceof Error ? e.message : "Erro ao salvar");
+      }
+    });
+  }
+
+  async function onTestAsaasWallet() {
+    setMessage("Testando wallet Asaas...");
+    startTransition(async () => {
+      try {
+        await testMyAsaasWallet();
+        setMessage("Wallet Asaas validado com sucesso.");
+      } catch (e) {
+        setMessage(e instanceof Error ? e.message : "Erro ao testar wallet Asaas");
       }
     });
   }
@@ -610,65 +625,100 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
             </div>
 
             <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-              <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Pagamento online</p>
-              <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
-                Escolha o provedor padrão e quais estarão disponíveis para o estabelecimento.
-              </p>
-              <div className="mt-3 flex flex-wrap gap-3">
-                {PAYMENT_OPTIONS.map((opt) => {
-                  const checked = form.payment_providers.includes(opt.id);
-                  return (
-                    <label key={opt.id} className="inline-flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={(e) => {
-                          const next = e.target.checked
-                            ? Array.from(new Set([...form.payment_providers, opt.id]))
-                            : form.payment_providers.filter((p) => p !== opt.id);
-                          const safe = next.length ? next : [opt.id];
-                          const provider = safe.includes(form.payment_provider) ? form.payment_provider : safe[0];
-                          setForm((s) => ({ ...s, payment_providers: safe, payment_provider: provider }));
-                        }}
-                      />
-                      {opt.label}
-                    </label>
-                  );
-                })}
-              </div>
-              <div className="mt-3">
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Provider padrão</label>
-                <select
-                  value={form.payment_provider}
-                  onChange={(e) => {
-                    const next = e.target.value as PaymentProviderKey;
-                    setForm((s) => ({ ...s, payment_provider: next }));
-                  }}
-                  className="ph-input mt-2"
-                >
-                  {PAYMENT_OPTIONS.filter((opt) => form.payment_providers.includes(opt.id)).map((opt) => (
-                    <option key={opt.id} value={opt.id}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {form.payment_providers.includes("asaas") ? (
-                <div className="mt-4">
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                    Wallet ID do recebedor (Asaas)
-                  </label>
-                  <input
-                    value={form.asaas_wallet_id}
-                    onChange={(e) => setForm((s) => ({ ...s, asaas_wallet_id: e.target.value }))}
-                    className="ph-input mt-2"
-                    placeholder="walletId do estabelecimento"
-                  />
-                  <p className="mt-2 text-xs text-zinc-500">
-                    Necessario para repasse automatico. Sem esse ID, o pagamento fica na plataforma.
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Pagamento online</p>
+                  <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                    Ative para liberar pagamento online e configurar o provedor.
                   </p>
                 </div>
-              ) : null}
+                <button
+                  type="button"
+                  onClick={() => setForm((s) => ({ ...s, online_payments_enabled: !s.online_payments_enabled }))}
+                  className={
+                    "inline-flex h-10 items-center rounded-full border px-4 text-sm font-bold transition-all " +
+                    (form.online_payments_enabled
+                      ? "border-black/10 bg-[#CCFF00] text-black hover:brightness-95"
+                      : "border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900/40")
+                  }
+                >
+                  {form.online_payments_enabled ? "Ativado" : "Ativar"}
+                </button>
+              </div>
+
+              {form.online_payments_enabled ? (
+                <div className="mt-4 space-y-4">
+                  <div className="flex flex-wrap gap-3">
+                    {PAYMENT_OPTIONS.map((opt) => {
+                      const checked = form.payment_providers.includes(opt.id);
+                      return (
+                        <label key={opt.id} className="inline-flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => {
+                              const next = e.target.checked
+                                ? Array.from(new Set([...form.payment_providers, opt.id]))
+                                : form.payment_providers.filter((p) => p !== opt.id);
+                              const safe = next.length ? next : [opt.id];
+                              const provider = safe.includes(form.payment_provider) ? form.payment_provider : safe[0];
+                              setForm((s) => ({ ...s, payment_providers: safe, payment_provider: provider }));
+                            }}
+                          />
+                          {opt.label}
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Provider padrão</label>
+                    <select
+                      value={form.payment_provider}
+                      onChange={(e) => {
+                        const next = e.target.value as PaymentProviderKey;
+                        setForm((s) => ({ ...s, payment_provider: next }));
+                      }}
+                      className="ph-input mt-2"
+                    >
+                      {PAYMENT_OPTIONS.filter((opt) => form.payment_providers.includes(opt.id)).map((opt) => (
+                        <option key={opt.id} value={opt.id}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {form.payment_providers.includes("asaas") ? (
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                        Wallet ID do recebedor (Asaas)
+                      </label>
+                      <input
+                        value={form.asaas_wallet_id}
+                        onChange={(e) => setForm((s) => ({ ...s, asaas_wallet_id: e.target.value }))}
+                        className="ph-input mt-2"
+                        placeholder="walletId do estabelecimento"
+                      />
+                      <div className="mt-2">
+                        <button
+                          type="button"
+                          onClick={onTestAsaasWallet}
+                          disabled={!form.asaas_wallet_id.trim() || isPending}
+                          className="ph-button-secondary-xs disabled:opacity-60"
+                        >
+                          Testar wallet
+                        </button>
+                      </div>
+                      <p className="mt-2 text-xs text-zinc-500">
+                        Necessario para repasse automatico. Sem esse ID, o pagamento online fica indisponivel.
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="mt-4 rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-4 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-300">
+                  Pagamento online desativado. Ative para liberar aos clientes.
+                </div>
+              )}
             </div>
 
             <div>

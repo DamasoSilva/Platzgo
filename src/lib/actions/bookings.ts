@@ -181,7 +181,7 @@ export async function createBooking(input: CreateBookingInput) {
 
   const paymentConfig = await getPaymentConfig();
   const paymentsEnabled = paymentConfig.enabled && paymentConfig.providersEnabled.length > 0;
-  const paymentsEnabledForBooking = paymentsEnabled && !input.payAtCourt;
+  let paymentsEnabledForBooking = paymentsEnabled && !input.payAtCourt;
   let selectedProvider: "asaas" | "mercadopago" | null = null;
   if (paymentsEnabledForBooking && repeatWeeks > 0) {
     throw new Error("Pagamentos online não suportam recorrência semanal. Use agendamento único.");
@@ -221,6 +221,8 @@ export async function createBooking(input: CreateBookingInput) {
             name: true,
             payment_provider: true,
             payment_providers: true,
+            online_payments_enabled: true,
+            asaas_wallet_id: true,
             requires_booking_confirmation: true,
             open_weekdays: true,
             opening_time: true,
@@ -248,15 +250,24 @@ export async function createBooking(input: CreateBookingInput) {
     const requiresConfirmation = court.establishment.requires_booking_confirmation !== false;
     const globalProviders = paymentConfig.providersEnabled.map((p) => p.toUpperCase());
     const establishmentProviders = court.establishment.payment_providers ?? [];
-    const allowedProviders = establishmentProviders.length
+    const baseProviders = establishmentProviders.length
       ? establishmentProviders.filter((p) => globalProviders.includes(p))
       : globalProviders;
+    const hasAsaasWallet = Boolean(court.establishment.asaas_wallet_id?.trim());
+    const allowedProviders = baseProviders.filter((p) => (p === "ASAAS" ? hasAsaasWallet : true));
     const defaultProvider = allowedProviders.includes(court.establishment.payment_provider)
       ? court.establishment.payment_provider
       : allowedProviders.find((p) => p.toLowerCase() === paymentConfig.provider) ?? null;
     const resolvedProvider = defaultProvider
       ? (defaultProvider.toLowerCase() as "asaas" | "mercadopago")
       : (allowedProviders[0]?.toLowerCase() as "asaas" | "mercadopago" | undefined);
+
+    if (!court.establishment.online_payments_enabled) {
+      paymentsEnabledForBooking = false;
+    }
+    if (paymentsEnabledForBooking && allowedProviders.length === 0) {
+      paymentsEnabledForBooking = false;
+    }
 
     if (paymentsEnabledForBooking && !resolvedProvider) {
       throw new Error("Nenhum provedor de pagamento disponível");
