@@ -30,9 +30,6 @@ export default async function SysadminApprovalsPage(props: {
     },
   });
 
-  const isRedirectError = (e: unknown) =>
-    Boolean((e as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT"));
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
@@ -87,7 +84,7 @@ export default async function SysadminApprovalsPage(props: {
                           await approveEstablishment({ establishmentId: est.id });
                           redirect("/sysadmin/approvals?ok=1");
                         } catch (e) {
-                          if (isRedirectError(e)) throw e;
+                          if ((e as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) throw e;
                           const msg = e instanceof Error ? e.message : "Erro ao aprovar";
                           redirect(`/sysadmin/approvals?err=${encodeURIComponent(msg)}`);
                         }
@@ -104,7 +101,7 @@ export default async function SysadminApprovalsPage(props: {
                           await rejectEstablishment({ establishmentId: est.id, note });
                           redirect("/sysadmin/approvals?ok=1");
                         } catch (e) {
-                          if (isRedirectError(e)) throw e;
+                          if ((e as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) throw e;
                           const msg = e instanceof Error ? e.message : "Erro ao reprovar";
                           redirect(`/sysadmin/approvals?err=${encodeURIComponent(msg)}`);
                         }
