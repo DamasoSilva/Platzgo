@@ -5,8 +5,9 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/authz";
 import type { PaymentProvider, SportType } from "@/generated/prisma/enums";
+import { EstablishmentApprovalStatus, NotificationType, Role } from "@/generated/prisma/enums";
 import { enqueueEmail } from "@/lib/emailQueue";
-import { courtValidatedEmailToOwner, getAppUrl } from "@/lib/emailTemplates";
+import { courtValidatedEmailToOwner, getAppUrl, sysadminApprovalTaskEmail } from "@/lib/emailTemplates";
 import { getNotificationSettings } from "@/lib/notificationSettings";
 import { slugify } from "@/lib/utils/slug";
 
@@ -602,5 +603,71 @@ export async function updateMyEstablishmentSettings(input: UpdateMyEstablishment
   });
 
   revalidatePath("/dashboard/admin");
+  return { ok: true };
+}
+
+export async function resubmitMyEstablishmentApproval() {
+  const session = await requireRole("ADMIN");
+
+  const establishment = await prisma.establishment.findFirst({
+    where: { ownerId: session.user.id },
+    select: { id: true, name: true },
+  });
+
+  if (!establishment) throw new Error("Estabelecimento não encontrado");
+
+  await prisma.establishment.update({
+    where: { id: establishment.id },
+    data: {
+      approval_status: EstablishmentApprovalStatus.PENDING,
+      approval_note: null,
+      approvedAt: null,
+      approvedById: null,
+    },
+  });
+
+  const sysadmins = await prisma.user.findMany({
+    where: { role: Role.SYSADMIN },
+    select: { id: true, name: true, email: true },
+  });
+
+  if (sysadmins.length) {
+    await prisma.notification.createMany({
+      data: sysadmins.map((admin) => ({
+        userId: admin.id,
+        type: NotificationType.BOOKING_PENDING,
+        title: "Nova aprovação de estabelecimento",
+        body: `Reenvio de cadastro aguardando aprovação: ${establishment.name}.`,
+      })),
+    });
+
+    const settings = await getNotificationSettings();
+    if (settings.emailEnabled) {
+      const appUrl = getAppUrl();
+      const approvalsUrl = `${appUrl}/sysadmin/approvals`;
+      await Promise.all(
+        sysadmins
+          .filter((admin) => admin.email)
+          .map((admin) => {
+            const { subject, text, html } = sysadminApprovalTaskEmail({
+              establishmentName: establishment.name,
+              ownerName: session.user.name,
+              ownerEmail: session.user.email,
+              approvalsUrl,
+            });
+            return enqueueEmail({
+              to: admin.email!,
+              subject,
+              text,
+              html,
+              dedupeKey: `establishment:resubmitted:${establishment.id}:${admin.email}`,
+            });
+          })
+      );
+    }
+  }
+
+  revalidatePath("/dashboard/admin");
+  revalidatePath("/dashboard");
   return { ok: true };
 }

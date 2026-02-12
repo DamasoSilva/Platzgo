@@ -105,10 +105,13 @@ export async function rejectEstablishment(input: { establishmentId: string; note
 
     const settings = await getNotificationSettings();
     if (owner.email && settings.emailEnabled) {
+      const appUrl = getAppUrl();
+      const dashboardUrl = `${appUrl}/dashboard/admin`;
       const { subject, text, html } = establishmentRejectedEmailToOwner({
         ownerName: owner.name,
         establishmentName: establishment.name,
         reason: note,
+        dashboardUrl,
       });
       await enqueueEmail({
         to: owner.email,

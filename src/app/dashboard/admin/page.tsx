@@ -12,6 +12,8 @@ export default async function AdminDashboardPage() {
       ownerId: true,
       name: true,
       slug: true,
+      approval_status: true,
+      approval_note: true,
       payment_provider: true,
       payment_providers: true,
       asaas_wallet_id: true,

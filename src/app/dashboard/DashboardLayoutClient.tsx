@@ -48,6 +48,7 @@ export function DashboardLayoutClient(props: {
   hasAtLeastOneCourt?: boolean;
   establishmentProfile?: EstablishmentProfile | null;
   approvalStatus?: import("@/generated/prisma/enums").EstablishmentApprovalStatus | null;
+  approvalNote?: string | null;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -61,6 +62,7 @@ export function DashboardLayoutClient(props: {
       hasAtLeastOneCourt={props.hasAtLeastOneCourt}
       establishmentProfile={props.establishmentProfile}
       approvalStatus={props.approvalStatus}
+      approvalNote={props.approvalNote}
     >
       {props.children}
     </DashboardLayoutShell>
@@ -75,6 +77,7 @@ function DashboardLayoutShell(props: {
   hasAtLeastOneCourt?: boolean;
   establishmentProfile?: EstablishmentProfile | null;
   approvalStatus?: import("@/generated/prisma/enums").EstablishmentApprovalStatus | null;
+  approvalNote?: string | null;
 }) {
   const [accountOpen, setAccountOpen] = useState(false);
 
@@ -244,9 +247,21 @@ function DashboardLayoutShell(props: {
           <div className={mainInnerClass}>
             {showApprovalBanner ? (
               <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                {props.approvalStatus === "REJECTED"
-                  ? "Seu cadastro foi reprovado. Verifique o e-mail enviado pelo sistema para detalhes."
-                  : "Seu cadastro está em análise pelo SYSADMIN. Você pode ajustar o perfil normalmente, mas a aprovação ainda está pendente."}
+                {props.approvalStatus === "REJECTED" ? (
+                  <div className="space-y-2">
+                    <p>
+                      Seu cadastro foi reprovado.
+                      {props.approvalNote ? ` Motivo: ${props.approvalNote}` : ""}
+                    </p>
+                    <p>
+                      Ajuste os dados em <Link href="/dashboard/admin" className="font-semibold underline">Meu espaco</Link> e reenviar para aprovacao.
+                    </p>
+                  </div>
+                ) : (
+                  <p>
+                    Seu cadastro esta em analise pelo SYSADMIN. Voce pode ajustar o perfil normalmente, mas a aprovacao ainda esta pendente.
+                  </p>
+                )}
               </div>
             ) : null}
             {props.children}

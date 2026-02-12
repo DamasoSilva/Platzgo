@@ -7,12 +7,16 @@ import { approveEstablishment, rejectEstablishment } from "@/lib/actions/sysadmi
 import { EstablishmentApprovalStatus } from "@/generated/prisma/enums";
 
 export default async function SysadminApprovalsPage(props: {
-  searchParams?: { ok?: string; err?: string } | Promise<{ ok?: string; err?: string }>;
+  searchParams?:
+    | { ok?: string; err?: string; name?: string; status?: string }
+    | Promise<{ ok?: string; err?: string; name?: string; status?: string }>;
 }) {
   await requireRoleOrRedirect("SYSADMIN", "/sysadmin/approvals");
 
   const searchParams = props.searchParams ? await Promise.resolve(props.searchParams) : undefined;
   const ok = searchParams?.ok === "1";
+  const okName = (searchParams?.name ?? "").trim();
+  const okStatus = (searchParams?.status ?? "").trim();
   const err = (searchParams?.err ?? "").trim();
 
   const pending = await prisma.establishment.findMany({
@@ -43,8 +47,21 @@ export default async function SysadminApprovalsPage(props: {
       </div>
 
       {ok ? (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-          Ação concluída.
+        <div
+          className={
+            "rounded-2xl border p-4 text-sm " +
+            (okStatus === "rejected"
+              ? "border-red-200 bg-red-50 text-red-900"
+              : "border-emerald-200 bg-emerald-50 text-emerald-900")
+          }
+        >
+          {okStatus === "rejected"
+            ? okName
+              ? `O estabelecimento ${okName} foi reprovado.`
+              : "Reprovado."
+            : okName
+              ? `O estabelecimento ${okName} foi aprovado.`
+              : "Ação concluída."}
         </div>
       ) : null}
 
@@ -82,7 +99,7 @@ export default async function SysadminApprovalsPage(props: {
                         "use server";
                         try {
                           await approveEstablishment({ establishmentId: est.id });
-                          redirect("/sysadmin/approvals?ok=1");
+                          redirect(`/sysadmin/approvals?ok=1&status=approved&name=${encodeURIComponent(est.name)}`);
                         } catch (e) {
                           if ((e as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) throw e;
                           const msg = e instanceof Error ? e.message : "Erro ao aprovar";
@@ -99,7 +116,7 @@ export default async function SysadminApprovalsPage(props: {
                         try {
                           const note = String(formData.get("note") ?? "");
                           await rejectEstablishment({ establishmentId: est.id, note });
-                          redirect("/sysadmin/approvals?ok=1");
+                          redirect(`/sysadmin/approvals?ok=1&status=rejected&name=${encodeURIComponent(est.name)}`);
                         } catch (e) {
                           if ((e as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) throw e;
                           const msg = e instanceof Error ? e.message : "Erro ao reprovar";

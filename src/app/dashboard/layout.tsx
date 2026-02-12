@@ -11,10 +11,18 @@ export default async function DashboardLayout(props: { children: React.ReactNode
   let hasAtLeastOneCourt = false;
   let establishmentProfile: { name: string; imageUrl: string | null } | null = null;
   let approvalStatus: import("@/generated/prisma/enums").EstablishmentApprovalStatus | null = null;
+  let approvalNote: string | null = null;
   if (session?.user?.id && session.user.role === "ADMIN") {
     const est = await prisma.establishment.findFirst({
       where: { ownerId: session.user.id },
-      select: { id: true, name: true, photo_urls: true, approval_status: true, courts: { select: { id: true }, take: 1 } },
+      select: {
+        id: true,
+        name: true,
+        photo_urls: true,
+        approval_status: true,
+        approval_note: true,
+        courts: { select: { id: true }, take: 1 },
+      },
     });
     hasEstablishment = Boolean(est);
     hasAtLeastOneCourt = Boolean(est?.courts?.length);
@@ -22,6 +30,7 @@ export default async function DashboardLayout(props: { children: React.ReactNode
     if (est) {
       establishmentProfile = { name: est.name, imageUrl: est.photo_urls?.[0] ?? null };
       approvalStatus = est.approval_status ?? null;
+      approvalNote = est.approval_note ?? null;
     }
   }
 
@@ -31,6 +40,7 @@ export default async function DashboardLayout(props: { children: React.ReactNode
       hasAtLeastOneCourt={hasAtLeastOneCourt}
       establishmentProfile={establishmentProfile}
       approvalStatus={approvalStatus}
+      approvalNote={approvalNote}
     >
       {props.children}
     </DashboardLayoutClient>

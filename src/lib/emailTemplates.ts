@@ -261,12 +261,18 @@ export function establishmentApprovedEmailToOwner(params: { ownerName?: string |
   return { subject, text, html };
 }
 
-export function establishmentRejectedEmailToOwner(params: { ownerName?: string | null; establishmentName: string; reason?: string | null }) {
+export function establishmentRejectedEmailToOwner(params: {
+  ownerName?: string | null;
+  establishmentName: string;
+  reason?: string | null;
+  dashboardUrl: string;
+}) {
   const subject = "Cadastro reprovado";
   const text =
     `Olá${params.ownerName ? ", " + params.ownerName : ""}!\n\n` +
     `O cadastro do estabelecimento ${params.establishmentName} foi reprovado.\n` +
-    `${params.reason ? `Motivo: ${params.reason}\n` : ""}`;
+    `${params.reason ? `Motivo: ${params.reason}\n` : ""}` +
+    `Ajuste os dados em Meu espaço e reenviar para aprovação: ${params.dashboardUrl}\n`;
 
   const html = layoutHtml({
     title: subject,
@@ -279,6 +285,8 @@ export function establishmentRejectedEmailToOwner(params: { ownerName?: string |
           <div style="color:#7f1d1d;">${escapeHtml(params.reason)}</div>
         </div>
       ` : ""}
+      <div style="margin-top:16px;">${buttonHtml(params.dashboardUrl, "Abrir Meu espaço")}</div>
+      <div style="margin-top:14px;color:#6b7280;font-size:12px;">Link direto: <a href="${escapeHtml(params.dashboardUrl)}">${escapeHtml(params.dashboardUrl)}</a></div>
     `,
   });
 

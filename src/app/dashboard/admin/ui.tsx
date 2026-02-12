@@ -11,7 +11,7 @@ import {
   toBrazilNationalDigitsFromAnyPhone,
 } from "@/components/BrazilPhoneInput";
 import { AddressMapPicker } from "@/components/AddressMapPicker";
-import { upsertMyEstablishment } from "@/lib/actions/admin";
+import { resubmitMyEstablishmentApproval, upsertMyEstablishment } from "@/lib/actions/admin";
 import { deleteMyEstablishmentHoliday, upsertMyEstablishmentHoliday } from "@/lib/actions/holidays";
 import { formatBRLFromCents } from "@/lib/utils/currency";
 import { formatSportLabel } from "@/lib/utils/sport";
@@ -195,6 +195,8 @@ type EstablishmentWithCourts = {
   ownerId: string;
   name: string;
   slug: string | null;
+  approval_status: import("@/generated/prisma/enums").EstablishmentApprovalStatus;
+  approval_note: string | null;
   payment_provider: import("@/generated/prisma/enums").PaymentProvider;
   payment_providers: Array<import("@/generated/prisma/enums").PaymentProvider>;
   asaas_wallet_id: string | null;
@@ -515,6 +517,37 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
       {message ? (
         <div className="rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
           {message}
+        </div>
+      ) : null}
+
+      {props.establishment?.approval_status === "REJECTED" ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
+          <p>
+            Cadastro reprovado.
+            {props.establishment.approval_note ? ` Motivo: ${props.establishment.approval_note}` : ""}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="ph-button"
+              disabled={isPending}
+              onClick={() => {
+                setMessage("Reenviando para aprovacao...");
+                startTransition(async () => {
+                  try {
+                    await resubmitMyEstablishmentApproval();
+                    setMessage("Reenvio realizado. Aguarde nova analise do SYSADMIN.");
+                    router.refresh();
+                  } catch (e) {
+                    setMessage(e instanceof Error ? e.message : "Erro ao reenviar");
+                  }
+                });
+              }}
+            >
+              Reenviar para aprovacao
+            </button>
+            <span className="text-xs text-red-700">Ajuste os dados abaixo antes de reenviar.</span>
+          </div>
         </div>
       ) : null}
 
