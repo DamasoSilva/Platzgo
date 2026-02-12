@@ -5,7 +5,7 @@ import { handleAsaasWebhook } from "@/lib/actions/payments";
 
 export async function POST(req: NextRequest) {
   const config = await getPaymentConfig();
-  if (!config.enabled || config.provider !== "asaas") {
+  if (!config.enabled || !config.providersEnabled.includes("asaas")) {
     return NextResponse.json({ ok: false, error: "Asaas inativo." }, { status: 501 });
   }
 

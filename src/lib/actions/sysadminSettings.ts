@@ -81,6 +81,7 @@ export async function getPaymentSettingsForSysadmin() {
   const [
     enabled,
     provider,
+    providers,
     returnUrl,
     mpAccessToken,
     mpWebhook,
@@ -92,6 +93,7 @@ export async function getPaymentSettingsForSysadmin() {
   ] = await Promise.all([
     getSystemSetting(PAYMENT_SETTING_KEYS.enabled),
     getSystemSetting(PAYMENT_SETTING_KEYS.provider),
+    getSystemSetting(PAYMENT_SETTING_KEYS.providers),
     getSystemSetting(PAYMENT_SETTING_KEYS.returnUrl),
     getSystemSecret(PAYMENT_SETTING_KEYS.mpAccessToken),
     getSystemSecret(PAYMENT_SETTING_KEYS.mpWebhook),
@@ -105,6 +107,7 @@ export async function getPaymentSettingsForSysadmin() {
   return {
     enabled: enabled ?? "0",
     provider: provider ?? "none",
+    providers: providers ?? "",
     returnUrl: returnUrl ?? "",
     hasMpAccessToken: Boolean(mpAccessToken),
     hasMpWebhook: Boolean(mpWebhook),
@@ -119,6 +122,7 @@ export async function getPaymentSettingsForSysadmin() {
 export async function savePaymentSettingsForSysadmin(input: {
   enabled: string;
   provider: string;
+  providers?: string;
   returnUrl: string;
   mpAccessToken?: string;
   mpWebhook?: string;
@@ -132,11 +136,13 @@ export async function savePaymentSettingsForSysadmin(input: {
 
   const enabled = (input.enabled ?? "0").trim();
   const provider = (input.provider ?? "none").trim();
+  const providers = (input.providers ?? "").trim();
   const returnUrl = (input.returnUrl ?? "").trim();
 
   await Promise.all([
     setSystemSetting(PAYMENT_SETTING_KEYS.enabled, enabled),
     setSystemSetting(PAYMENT_SETTING_KEYS.provider, provider),
+    setSystemSetting(PAYMENT_SETTING_KEYS.providers, providers),
     setSystemSetting(PAYMENT_SETTING_KEYS.returnUrl, returnUrl),
   ]);
 

@@ -1,10 +1,12 @@
 import { getSystemSecret, getSystemSetting } from "@/lib/systemSettings";
 
 type PaymentProvider = "mercadopago" | "asaas" | "none";
+type EnabledPaymentProvider = "mercadopago" | "asaas";
 
 type PaymentConfig = {
   enabled: boolean;
   provider: PaymentProvider;
+  providersEnabled: EnabledPaymentProvider[];
   mercadopago: {
     accessToken?: string;
     webhookSecret?: string;
@@ -22,6 +24,7 @@ type PaymentConfig = {
 export const PAYMENT_SETTING_KEYS = {
   enabled: "payments.enabled",
   provider: "payments.provider",
+  providers: "payments.providers",
   returnUrl: "payments.return_url",
   mpAccessToken: "payments.mercadopago.access_token",
   mpWebhook: "payments.mercadopago.webhook",
@@ -32,10 +35,28 @@ export const PAYMENT_SETTING_KEYS = {
   asaasSplitPercent: "payments.asaas.split_percent",
 } as const;
 
+function normalizeProviders(raw: string | null | undefined): EnabledPaymentProvider[] {
+  if (!raw) return [];
+  const cleaned = raw
+    .split(",")
+    .map((v) => v.trim().toLowerCase())
+    .filter(Boolean);
+
+  const out: EnabledPaymentProvider[] = [];
+  for (const item of cleaned) {
+    if (item === "mercadopago" || item === "asaas") {
+      if (!out.includes(item)) out.push(item);
+    }
+  }
+
+  return out;
+}
+
 export async function getPaymentConfig(): Promise<PaymentConfig> {
   const [
     enabledDb,
     providerDb,
+    providersDb,
     returnUrlDb,
     mpAccessTokenDb,
     mpWebhookDb,
@@ -47,6 +68,7 @@ export async function getPaymentConfig(): Promise<PaymentConfig> {
   ] = await Promise.all([
     getSystemSetting(PAYMENT_SETTING_KEYS.enabled),
     getSystemSetting(PAYMENT_SETTING_KEYS.provider),
+    getSystemSetting(PAYMENT_SETTING_KEYS.providers),
     getSystemSetting(PAYMENT_SETTING_KEYS.returnUrl),
     getSystemSecret(PAYMENT_SETTING_KEYS.mpAccessToken),
     getSystemSecret(PAYMENT_SETTING_KEYS.mpWebhook),
@@ -63,11 +85,19 @@ export async function getPaymentConfig(): Promise<PaymentConfig> {
   const provider: PaymentProvider =
     providerRaw === "mercadopago" || providerRaw === "asaas" ? providerRaw : "none";
 
+  const providersRaw = (providersDb ?? process.env.PAYMENT_PROVIDERS ?? "").trim();
+  const providersEnabled = normalizeProviders(providersRaw);
+
+  if (providersEnabled.length === 0 && provider !== "none") {
+    providersEnabled.push(provider);
+  }
+
   const returnUrl = (returnUrlDb ?? process.env.PAYMENT_RETURN_URL ?? "").trim() || undefined;
 
   return {
     enabled,
     provider,
+    providersEnabled,
     mercadopago: {
       accessToken: mpAccessTokenDb ?? process.env.MERCADOPAGO_ACCESS_TOKEN,
       webhookSecret: mpWebhookDb ?? process.env.MERCADOPAGO_WEBHOOK_SECRET,
@@ -90,7 +120,7 @@ export async function getPaymentConfig(): Promise<PaymentConfig> {
 
 export async function assertPaymentsEnabled() {
   const config = await getPaymentConfig();
-  if (!config.enabled || config.provider === "none") {
+  if (!config.enabled || config.providersEnabled.length === 0) {
     throw new Error("PAYMENTS_DISABLED");
   }
   return config;

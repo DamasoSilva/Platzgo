@@ -15,7 +15,7 @@ import { dateWithTime } from "@/lib/utils/time";
 import { formatBRLFromCents } from "@/lib/utils/currency";
 import { logAudit } from "@/lib/audit";
 import { getPaymentConfig } from "@/lib/payments";
-import { startPaymentForBooking } from "@/lib/actions/payments";
+import { releaseAsaasPayoutForPayment, startPaymentForBooking } from "@/lib/actions/payments";
 import {
   bookingCancelledEmailToCustomer,
   bookingCancelledEmailToOwner,
@@ -33,6 +33,7 @@ export type CreateBookingInput = {
   endTime: Date | string;
   repeatWeeks?: number;
   payAtCourt?: boolean;
+  paymentProvider?: "asaas" | "mercadopago";
 };
 
 function coerceDate(value: Date | string, fieldName: string): Date {
@@ -179,8 +180,9 @@ export async function createBooking(input: CreateBookingInput) {
   if (start <= now) throw new Error("Não é possível agendar horários retroativos.");
 
   const paymentConfig = await getPaymentConfig();
-  const paymentsEnabled = paymentConfig.enabled && paymentConfig.provider !== "none";
+  const paymentsEnabled = paymentConfig.enabled && paymentConfig.providersEnabled.length > 0;
   const paymentsEnabledForBooking = paymentsEnabled && !input.payAtCourt;
+  let selectedProvider: "asaas" | "mercadopago" | null = null;
   if (paymentsEnabledForBooking && repeatWeeks > 0) {
     throw new Error("Pagamentos online não suportam recorrência semanal. Use agendamento único.");
   }
@@ -217,6 +219,8 @@ export async function createBooking(input: CreateBookingInput) {
             id: true,
             ownerId: true,
             name: true,
+            payment_provider: true,
+            payment_providers: true,
             requires_booking_confirmation: true,
             open_weekdays: true,
             opening_time: true,
@@ -242,6 +246,23 @@ export async function createBooking(input: CreateBookingInput) {
     const discounted = discountPercent > 0 ? Math.round((baseTotal * (100 - discountPercent)) / 100) : baseTotal;
 
     const requiresConfirmation = court.establishment.requires_booking_confirmation !== false;
+    const globalProviders = paymentConfig.providersEnabled.map((p) => p.toUpperCase());
+    const establishmentProviders = court.establishment.payment_providers ?? [];
+    const allowedProviders = establishmentProviders.length
+      ? establishmentProviders.filter((p) => globalProviders.includes(p))
+      : globalProviders;
+    const defaultProvider = allowedProviders.includes(court.establishment.payment_provider)
+      ? court.establishment.payment_provider
+      : allowedProviders.find((p) => p.toLowerCase() === paymentConfig.provider) ?? null;
+    const resolvedProvider = defaultProvider
+      ? (defaultProvider.toLowerCase() as "asaas" | "mercadopago")
+      : (allowedProviders[0]?.toLowerCase() as "asaas" | "mercadopago" | undefined);
+
+    if (paymentsEnabledForBooking && !resolvedProvider) {
+      throw new Error("Nenhum provedor de pagamento disponível");
+    }
+
+    selectedProvider = resolvedProvider ?? null;
     const initialStatus = paymentsEnabledForBooking
       ? BookingStatus.PENDING
       : requiresConfirmation
@@ -469,7 +490,7 @@ export async function createBooking(input: CreateBookingInput) {
   });
 
   if (result && paymentsEnabledForBooking && result.total_price_cents > 0) {
-    const payment = await startPaymentForBooking({ bookingId: result.id });
+    const payment = await startPaymentForBooking({ bookingId: result.id, provider: selectedProvider ?? undefined });
     return { ...result, payment };
   }
 
@@ -661,7 +682,7 @@ export async function confirmBookingAsOwner(input: { bookingId: string }) {
 
   const notificationSettings = await getNotificationSettings();
 
-  const booking = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const b = await tx.booking.findUnique({
       where: { id: input.bookingId },
       select: {
@@ -861,11 +882,22 @@ export async function confirmBookingAsOwner(input: { bookingId: string }) {
       },
     });
 
-    return b;
+    return {
+      booking: b,
+      payoutPaymentId: payment?.status === PaymentStatus.AUTHORIZED ? payment.id : null,
+    };
   });
 
+  if (result.payoutPaymentId) {
+    try {
+      await releaseAsaasPayoutForPayment(result.payoutPaymentId);
+    } catch (e) {
+      console.error("Falha ao liberar repasse Asaas:", e);
+    }
+  }
+
   revalidatePath("/dashboard/agenda");
-  revalidatePath(`/courts/${booking.courtId}`);
+  revalidatePath(`/courts/${result.booking.courtId}`);
   revalidatePath("/meus-agendamentos");
   return { ok: true };
 }

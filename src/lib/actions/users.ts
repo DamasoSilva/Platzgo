@@ -136,14 +136,22 @@ export async function registerCustomer(input: RegisterCustomerInput) {
 
   await clearAttempts(key);
 
-  await createAndSendEmailVerificationCode({
+  const verificationRequired = await createAndSendEmailVerificationCode({
     userId: user.id,
     name: user.name,
     email: user.email,
     purpose: EmailVerificationPurpose.SIGNUP_CUSTOMER,
   });
 
-  return { id: user.id, email: user.email, role: Role.CUSTOMER, verificationRequired: true };
+  if (!verificationRequired) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { emailVerified: new Date() },
+      select: { id: true },
+    });
+  }
+
+  return { id: user.id, email: user.email, role: Role.CUSTOMER, verificationRequired };
 }
 
 export async function registerOwner(input: RegisterOwnerInput) {
@@ -209,14 +217,22 @@ export async function registerOwner(input: RegisterOwnerInput) {
 
   await clearAttempts(key);
 
-  await createAndSendEmailVerificationCode({
+  const verificationRequired = await createAndSendEmailVerificationCode({
     userId: created.id,
     name: created.name,
     email: created.email,
     purpose: EmailVerificationPurpose.SIGNUP_OWNER,
   });
 
-  return { id: created.id, email: created.email, role: Role.ADMIN, verificationRequired: true };
+  if (!verificationRequired) {
+    await prisma.user.update({
+      where: { id: created.id },
+      data: { emailVerified: new Date() },
+      select: { id: true },
+    });
+  }
+
+  return { id: created.id, email: created.email, role: Role.ADMIN, verificationRequired };
 }
 
 function sha256Hex(input: string): string {
@@ -233,10 +249,10 @@ async function createAndSendEmailVerificationCode(params: {
   name?: string | null;
   email: string;
   purpose: EmailVerificationPurpose;
-}) {
+}): Promise<boolean> {
   const smtp = await getEffectiveSmtpConfig();
   if (!smtp) {
-    throw new Error("SMTP não configurado. Configure host/porta/from e credenciais antes de enviar o código.");
+    return false;
   }
 
   const code = generateCode();
@@ -278,6 +294,8 @@ async function createAndSendEmailVerificationCode(params: {
     const reason = sent?.lastError || "Falha ao enviar o email";
     throw new Error(`Não foi possível enviar o código de verificação: ${reason}`);
   }
+
+  return true;
 }
 
 export async function resendEmailVerificationCode(input: { email: string }) {
@@ -294,12 +312,14 @@ export async function resendEmailVerificationCode(input: { email: string }) {
 
   const purpose = user.role === Role.ADMIN ? EmailVerificationPurpose.SIGNUP_OWNER : EmailVerificationPurpose.SIGNUP_CUSTOMER;
 
-  await createAndSendEmailVerificationCode({
+  const sent = await createAndSendEmailVerificationCode({
     userId: user.id,
     name: user.name,
     email: user.email,
     purpose,
   });
+
+  if (!sent) return { ok: true };
 
   return { ok: true };
 }

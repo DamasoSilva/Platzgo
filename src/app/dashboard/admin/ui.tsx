@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useId, useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 
 import {
   BrazilPhoneInput,
@@ -22,6 +22,15 @@ const PROFILE_MAX_PHOTOS = 7;
 const PROFILE_MAX_VIDEOS = 2;
 
 const weekdayLabels = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"] as const;
+const PAYMENT_OPTIONS = [
+  { id: "asaas", label: "Asaas" },
+  { id: "mercadopago", label: "MercadoPago" },
+] as const;
+
+function providerToKey(value: string | null | undefined): "asaas" | "mercadopago" | "" {
+  const v = (value ?? "").toLowerCase();
+  return v === "asaas" || v === "mercadopago" ? v : "";
+}
 
 function isVideoUrl(url: string): boolean {
   return /\.(mp4|webm)(\?|#|$)/i.test(url);
@@ -184,6 +193,9 @@ type EstablishmentWithCourts = {
   ownerId: string;
   name: string;
   slug: string | null;
+  payment_provider: import("@/generated/prisma/enums").PaymentProvider;
+  payment_providers: Array<import("@/generated/prisma/enums").PaymentProvider>;
+  asaas_wallet_id: string | null;
   description: string | null;
   whatsapp_number: string;
   contact_number: string | null;
@@ -220,6 +232,45 @@ type EstablishmentWithCourts = {
   }>;
 } | null;
 
+function buildFormState(establishment: EstablishmentWithCourts) {
+  return {
+    name: establishment?.name ?? "",
+    payment_provider: providerToKey(establishment?.payment_provider) || "asaas",
+    payment_providers: (() => {
+      const list = (establishment?.payment_providers ?? []).map((p) => providerToKey(p)).filter(Boolean);
+      if (list.length) return list;
+      const fallback = providerToKey(establishment?.payment_provider) || "asaas";
+      return [fallback];
+    })(),
+    asaas_wallet_id: establishment?.asaas_wallet_id ?? "",
+    description: establishment?.description ?? "",
+    whatsapp_digits: toBrazilNationalDigitsFromAnyPhone(establishment?.whatsapp_number ?? ""),
+    contact_digits: toBrazilNationalDigitsFromAnyPhone(establishment?.contact_number ?? ""),
+    instagram_url: establishment?.instagram_url ?? "",
+    photo_urls: establishment?.photo_urls ?? [],
+    requires_booking_confirmation: establishment?.requires_booking_confirmation ?? true,
+    address_text: establishment?.address_text ?? "",
+    latitude: establishment?.latitude ?? -23.55052,
+    longitude: establishment?.longitude ?? -46.633308,
+    open_weekdays: establishment?.open_weekdays ?? [0, 1, 2, 3, 4, 5, 6],
+    opening_time: establishment?.opening_time ?? "08:00",
+    closing_time: establishment?.closing_time ?? "23:00",
+    opening_time_by_weekday: normalizeWeekdayTimes(
+      establishment?.opening_time_by_weekday,
+      establishment?.opening_time ?? "08:00"
+    ),
+    closing_time_by_weekday: normalizeWeekdayTimes(
+      establishment?.closing_time_by_weekday,
+      establishment?.closing_time ?? "23:00"
+    ),
+    cancel_min_hours: establishment?.cancel_min_hours ?? 2,
+    cancel_fee_percent: establishment?.cancel_fee_percent ?? 0,
+    cancel_fee_fixed_reais: (establishment?.cancel_fee_fixed_cents ?? 0) / 100,
+    cancel_fee_type: (establishment?.cancel_fee_fixed_cents ?? 0) > 0 ? "fixed" : "percent",
+    booking_buffer_minutes: establishment?.booking_buffer_minutes ?? 0,
+  };
+}
+
 function normalizeWeekdayTimes(values: string[] | null | undefined, fallback: string): string[] {
   const out = Array.from({ length: 7 }, (_, i) => (values?.[i] ?? "").trim() || fallback);
   return out;
@@ -252,34 +303,11 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
       </div>
     ) : null;
 
-  const [form, setForm] = useState(() => ({
-    name: props.establishment?.name ?? "",
-    description: props.establishment?.description ?? "",
-    whatsapp_digits: toBrazilNationalDigitsFromAnyPhone(props.establishment?.whatsapp_number ?? ""),
-    contact_digits: toBrazilNationalDigitsFromAnyPhone(props.establishment?.contact_number ?? ""),
-    instagram_url: props.establishment?.instagram_url ?? "",
-    photo_urls: props.establishment?.photo_urls ?? [],
-    requires_booking_confirmation: props.establishment?.requires_booking_confirmation ?? true,
-    address_text: props.establishment?.address_text ?? "",
-    latitude: props.establishment?.latitude ?? -23.55052,
-    longitude: props.establishment?.longitude ?? -46.633308,
-    open_weekdays: props.establishment?.open_weekdays ?? [0, 1, 2, 3, 4, 5, 6],
-    opening_time: props.establishment?.opening_time ?? "08:00",
-    closing_time: props.establishment?.closing_time ?? "23:00",
-    opening_time_by_weekday: normalizeWeekdayTimes(
-      props.establishment?.opening_time_by_weekday,
-      props.establishment?.opening_time ?? "08:00"
-    ),
-    closing_time_by_weekday: normalizeWeekdayTimes(
-      props.establishment?.closing_time_by_weekday,
-      props.establishment?.closing_time ?? "23:00"
-    ),
-    cancel_min_hours: props.establishment?.cancel_min_hours ?? 2,
-    cancel_fee_percent: props.establishment?.cancel_fee_percent ?? 0,
-    cancel_fee_fixed_reais: (props.establishment?.cancel_fee_fixed_cents ?? 0) / 100,
-    cancel_fee_type: (props.establishment?.cancel_fee_fixed_cents ?? 0) > 0 ? "fixed" : "percent",
-    booking_buffer_minutes: props.establishment?.booking_buffer_minutes ?? 0,
-  }));
+  const [form, setForm] = useState(() => buildFormState(props.establishment));
+
+  useEffect(() => {
+    setForm(buildFormState(props.establishment));
+  }, [props.establishment]);
 
   const publicSlug = useMemo(() => {
     if (props.establishment?.slug) return props.establishment.slug;
@@ -350,7 +378,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
   }
 
   async function onSaveEstablishment() {
-    setMessage(null);
+    setMessage("Salvando...");
     setCopyStatus(null);
     startTransition(async () => {
       try {
@@ -373,6 +401,9 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
 
         await upsertMyEstablishment({
           name: form.name,
+          payment_provider: form.payment_provider,
+          payment_providers: form.payment_providers,
+          asaas_wallet_id: form.asaas_wallet_id,
           description: form.description || undefined,
           whatsapp_number: toBrazilE164FromNationalDigits(form.whatsapp_digits),
           contact_number: form.contact_digits.trim()
@@ -394,7 +425,8 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
           booking_buffer_minutes: Number(form.booking_buffer_minutes),
           requires_booking_confirmation: Boolean(form.requires_booking_confirmation),
         });
-        setMessage("Estabelecimento salvo. (A página pode precisar recarregar para refletir dados do servidor)");
+        setMessage("Estabelecimento salvo. Atualizando dados...");
+        router.refresh();
       } catch (e) {
         setMessage(e instanceof Error ? e.message : "Erro ao salvar");
       }
@@ -538,6 +570,65 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                 />
                 Retirar obrigatoriedade de confirmação
               </label>
+            </div>
+
+            <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+              <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Pagamento online</p>
+              <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                Escolha o provedor padrão e quais estarão disponíveis para o estabelecimento.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-3">
+                {PAYMENT_OPTIONS.map((opt) => {
+                  const checked = form.payment_providers.includes(opt.id);
+                  return (
+                    <label key={opt.id} className="inline-flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? Array.from(new Set([...form.payment_providers, opt.id]))
+                            : form.payment_providers.filter((p) => p !== opt.id);
+                          const safe = next.length ? next : [opt.id];
+                          const provider = safe.includes(form.payment_provider) ? form.payment_provider : safe[0];
+                          setForm((s) => ({ ...s, payment_providers: safe, payment_provider: provider }));
+                        }}
+                      />
+                      {opt.label}
+                    </label>
+                  );
+                })}
+              </div>
+              <div className="mt-3">
+                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Provider padrão</label>
+                <select
+                  value={form.payment_provider}
+                  onChange={(e) => setForm((s) => ({ ...s, payment_provider: e.target.value }))}
+                  className="ph-input mt-2"
+                >
+                  {PAYMENT_OPTIONS.filter((opt) => form.payment_providers.includes(opt.id)).map((opt) => (
+                    <option key={opt.id} value={opt.id}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {form.payment_providers.includes("asaas") ? (
+                <div className="mt-4">
+                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                    Wallet ID do recebedor (Asaas)
+                  </label>
+                  <input
+                    value={form.asaas_wallet_id}
+                    onChange={(e) => setForm((s) => ({ ...s, asaas_wallet_id: e.target.value }))}
+                    className="ph-input mt-2"
+                    placeholder="walletId do estabelecimento"
+                  />
+                  <p className="mt-2 text-xs text-zinc-500">
+                    Necessario para repasse automatico. Sem esse ID, o pagamento fica na plataforma.
+                  </p>
+                </div>
+              ) : null}
             </div>
 
             <div>
@@ -816,7 +907,12 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
               </div>
             </div>
 
-            <button onClick={onSaveEstablishment} disabled={isPending} className="ph-button w-full">
+            <button
+              onClick={onSaveEstablishment}
+              disabled={isPending}
+              className="ph-button w-full"
+              aria-busy={isPending}
+            >
               {isPending ? "Salvando..." : "Salvar Estabelecimento"}
             </button>
           </div>

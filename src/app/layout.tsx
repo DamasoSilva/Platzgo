@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { GlobalBackButton } from "@/components/GlobalBackButton";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -28,7 +27,6 @@ export default function RootLayout({
       <body
         className={`${inter.variable} min-h-screen bg-[#121212] text-zinc-100 antialiased`}
       >
-        <GlobalBackButton />
         {children}
       </body>
     </html>

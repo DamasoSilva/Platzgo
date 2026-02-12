@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { requireRoleOrRedirect } from "@/lib/authz";
+import { FormSubmitButton } from "@/components/FormSubmitButton";
 import {
   getSmtpSettingsForSysadmin,
   saveSmtpSettings,
@@ -104,7 +105,7 @@ export default async function SysadminSettingsPage(props: {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <button type="submit" className="ph-button">Salvar SMTP</button>
+              <FormSubmitButton label="Salvar SMTP" pendingLabel="Salvando..." className="ph-button" />
 
               <button
                 formAction={async () => {
@@ -156,9 +157,11 @@ export default async function SysadminSettingsPage(props: {
             action={async (formData) => {
               "use server";
               try {
+                const providers = (formData.getAll("paymentProviders") ?? []).map((v) => String(v)).join(",");
                 await savePaymentSettingsForSysadmin({
                   enabled: String(formData.get("paymentsEnabled") ?? "0"),
                   provider: String(formData.get("paymentProvider") ?? "none"),
+                  providers,
                   returnUrl: String(formData.get("paymentReturnUrl") ?? ""),
                   mpAccessToken: String(formData.get("mpAccessToken") ?? ""),
                   mpWebhook: String(formData.get("mpWebhook") ?? ""),
@@ -187,7 +190,32 @@ export default async function SysadminSettingsPage(props: {
                   />
                   <span>Ativar pagamentos</span>
                 </label>
-                <span className="text-xs text-zinc-500">Provider atual: {payments.provider}</span>
+                <span className="text-xs text-zinc-500">Provider padrão: {payments.provider}</span>
+              </div>
+
+              <div className="mt-3">
+                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Providers ativos</label>
+                <div className="mt-2 flex flex-wrap gap-3">
+                  <label className="inline-flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      name="paymentProviders"
+                      value="mercadopago"
+                      defaultChecked={payments.providers?.includes("mercadopago")}
+                    />
+                    MercadoPago
+                  </label>
+                  <label className="inline-flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      name="paymentProviders"
+                      value="asaas"
+                      defaultChecked={payments.providers?.includes("asaas")}
+                    />
+                    Asaas
+                  </label>
+                </div>
+                <p className="mt-2 text-xs text-zinc-500">Marque os providers que estarao disponiveis no checkout.</p>
               </div>
 
               <div className="mt-3">
@@ -237,6 +265,7 @@ export default async function SysadminSettingsPage(props: {
             <div className="rounded-2xl border border-zinc-200 bg-white/70 p-4 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300">
               <p className="font-semibold text-zinc-900 dark:text-zinc-50">Asaas</p>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <input type="hidden" name="asaasSplitWalletId" defaultValue={payments.asaasSplitWalletId} />
                 <div>
                   <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">API key</label>
                   <input
@@ -265,16 +294,7 @@ export default async function SysadminSettingsPage(props: {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Wallet ID (split)</label>
-                  <input
-                    name="asaasSplitWalletId"
-                    className="ph-input mt-2"
-                    defaultValue={payments.asaasSplitWalletId}
-                    placeholder="walletId do recebedor"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Split %</label>
+                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Comissao % do app</label>
                   <input
                     name="asaasSplitPercent"
                     type="number"
@@ -287,11 +307,13 @@ export default async function SysadminSettingsPage(props: {
                   />
                 </div>
               </div>
-              <p className="mt-2 text-xs text-zinc-500">Split aplicado automaticamente nas cobranças do Asaas.</p>
+              <p className="mt-2 text-xs text-zinc-500">
+                O repasse usa o Wallet ID do estabelecimento (configurado no painel do dono).
+              </p>
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <button type="submit" className="ph-button">Salvar pagamentos</button>
+              <FormSubmitButton label="Salvar pagamentos" pendingLabel="Salvando..." className="ph-button" />
               <button
                 formAction={async () => {
                   "use server";
@@ -469,7 +491,7 @@ export default async function SysadminSettingsPage(props: {
               </div>
             </div>
 
-            <button type="submit" className="ph-button">Salvar notificações</button>
+            <FormSubmitButton label="Salvar notificações" pendingLabel="Salvando..." className="ph-button" />
           </form>
         </div>
 
@@ -505,7 +527,7 @@ export default async function SysadminSettingsPage(props: {
               <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Mínimo de 8 caracteres.</p>
             </div>
 
-            <button type="submit" className="ph-button">Salvar nova senha</button>
+            <FormSubmitButton label="Salvar nova senha" pendingLabel="Salvando..." className="ph-button" />
 
             <p className="text-xs text-zinc-600 dark:text-zinc-400">
                 Dica: você também pode usar o fluxo de Esqueci minha senha no login.

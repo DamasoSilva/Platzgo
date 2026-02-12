@@ -413,84 +413,6 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Fotos e vídeos da Arena</label>
-                  <div className="mt-2 flex items-center justify-between gap-3">
-                    <UploadPickerButton
-                      label={photoFiles.length ? "Adicionar mais arquivos" : "Adicionar arquivos"}
-                      accept="image/*,video/mp4,video/webm"
-                      multiple
-                      disabled={isPending || !canUploadOwnerMedia}
-                      onFiles={(files) => {
-                        try {
-                          validateMediaFiles(files);
-
-                          const next = [...photoFiles, ...files];
-                          const nextCounts = countSelectedMedia(next);
-                          if (nextCounts.photos > PROFILE_MAX_PHOTOS || nextCounts.videos > PROFILE_MAX_VIDEOS) {
-                            throw new Error(`Limite do perfil: até ${PROFILE_MAX_PHOTOS} fotos e ${PROFILE_MAX_VIDEOS} vídeos.`);
-                          }
-
-                          setPhotoFiles(next);
-                        } catch (e) {
-                          setError(e instanceof Error ? e.message : "Erro ao selecionar arquivos");
-                        }
-                      }}
-                    />
-                    <div className="text-xs text-zinc-600 dark:text-zinc-400">
-                      {selectedCounts.photos}/{PROFILE_MAX_PHOTOS} fotos · {selectedCounts.videos}/{PROFILE_MAX_VIDEOS} vídeos
-                    </div>
-                  </div>
-                  <p className="ph-help mt-2">Pelo menos 1 mídia é obrigatória. Vídeos: MP4/WebM.</p>
-                  {!canUploadOwnerMedia ? (
-                    <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-                      Informe um e-mail válido para habilitar o upload.
-                    </p>
-                  ) : null}
-
-                  {ownerPhotoPreviews.length ? (
-                    <div className="mt-3 grid grid-cols-3 gap-2">
-                      {ownerPhotoPreviews.map((url, idx) => {
-                        const file = photoFiles[idx];
-                        const isVideo = Boolean(file && (file.type === "video/mp4" || file.type === "video/webm"));
-                        return (
-                        <div
-                          key={url}
-                          className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900"
-                        >
-                          {isVideo ? (
-                            <a
-                              href={url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="flex h-24 w-full items-center justify-center bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100"
-                              title="Abrir vídeo em nova aba"
-                            >
-                              <span className="flex items-center gap-2 text-xs font-semibold">
-                                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/80 text-white">▶</span>
-                                Vídeo
-                              </span>
-                            </a>
-                          ) : (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={url} alt="" className="h-24 w-full object-cover" />
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setPhotoFiles((prev) => prev.filter((_, i) => i !== idx));
-                            }}
-                            className="absolute right-2 top-2 rounded-full bg-black/60 px-2 py-1 text-[10px] font-semibold text-white"
-                          >
-                            Remover
-                          </button>
-                        </div>
-                      );
-                      })}
-                    </div>
-                  ) : null}
-                </div>
-
-                <div>
                   <PlacesLocationPicker
                     apiKey={apiKey}
                     label="Endereço da Arena"
@@ -523,6 +445,86 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
               />
               <p className="ph-help mt-2">Mínimo de 8 caracteres.</p>
             </div>
+
+            {role === "OWNER" ? (
+              <div>
+                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Fotos e vídeos da Arena</label>
+                <div className="mt-2 flex items-center justify-between gap-3">
+                  <UploadPickerButton
+                    label={photoFiles.length ? "Adicionar mais arquivos" : "Adicionar arquivos"}
+                    accept="image/*,video/mp4,video/webm"
+                    multiple
+                    disabled={isPending || !canUploadOwnerMedia}
+                    onFiles={(files) => {
+                      try {
+                        validateMediaFiles(files);
+
+                        const next = [...photoFiles, ...files];
+                        const nextCounts = countSelectedMedia(next);
+                        if (nextCounts.photos > PROFILE_MAX_PHOTOS || nextCounts.videos > PROFILE_MAX_VIDEOS) {
+                          throw new Error(`Limite do perfil: até ${PROFILE_MAX_PHOTOS} fotos e ${PROFILE_MAX_VIDEOS} vídeos.`);
+                        }
+
+                        setPhotoFiles(next);
+                      } catch (e) {
+                        setError(e instanceof Error ? e.message : "Erro ao selecionar arquivos");
+                      }
+                    }}
+                  />
+                  <div className="text-xs text-zinc-600 dark:text-zinc-400">
+                    {selectedCounts.photos}/{PROFILE_MAX_PHOTOS} fotos · {selectedCounts.videos}/{PROFILE_MAX_VIDEOS} vídeos
+                  </div>
+                </div>
+                <p className="ph-help mt-2">Pelo menos 1 mídia é obrigatória. Vídeos: MP4/WebM.</p>
+                {!canUploadOwnerMedia ? (
+                  <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                    Informe um e-mail válido para habilitar o upload.
+                  </p>
+                ) : null}
+
+                {ownerPhotoPreviews.length ? (
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    {ownerPhotoPreviews.map((url, idx) => {
+                      const file = photoFiles[idx];
+                      const isVideo = Boolean(file && (file.type === "video/mp4" || file.type === "video/webm"));
+                      return (
+                        <div
+                          key={url}
+                          className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900"
+                        >
+                          {isVideo ? (
+                            <a
+                              href={url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex h-24 w-full items-center justify-center bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100"
+                              title="Abrir vídeo em nova aba"
+                            >
+                              <span className="flex items-center gap-2 text-xs font-semibold">
+                                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/80 text-white">▶</span>
+                                Vídeo
+                              </span>
+                            </a>
+                          ) : (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={url} alt="" className="h-24 w-full object-cover" />
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPhotoFiles((prev) => prev.filter((_, i) => i !== idx));
+                            }}
+                            className="absolute right-2 top-2 rounded-full bg-black/60 px-2 py-1 text-[10px] font-semibold text-white"
+                          >
+                            Remover
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
 
             {error ? <p className="text-sm text-red-600">{error}</p> : null}
 

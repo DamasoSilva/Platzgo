@@ -5,7 +5,7 @@ import { handleMercadoPagoWebhook } from "@/lib/actions/payments";
 
 export async function POST(req: NextRequest) {
   const config = await getPaymentConfig();
-  if (!config.enabled || config.provider !== "mercadopago") {
+  if (!config.enabled || !config.providersEnabled.includes("mercadopago")) {
     return NextResponse.json({ ok: false, error: "MercadoPago inativo." }, { status: 501 });
   }
 

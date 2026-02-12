@@ -76,6 +76,13 @@ enum PaymentStatus {
   FAILED
 }
 
+enum PayoutStatus {
+  NONE
+  PENDING
+  TRANSFERRED
+  FAILED
+}
+
 enum OutboundEmailStatus {
   PENDING
   SENDING
@@ -196,6 +203,9 @@ model Establishment {
   ownerId                      String
   name                         String
   slug                         String?  @unique
+  payment_provider             PaymentProvider @default(ASAAS)
+  payment_providers            PaymentProvider[] @default([])
+  asaas_wallet_id              String?
   description                  String?
   whatsapp_number              String
   contact_number               String?
@@ -405,11 +415,15 @@ model Payment {
   monthlyPassId        String?
   provider             PaymentProvider
   status               PaymentStatus   @default(PENDING)
+  payout_status         PayoutStatus    @default(NONE)
   amount_cents         Int
   currency             String          @default("BRL")
   provider_payment_id  String?
   checkout_url         String?
   idempotency_key      String?
+  payout_provider_id    String?
+  payout_amount_cents   Int?
+  payout_error          String?
   expires_at           DateTime?
   requires_confirmation Boolean        @default(false)
   metadata             Json?

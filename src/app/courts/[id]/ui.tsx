@@ -153,6 +153,11 @@ export function CourtDetailsClient(props: {
     }
   }, [paymentOpened, paymentUrl]);
 
+  const paymentProvider =
+    (data.paymentDefaultProvider && data.paymentProviders?.includes(data.paymentDefaultProvider)
+      ? data.paymentDefaultProvider
+      : data.paymentProviders?.[0]) ?? null;
+
   function refreshDay(nextDay: string, opts?: { keepMessage?: boolean }) {
     if (!opts?.keepMessage) setMessage(null);
     if (!opts?.keepMessage) setPaymentUrl(null);
@@ -677,6 +682,15 @@ export function CourtDetailsClient(props: {
                     />
                     <span>Pagamento direto à quadra (sem pagamento online).</span>
                   </label>
+                ) : null}
+
+                {data.paymentsEnabled && !payAtCourt && paymentProvider ? (
+                  <div className="rounded-2xl border border-zinc-200 bg-white p-4 text-xs text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
+                    <p className="font-semibold text-zinc-900 dark:text-zinc-50">Forma de pagamento</p>
+                    <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
+                      {paymentProvider === "asaas" ? "Asaas" : "MercadoPago"}
+                    </p>
+                  </div>
                 ) : null}
 
                 <div className="rounded-3xl border border-zinc-200 bg-white p-4 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">

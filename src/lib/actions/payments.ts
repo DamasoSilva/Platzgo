@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { getPaymentConfig } from "@/lib/payments";
-import { PaymentProvider, PaymentStatus, BookingStatus, NotificationType } from "@/generated/prisma/enums";
+import { PaymentProvider, PaymentStatus, BookingStatus, NotificationType, PayoutStatus } from "@/generated/prisma/enums";
 import { getAppUrl } from "@/lib/emailTemplates";
 
 function toCents(value: number): number {
@@ -16,6 +16,12 @@ function toAsaasValueFromCents(cents: number): number {
 
 function onlyDigits(v: string | null | undefined): string {
   return (v ?? "").replace(/\D/g, "");
+}
+
+function clampPercent(value: unknown): number {
+  const n = typeof value === "number" ? value : Number(String(value ?? "").trim());
+  if (!Number.isFinite(n)) return 0;
+  return Math.min(100, Math.max(0, n));
 }
 
 async function ensureAsaasCustomer(userId: string, config: { apiKey?: string; baseUrl?: string }) {
@@ -63,6 +69,9 @@ async function createAsaasPayment(params: {
   amountCents: number;
   customerId: string;
   description: string;
+  requiresConfirmation: boolean;
+  establishmentWalletId?: string | null;
+  commissionPercent?: number | null;
 }) {
   const config = await getPaymentConfig();
   if (!config.asaas.apiKey) throw new Error("Asaas não configurado");
@@ -72,15 +81,17 @@ async function createAsaasPayment(params: {
     baseUrl: config.asaas.baseUrl,
   });
 
-  const splitRules =
-    config.asaas.splitWalletId && typeof config.asaas.splitPercent === "number" && config.asaas.splitPercent > 0
-      ? [
-          {
-            walletId: config.asaas.splitWalletId,
-            percentualValue: config.asaas.splitPercent,
-          },
-        ]
-      : [];
+  const commissionPercent = clampPercent(params.commissionPercent ?? config.asaas.splitPercent ?? 0);
+  const ownerPercent = Math.max(0, 100 - commissionPercent);
+  const shouldSplit = Boolean(params.establishmentWalletId && ownerPercent > 0 && !params.requiresConfirmation);
+  const splitRules = shouldSplit
+    ? [
+        {
+          walletId: params.establishmentWalletId,
+          percentualValue: ownerPercent,
+        },
+      ]
+    : [];
 
   const dueDate = new Date().toISOString().slice(0, 10);
 
@@ -110,7 +121,12 @@ async function createAsaasPayment(params: {
 
   const checkoutUrl = data.invoiceUrl ?? data.paymentLink ?? data.bankSlipUrl ?? null;
 
-  return { providerPaymentId: String(data.id), checkoutUrl };
+  return {
+    providerPaymentId: String(data.id),
+    checkoutUrl,
+    payoutMode: shouldSplit ? "split" : null,
+    payoutAmountCents: shouldSplit ? Math.round(params.amountCents * (ownerPercent / 100)) : null,
+  };
 }
 
 async function createMercadoPagoPreference(params: {
@@ -159,12 +175,122 @@ async function createMercadoPagoPreference(params: {
   }
 
   const checkoutUrl = data.init_point ?? data.sandbox_init_point ?? null;
-  return { providerPaymentId: String(data.id), checkoutUrl };
+  return { providerPaymentId: String(data.id), checkoutUrl, payoutMode: null, payoutAmountCents: null };
 }
 
-export async function startPaymentForBooking(input: { bookingId: string }) {
+async function createAsaasTransfer(params: {
+  amountCents: number;
+  walletId: string;
+  description: string;
+}) {
   const config = await getPaymentConfig();
-  if (!config.enabled || config.provider === "none") throw new Error("PAYMENTS_DISABLED");
+  if (!config.asaas.apiKey) throw new Error("Asaas não configurado");
+
+  const payload = {
+    walletId: params.walletId,
+    value: toAsaasValueFromCents(params.amountCents),
+    description: params.description,
+  };
+
+  const res = await fetch(`${config.asaas.baseUrl ?? "https://sandbox.asaas.com/api/v3"}/transfers`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      access_token: config.asaas.apiKey,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json().catch(() => null);
+  if (!res.ok || !data?.id) {
+    throw new Error("Falha ao criar repasse no Asaas");
+  }
+
+  return String(data.id);
+}
+
+export async function releaseAsaasPayoutForPayment(paymentId: string) {
+  const payment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+    select: {
+      id: true,
+      provider: true,
+      status: true,
+      payout_status: true,
+      amount_cents: true,
+      metadata: true,
+      bookingId: true,
+      booking: {
+        select: {
+          start_time: true,
+          end_time: true,
+          court: {
+            select: {
+              name: true,
+              establishment: {
+                select: { asaas_wallet_id: true, name: true },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!payment) return;
+  if (payment.provider !== PaymentProvider.ASAAS) return;
+  if (payment.status !== PaymentStatus.PAID) return;
+  if (payment.payout_status === PayoutStatus.TRANSFERRED || payment.payout_status === PayoutStatus.PENDING) return;
+  if (!payment.bookingId || !payment.booking) return;
+
+  const payoutMode = (payment.metadata as { payout_mode?: string } | null)?.payout_mode;
+  if (payoutMode === "split") return;
+
+  const walletId = payment.booking.court.establishment.asaas_wallet_id;
+  if (!walletId) return;
+
+  const config = await getPaymentConfig();
+  const commissionPercent = clampPercent(config.asaas.splitPercent ?? 0);
+  const ownerPercent = Math.max(0, 100 - commissionPercent);
+  if (ownerPercent <= 0) return;
+
+  const payoutAmountCents = Math.round(payment.amount_cents * (ownerPercent / 100));
+  if (payoutAmountCents <= 0) return;
+
+  await prisma.payment.update({
+    where: { id: payment.id },
+    data: { payout_status: PayoutStatus.PENDING, payout_amount_cents: payoutAmountCents },
+    select: { id: true },
+  });
+
+  const description = `${payment.booking.court.name} ${payment.booking.start_time.toISOString()}`;
+
+  try {
+    const transferId = await createAsaasTransfer({
+      amountCents: payoutAmountCents,
+      walletId,
+      description,
+    });
+
+    await prisma.payment.update({
+      where: { id: payment.id },
+      data: { payout_status: PayoutStatus.TRANSFERRED, payout_provider_id: transferId, payout_error: null },
+      select: { id: true },
+    });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Falha ao criar repasse";
+    await prisma.payment.update({
+      where: { id: payment.id },
+      data: { payout_status: PayoutStatus.FAILED, payout_error: message },
+      select: { id: true },
+    });
+    throw e;
+  }
+}
+
+export async function startPaymentForBooking(input: { bookingId: string; provider?: "asaas" | "mercadopago" }) {
+  const config = await getPaymentConfig();
+  if (!config.enabled || config.providersEnabled.length === 0) throw new Error("PAYMENTS_DISABLED");
 
   const booking = await prisma.booking.findUnique({
     where: { id: input.bookingId },
@@ -178,7 +304,7 @@ export async function startPaymentForBooking(input: { bookingId: string }) {
       court: {
         select: {
           name: true,
-          establishment: { select: { requires_booking_confirmation: true } },
+          establishment: { select: { requires_booking_confirmation: true, asaas_wallet_id: true } },
         },
       },
     },
@@ -201,7 +327,20 @@ export async function startPaymentForBooking(input: { bookingId: string }) {
     return { paymentId: existing.id, provider: existing.provider, checkoutUrl: existing.checkout_url ?? null };
   }
 
-  const provider = config.provider === "asaas" ? PaymentProvider.ASAAS : PaymentProvider.MERCADOPAGO;
+  const requested = input.provider ?? null;
+  const fallbackProvider = config.providersEnabled.includes(config.provider as "asaas" | "mercadopago")
+    ? (config.provider as "asaas" | "mercadopago")
+    : config.providersEnabled[0] ?? null;
+  const selected = requested || fallbackProvider;
+
+  if (!selected) {
+    throw new Error("Nenhum provedor de pagamento disponível");
+  }
+  if (!config.providersEnabled.includes(selected)) {
+    throw new Error("Provedor de pagamento indisponível");
+  }
+
+  const provider = selected === "asaas" ? PaymentProvider.ASAAS : PaymentProvider.MERCADOPAGO;
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
   const payment = await prisma.payment.create({
@@ -229,6 +368,9 @@ export async function startPaymentForBooking(input: { bookingId: string }) {
             amountCents: booking.total_price_cents,
             customerId: booking.customerId,
             description,
+            requiresConfirmation: booking.court.establishment.requires_booking_confirmation !== false,
+            establishmentWalletId: booking.court.establishment.asaas_wallet_id,
+            commissionPercent: config.asaas.splitPercent ?? null,
           })
         : await createMercadoPagoPreference({
             bookingId: booking.id,
@@ -241,6 +383,19 @@ export async function startPaymentForBooking(input: { bookingId: string }) {
       data: {
         provider_payment_id: result.providerPaymentId,
         checkout_url: result.checkoutUrl,
+        payout_status: result.payoutMode === "split" ? PayoutStatus.PENDING : undefined,
+        payout_amount_cents: result.payoutAmountCents ?? undefined,
+        metadata:
+          result.payoutMode === "split"
+            ? {
+                start: booking.start_time.toISOString(),
+                end: booking.end_time.toISOString(),
+                payout_mode: "split",
+              }
+            : {
+                start: booking.start_time.toISOString(),
+                end: booking.end_time.toISOString(),
+              },
       },
       select: { id: true },
     });
@@ -265,7 +420,7 @@ export async function applyPaymentStatusForBooking(params: {
 }) {
   const payment = await prisma.payment.findUnique({
     where: { id: params.paymentId },
-    select: { id: true, bookingId: true, requires_confirmation: true },
+    select: { id: true, bookingId: true, requires_confirmation: true, provider: true, payout_status: true, metadata: true },
   });
 
   if (!payment) throw new Error("Pagamento não encontrado");
@@ -348,6 +503,23 @@ export async function applyPaymentStatusForBooking(params: {
       },
       select: { id: true },
     });
+  }
+
+  if (params.status === PaymentStatus.PAID && !payment.requires_confirmation && payment.provider === PaymentProvider.ASAAS) {
+    const payoutMode = (payment.metadata as { payout_mode?: string } | null)?.payout_mode;
+    if (payoutMode === "split" && payment.payout_status === PayoutStatus.PENDING) {
+      await prisma.payment.update({
+        where: { id: payment.id },
+        data: { payout_status: PayoutStatus.TRANSFERRED },
+        select: { id: true },
+      });
+    } else {
+      try {
+        await releaseAsaasPayoutForPayment(payment.id);
+      } catch (e) {
+        console.error("Falha ao processar repasse Asaas:", e);
+      }
+    }
   }
 
   const statusValue = String(params.status);

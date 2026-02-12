@@ -67,6 +67,8 @@ export async function getCourtBookingsForDay(params: { courtId: string; day: Dat
           select: {
             id: true,
             name: true,
+            payment_provider: true,
+            payment_providers: true,
             description: true,
             photo_urls: true,
             whatsapp_number: true,
@@ -176,9 +178,20 @@ export async function getCourtBookingsForDay(params: { courtId: string; day: Dat
     }
   }
 
+  const globalProviders = paymentConfig.providersEnabled.map((p) => p.toUpperCase());
+  const establishmentProviders = court.establishment.payment_providers ?? [];
+  const allowedProviders = establishmentProviders.length
+    ? establishmentProviders.filter((p) => globalProviders.includes(p))
+    : globalProviders;
+  const paymentDefaultProvider = allowedProviders.includes(court.establishment.payment_provider)
+    ? court.establishment.payment_provider
+    : allowedProviders.find((p) => p.toLowerCase() === paymentConfig.provider) ?? null;
+
   return {
     court,
-    paymentsEnabled: paymentConfig.enabled && paymentConfig.provider !== "none",
+    paymentsEnabled: paymentConfig.enabled && allowedProviders.length > 0,
+    paymentProviders: allowedProviders.map((p) => p.toLowerCase()),
+    paymentDefaultProvider: paymentDefaultProvider?.toLowerCase() ?? null,
     dayInfo: {
       date: dayKey,
       is_closed,

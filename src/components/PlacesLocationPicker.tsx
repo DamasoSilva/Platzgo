@@ -120,8 +120,22 @@ export function PlacesLocationPicker(props: Props) {
         setValue(next);
         onChange(next);
       },
-      () => setError("Não foi possível obter sua localização."),
-      { enableHighAccuracy: true, timeout: 8000 }
+      (err) => {
+        if (err?.code === 1) {
+          setError("Permissão de localização negada. Ative o acesso a localização no navegador.");
+          return;
+        }
+        if (err?.code === 2) {
+          setError("Localização indisponível. Verifique o GPS ou a conexão.");
+          return;
+        }
+        if (err?.code === 3) {
+          setError("Tempo esgotado ao obter a localização. Tente novamente.");
+          return;
+        }
+        setError("Não foi possível obter sua localização.");
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   }
 

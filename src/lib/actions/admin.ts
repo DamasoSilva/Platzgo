@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/authz";
-import type { SportType } from "@/generated/prisma/enums";
+import type { PaymentProvider, SportType } from "@/generated/prisma/enums";
 import { enqueueEmail } from "@/lib/emailQueue";
 import { courtValidatedEmailToOwner, getAppUrl } from "@/lib/emailTemplates";
 import { getNotificationSettings } from "@/lib/notificationSettings";
@@ -67,6 +67,24 @@ function assertCourtMediaLimits(urls: string[]) {
   if (videos > 1) throw new Error("Na quadra: máximo de 1 vídeo (MP4/WebM).");
 }
 
+function normalizePaymentProviders(input?: string[] | null): PaymentProvider[] | undefined {
+  if (!input) return undefined;
+  const out: PaymentProvider[] = [];
+  for (const raw of input) {
+    const v = (raw ?? "").trim().toUpperCase();
+    if (v === "ASAAS" || v === "MERCADOPAGO") {
+      if (!out.includes(v as PaymentProvider)) out.push(v as PaymentProvider);
+    }
+  }
+  return out;
+}
+
+function normalizePaymentProvider(input?: string | null): PaymentProvider | undefined {
+  const v = (input ?? "").trim().toUpperCase();
+  if (v === "ASAAS" || v === "MERCADOPAGO") return v as PaymentProvider;
+  return undefined;
+}
+
 function clampInt(value: unknown, fallback: number, min: number, max: number): number {
   const n = typeof value === "number" ? value : Number(String(value ?? "").trim());
   if (!Number.isFinite(n)) return fallback;
@@ -101,6 +119,9 @@ export type UpsertEstablishmentInput = {
   contact_number?: string | null;
   instagram_url?: string | null;
   photo_urls?: string[];
+  payment_provider?: string;
+  payment_providers?: string[];
+  asaas_wallet_id?: string | null;
   address_text: string;
   latitude: number;
   longitude: number;
@@ -146,6 +167,14 @@ export async function upsertMyEstablishment(input: UpsertEstablishmentInput) {
   const cancel_fee_fixed_cents = clampInt(input.cancel_fee_fixed_cents, 0, 0, 5_000_00);
   const booking_buffer_minutes = clampInt(input.booking_buffer_minutes, 0, 0, 240);
 
+  const paymentProviders = normalizePaymentProviders(input.payment_providers);
+  let paymentProvider = normalizePaymentProvider(input.payment_provider);
+  if (paymentProviders && paymentProviders.length > 0) {
+    if (!paymentProvider || !paymentProviders.includes(paymentProvider)) {
+      paymentProvider = paymentProviders[0];
+    }
+  }
+
   const existing = await prisma.establishment.findFirst({
     where: { ownerId: session.user.id },
     select: { id: true },
@@ -167,6 +196,9 @@ export async function upsertMyEstablishment(input: UpsertEstablishmentInput) {
               : (input.contact_number?.trim() || null),
           instagram_url,
           photo_urls,
+          payment_provider: paymentProvider,
+          payment_providers: paymentProviders,
+          asaas_wallet_id: input.asaas_wallet_id === undefined ? undefined : (input.asaas_wallet_id?.trim() || null),
           address_text: input.address_text,
           latitude: input.latitude,
           longitude: input.longitude,
@@ -195,6 +227,9 @@ export async function upsertMyEstablishment(input: UpsertEstablishmentInput) {
           contact_number: input.contact_number?.trim() || null,
           instagram_url,
           photo_urls,
+          payment_provider: paymentProvider,
+          payment_providers: paymentProviders,
+          asaas_wallet_id: input.asaas_wallet_id?.trim() || null,
           address_text: input.address_text,
           latitude: input.latitude,
           longitude: input.longitude,
@@ -481,6 +516,8 @@ export type UpdateMyEstablishmentSettingsInput = {
   contact_number?: string | null;
   instagram_url?: string | null;
   photo_urls?: string[];
+  payment_provider?: string;
+  payment_providers?: string[];
   open_weekdays?: number[];
   opening_time?: string;
   closing_time?: string;
@@ -528,6 +565,14 @@ export async function updateMyEstablishmentSettings(input: UpdateMyEstablishment
       ? undefined
       : clampInt(input.booking_buffer_minutes, 0, 0, 240);
 
+  const paymentProviders = normalizePaymentProviders(input.payment_providers);
+  let paymentProvider = normalizePaymentProvider(input.payment_provider);
+  if (paymentProviders && paymentProviders.length > 0) {
+    if (!paymentProvider || !paymentProviders.includes(paymentProvider)) {
+      paymentProvider = paymentProviders[0];
+    }
+  }
+
   const slug = input.name ? await buildUniqueEstablishmentSlug(input.name, existing.id) : undefined;
 
   await prisma.establishment.update({
@@ -542,6 +587,8 @@ export async function updateMyEstablishmentSettings(input: UpdateMyEstablishment
           : (input.contact_number?.trim() || null),
       instagram_url,
       photo_urls,
+      payment_provider: paymentProvider,
+      payment_providers: paymentProviders,
       open_weekdays,
       opening_time: input.opening_time,
       closing_time: input.closing_time,

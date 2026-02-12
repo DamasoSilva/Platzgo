@@ -14,7 +14,7 @@ function toAsaasValueFromCents(cents: number): number {
 export async function POST(req: NextRequest) {
   try {
     const config = await assertPaymentsEnabled();
-    if (config.provider !== "asaas") {
+    if (!config.providersEnabled.includes("asaas")) {
       return NextResponse.json({ ok: false, error: "Asaas não está ativo." }, { status: 501 });
     }
 
