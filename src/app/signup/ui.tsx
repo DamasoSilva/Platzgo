@@ -6,7 +6,7 @@ import { useEffect, useId, useMemo, useState, useTransition } from "react";
 
 import { PlacesLocationPicker } from "@/components/PlacesLocationPicker";
 import { BrazilPhoneInput, isValidBrazilNationalDigits, toBrazilE164FromNationalDigits } from "@/components/BrazilPhoneInput";
-import { registerCustomer, registerOwner, resendEmailVerificationCode, verifyEmailCode } from "@/lib/actions/users";
+import { registerCustomerSafe, registerOwnerSafe, resendEmailVerificationCode, verifyEmailCode } from "@/lib/actions/users";
 
 type SignUpRole = "CUSTOMER" | "OWNER";
 
@@ -179,7 +179,7 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
           if (!isValidBrazilNationalDigits(whatsappDigits)) {
             throw new Error("Telefone/WhatsApp inválido. Informe DDD + número (fixo ou celular)." );
           }
-          const res = await registerCustomer({
+          const res = await registerCustomerSafe({
             name,
             email,
             password,
@@ -188,6 +188,7 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
             latitude: customerLoc.lat,
             longitude: customerLoc.lng,
           });
+          if (!res.ok) throw new Error(res.error);
           if (res?.verificationRequired) {
             setVerificationEmail(res.email ?? email);
             setStep("verify");
@@ -209,7 +210,7 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
           }
 
           const uploadedUrls = await uploadOwnerPhotos(photoFiles);
-          const res = await registerOwner({
+          const res = await registerOwnerSafe({
             email,
             password,
             arena_name: arenaName,
@@ -223,6 +224,7 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
             latitude: ownerLoc.lat,
             longitude: ownerLoc.lng,
           });
+          if (!res.ok) throw new Error(res.error);
           if (res?.verificationRequired) {
             setVerificationEmail(res.email ?? email);
             setStep("verify");

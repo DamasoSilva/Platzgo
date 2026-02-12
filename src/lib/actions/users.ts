@@ -43,6 +43,15 @@ type RegisterOwnerInput = {
   longitude: number;
 };
 
+type RegisterResult = {
+  id: string;
+  email: string;
+  role: Role;
+  verificationRequired: boolean;
+};
+
+type SafeRegisterResult = { ok: true } & RegisterResult | { ok: false; error: string };
+
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
@@ -233,6 +242,28 @@ export async function registerOwner(input: RegisterOwnerInput) {
   }
 
   return { id: created.id, email: created.email, role: Role.ADMIN, verificationRequired };
+}
+
+function formatRegisterError(e: unknown): string {
+  return e instanceof Error ? e.message : "Erro ao cadastrar";
+}
+
+export async function registerCustomerSafe(input: RegisterCustomerInput): Promise<SafeRegisterResult> {
+  try {
+    const result = await registerCustomer(input);
+    return { ok: true, ...result };
+  } catch (e) {
+    return { ok: false, error: formatRegisterError(e) };
+  }
+}
+
+export async function registerOwnerSafe(input: RegisterOwnerInput): Promise<SafeRegisterResult> {
+  try {
+    const result = await registerOwner(input);
+    return { ok: true, ...result };
+  } catch (e) {
+    return { ok: false, error: formatRegisterError(e) };
+  }
 }
 
 function sha256Hex(input: string): string {
