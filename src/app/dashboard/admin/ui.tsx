@@ -11,7 +11,12 @@ import {
   toBrazilNationalDigitsFromAnyPhone,
 } from "@/components/BrazilPhoneInput";
 import { AddressMapPicker } from "@/components/AddressMapPicker";
-import { resubmitMyEstablishmentApproval, testMyAsaasWallet, upsertMyEstablishment } from "@/lib/actions/admin";
+import {
+  resubmitMyEstablishmentApproval,
+  testMyAsaasWallet,
+  updateMyEstablishmentPayments,
+  upsertMyEstablishment,
+} from "@/lib/actions/admin";
 import { deleteMyEstablishmentHoliday, upsertMyEstablishmentHoliday } from "@/lib/actions/holidays";
 import { formatBRLFromCents } from "@/lib/utils/currency";
 import { formatSportLabel } from "@/lib/utils/sport";
@@ -411,10 +416,6 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
 
         await upsertMyEstablishment({
           name: form.name,
-          payment_provider: form.payment_provider,
-          payment_providers: form.payment_providers,
-          asaas_wallet_id: form.asaas_wallet_id,
-          online_payments_enabled: form.online_payments_enabled,
           description: form.description || undefined,
           whatsapp_number: toBrazilE164FromNationalDigits(form.whatsapp_digits),
           contact_number: form.contact_digits.trim()
@@ -440,6 +441,37 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
         router.refresh();
       } catch (e) {
         setMessage(e instanceof Error ? e.message : "Erro ao salvar");
+      }
+    });
+  }
+
+  async function onSavePayments() {
+    setMessage("Salvando pagamentos...");
+    setCopyStatus(null);
+
+    if (form.payment_providers.includes("asaas")) {
+      if (!form.asaas_wallet_id.trim()) {
+        setMessage("Wallet ID nao configurado");
+        return;
+      }
+      if (form.online_payments_enabled && walletTestStatus !== "ok") {
+        setMessage("Valide a wallet Asaas antes de ativar pagamentos online.");
+        return;
+      }
+    }
+
+    startTransition(async () => {
+      try {
+        await updateMyEstablishmentPayments({
+          payment_provider: form.payment_provider,
+          payment_providers: form.payment_providers,
+          asaas_wallet_id: form.asaas_wallet_id,
+          online_payments_enabled: form.online_payments_enabled,
+        });
+        setMessage("Pagamentos atualizados.");
+        router.refresh();
+      } catch (e) {
+        setMessage(e instanceof Error ? e.message : "Erro ao salvar pagamentos");
       }
     });
   }
@@ -649,7 +681,11 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                 </div>
                 <button
                   type="button"
-                  onClick={() => setForm((s) => ({ ...s, online_payments_enabled: !s.online_payments_enabled }))}
+                  onClick={() => {
+                    setWalletTestStatus("idle");
+                    setWalletTestMessage(null);
+                    setForm((s) => ({ ...s, online_payments_enabled: !s.online_payments_enabled }));
+                  }}
                   className={
                     "inline-flex h-10 items-center rounded-full border px-4 text-sm font-bold transition-all " +
                     (form.online_payments_enabled
@@ -672,6 +708,8 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                             type="checkbox"
                             checked={checked}
                             onChange={(e) => {
+                              setWalletTestStatus("idle");
+                              setWalletTestMessage(null);
                               const next = e.target.checked
                                 ? Array.from(new Set([...form.payment_providers, opt.id]))
                                 : form.payment_providers.filter((p) => p !== opt.id);
@@ -691,6 +729,8 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                       value={form.payment_provider}
                       onChange={(e) => {
                         const next = e.target.value as PaymentProviderKey;
+                        setWalletTestStatus("idle");
+                        setWalletTestMessage(null);
                         setForm((s) => ({ ...s, payment_provider: next }));
                       }}
                       className="ph-input mt-2"
@@ -709,7 +749,12 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                       </label>
                       <input
                         value={form.asaas_wallet_id}
-                        onChange={(e) => setForm((s) => ({ ...s, asaas_wallet_id: e.target.value }))}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setWalletTestStatus("idle");
+                          setWalletTestMessage(null);
+                          setForm((s) => ({ ...s, asaas_wallet_id: value }));
+                        }}
                         className="ph-input mt-2"
                         placeholder="walletId do estabelecimento"
                       />
@@ -740,6 +785,23 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                   Pagamento online desativado. Ative para liberar aos clientes.
                 </div>
               )}
+
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={onSavePayments}
+                  disabled={
+                    isPending ||
+                    (form.payment_providers.includes("asaas") && form.online_payments_enabled && walletTestStatus !== "ok")
+                  }
+                  className="ph-button disabled:opacity-60"
+                >
+                  Salvar pagamento online
+                </button>
+                {form.payment_providers.includes("asaas") && form.online_payments_enabled && walletTestStatus !== "ok" ? (
+                  <span className="text-xs text-amber-600">Teste a wallet Asaas para liberar.</span>
+                ) : null}
+              </div>
             </div>
 
             <div>

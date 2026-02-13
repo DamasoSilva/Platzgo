@@ -292,7 +292,7 @@ export default async function MyNotificationsHistoryPage({
           </div>
 
           {notifications.map((n) => (
-            <div
+            <details
               key={n.id}
               className={
                 "rounded-2xl border p-4 " +
@@ -303,17 +303,25 @@ export default async function MyNotificationsHistoryPage({
                     : "border-[#CCFF00]/40 bg-[#CCFF00]/10 dark:border-[#CCFF00]/40 dark:bg-[#CCFF00]/10")
               }
             >
-              <div className="flex items-start justify-between gap-3">
+              <summary className="flex cursor-pointer list-none items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
                     {n.title}
                     {n.deletedAt ? " (excluída)" : ""}
                   </p>
-                  <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{n.body}</p>
-                  <p className="mt-2 text-[11px] text-zinc-500 dark:text-zinc-500">{formatDateTimeBR(n.createdAt)}</p>
+                  <p className="mt-1 text-[11px] text-zinc-500 dark:text-zinc-500">{formatDateTimeBR(n.createdAt)}</p>
                 </div>
-
                 <div className="flex shrink-0 items-center gap-2">
+                  {!n.readAt && !n.deletedAt ? (
+                    <span className="rounded-full bg-[#CCFF00]/80 px-2 py-1 text-[10px] font-bold text-black">NOVA</span>
+                  ) : null}
+                </div>
+              </summary>
+
+              <div className="mt-3 border-t border-zinc-200 pt-3 text-xs text-zinc-600 dark:border-zinc-800 dark:text-zinc-300">
+                <p>{n.body}</p>
+
+                <div className="mt-3 flex flex-wrap items-center gap-2">
                   {n.bookingId ? (
                     <Link
                       href={`/meus-agendamentos/${n.bookingId}`}
@@ -344,7 +352,7 @@ export default async function MyNotificationsHistoryPage({
                   )}
                 </div>
               </div>
-            </div>
+            </details>
           ))}
 
           {notifications.length === 0 ? (

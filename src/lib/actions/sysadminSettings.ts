@@ -182,6 +182,35 @@ export async function clearPaymentSecretsForSysadmin() {
   return { ok: true };
 }
 
+export async function testAsaasSplitWallet() {
+  await requireRole("SYSADMIN");
+
+  const [asaasApiKey, asaasBaseUrl, walletIdRaw] = await Promise.all([
+    getSystemSecret(PAYMENT_SETTING_KEYS.asaasApiKey),
+    getSystemSetting(PAYMENT_SETTING_KEYS.asaasBaseUrl),
+    getSystemSetting(PAYMENT_SETTING_KEYS.asaasSplitWalletId),
+  ]);
+
+  const walletId = (walletIdRaw ?? "").trim();
+  if (!walletId) throw new Error("Wallet ID nao configurado");
+  if (!asaasApiKey) throw new Error("Asaas nao configurado");
+
+  const baseUrl = (asaasBaseUrl ?? "https://sandbox.asaas.com/api/v3").trim() || "https://sandbox.asaas.com/api/v3";
+  const res = await fetch(`${baseUrl}/wallets/${walletId}`, {
+    headers: { access_token: asaasApiKey },
+  });
+
+  if (!res.ok) {
+    const data = (await res.json().catch(() => null)) as
+      | null
+      | { message?: string; error?: string; errors?: Array<{ description?: string }> };
+    const detail = data?.errors?.[0]?.description || data?.message || data?.error || null;
+    throw new Error(detail ? `Wallet Asaas invalido: ${detail}` : "Wallet Asaas invalido ou nao encontrado");
+  }
+
+  return { ok: true };
+}
+
 export async function sendTestEmailToMe() {
   const session = await requireRole("SYSADMIN");
   const to = session.user.email;

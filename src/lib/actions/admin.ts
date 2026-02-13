@@ -87,6 +87,34 @@ function normalizePaymentProvider(input?: string | null): PaymentProvider | unde
   return undefined;
 }
 
+async function validateAsaasWalletId(walletId: string): Promise<{ ok: true } | { ok: false; message: string }> {
+  const config = await getPaymentConfig();
+  if (!config.asaas.apiKey) return { ok: false, message: "Asaas nao configurado" };
+
+  const baseUrl = config.asaas.baseUrl ?? "https://sandbox.asaas.com/api/v3";
+
+  try {
+    const res = await fetch(`${baseUrl}/wallets/${walletId}`, {
+      headers: { access_token: config.asaas.apiKey },
+    });
+
+    if (!res.ok) {
+      const data = (await res.json().catch(() => null)) as
+        | null
+        | { message?: string; error?: string; errors?: Array<{ description?: string }> };
+      const detail = data?.errors?.[0]?.description || data?.message || data?.error || null;
+      return {
+        ok: false,
+        message: detail ? `Wallet Asaas invalido: ${detail}` : "Wallet Asaas invalido ou nao encontrado",
+      };
+    }
+  } catch {
+    return { ok: false, message: "Falha ao validar wallet Asaas" };
+  }
+
+  return { ok: true };
+}
+
 function clampInt(value: unknown, fallback: number, min: number, max: number): number {
   const n = typeof value === "number" ? value : Number(String(value ?? "").trim());
   if (!Number.isFinite(n)) return fallback;
@@ -693,30 +721,51 @@ export async function testMyAsaasWallet(): Promise<{ ok: true } | { ok: false; m
 
   const walletId = establishment.asaas_wallet_id?.trim();
   if (!walletId) return { ok: false, message: "Wallet ID nao configurado" };
+  return await validateAsaasWalletId(walletId);
+}
 
-  const config = await getPaymentConfig();
-  if (!config.asaas.apiKey) return { ok: false, message: "Asaas nao configurado" };
+export async function updateMyEstablishmentPayments(input: {
+  payment_provider?: string;
+  payment_providers?: string[];
+  asaas_wallet_id?: string | null;
+  online_payments_enabled?: boolean;
+}) {
+  const session = await requireRole("ADMIN");
 
-  const baseUrl = config.asaas.baseUrl ?? "https://sandbox.asaas.com/api/v3";
+  const existing = await prisma.establishment.findFirst({
+    where: { ownerId: session.user.id },
+    select: { id: true },
+  });
 
-  try {
-    const res = await fetch(`${baseUrl}/wallets/${walletId}`, {
-      headers: { access_token: config.asaas.apiKey },
-    });
+  if (!existing) throw new Error("Estabelecimento nao encontrado");
 
-    if (!res.ok) {
-      const data = (await res.json().catch(() => null)) as
-        | null
-        | { message?: string; error?: string; errors?: Array<{ description?: string }> };
-      const detail = data?.errors?.[0]?.description || data?.message || data?.error || null;
-      return {
-        ok: false,
-        message: detail ? `Wallet Asaas invalido: ${detail}` : "Wallet Asaas invalido ou nao encontrado",
-      };
+  const paymentProviders = normalizePaymentProviders(input.payment_providers);
+  let paymentProvider = normalizePaymentProvider(input.payment_provider);
+  if (paymentProviders && paymentProviders.length > 0) {
+    if (!paymentProvider || !paymentProviders.includes(paymentProvider)) {
+      paymentProvider = paymentProviders[0];
     }
-  } catch {
-    return { ok: false, message: "Falha ao validar wallet Asaas" };
   }
 
+  const walletId = input.asaas_wallet_id?.trim() || null;
+  const enableOnline = typeof input.online_payments_enabled === "boolean" ? input.online_payments_enabled : false;
+
+  if (enableOnline && paymentProviders?.includes("ASAAS")) {
+    if (!walletId) throw new Error("Wallet ID nao configurado");
+    const validation = await validateAsaasWalletId(walletId);
+    if (!validation.ok) throw new Error(validation.message);
+  }
+
+  await prisma.establishment.update({
+    where: { id: existing.id },
+    data: {
+      payment_provider: paymentProvider,
+      payment_providers: paymentProviders,
+      asaas_wallet_id: walletId,
+      online_payments_enabled: enableOnline,
+    },
+  });
+
+  revalidatePath("/dashboard/admin");
   return { ok: true };
 }

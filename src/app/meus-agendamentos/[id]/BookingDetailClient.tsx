@@ -131,6 +131,7 @@ export function BookingDetailClient(props: { booking: BookingDetail }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
+  const [showReschedule, setShowReschedule] = useState(false);
 
   const todayYmd = useMemo(() => toYMD(new Date()), []);
 
@@ -377,6 +378,9 @@ export function BookingDetailClient(props: { booking: BookingDetail }) {
           Você pode reagendar <span className="font-semibold">apenas 1 vez</span> por agendamento. Ao reagendar, este agendamento será
           cancelado e um novo agendamento será criado como <span className="font-semibold">Pendente</span>.
         </p>
+        <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
+          O dono do estabelecimento receberá uma solicitação de aprovação para o reagendamento.
+        </p>
       </div>
 
       {props.booking.status === BookingStatus.CANCELLED ? (
@@ -415,7 +419,19 @@ export function BookingDetailClient(props: { booking: BookingDetail }) {
           <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Reagendar</p>
           <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Escolha um dia e um horário disponível (30 em 30).</p>
 
-          <div className="mt-3 grid gap-3">
+          <button
+            type="button"
+            disabled={!canReschedule || isPending}
+            onClick={() => setShowReschedule((s) => !s)}
+            className={
+              "mt-3 w-full rounded-full px-4 py-2 text-xs font-bold transition-all " +
+              (canReschedule && !isPending ? "bg-[#CCFF00] text-black" : "bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400")
+            }
+          >
+            {showReschedule ? "Fechar reagendamento" : "Abrir reagendamento"}
+          </button>
+          {showReschedule ? (
+            <div className="mt-3 grid gap-3">
             <div className="grid gap-2">
               <div className="flex items-center justify-between gap-3">
                 <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Dia</label>
@@ -545,18 +561,21 @@ export function BookingDetailClient(props: { booking: BookingDetail }) {
               </div>
             ) : null}
           </div>
+          ) : null}
 
-          <button
-            type="button"
-            disabled={!canReschedule || isPending}
-            onClick={() => void onReschedule()}
-            className={
-              "mt-3 w-full rounded-full px-4 py-2 text-xs font-bold transition-all " +
-              (canReschedule && !isPending ? "bg-[#CCFF00] text-black hover:scale-[1.02]" : "bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400")
-            }
-          >
-            Reagendar
-          </button>
+          {showReschedule ? (
+            <button
+              type="button"
+              disabled={!canReschedule || isPending}
+              onClick={() => void onReschedule()}
+              className={
+                "mt-3 w-full rounded-full px-4 py-2 text-xs font-bold transition-all " +
+                (canReschedule && !isPending ? "bg-[#CCFF00] text-black hover:scale-[1.02]" : "bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400")
+              }
+            >
+              Reagendar
+            </button>
+          ) : null}
 
           {alreadyRescheduled ? (
             <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
@@ -571,7 +590,7 @@ export function BookingDetailClient(props: { booking: BookingDetail }) {
           Dica: se você tiver uma mensalidade ativa para este mês nesta quadra, o valor do novo agendamento será {" "}
           <span className="font-semibold">R$ 0</span>.
         </p>
-        <p className="mt-1">O estabelecimento verá o novo agendamento como uma nova solicitação pendente.</p>
+        <p className="mt-1">O reagendamento gera uma nova solicitação pendente para o dono do estabelecimento.</p>
       </div>
 
       {props.booking.notifications?.length ? (

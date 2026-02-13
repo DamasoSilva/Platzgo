@@ -319,8 +319,8 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
     return d ? [d] : days.slice(0, 1);
   }, [days, focusedDayYmd, viewMode]);
 
-  const gridColsClass = viewMode === "week" ? "grid-cols-[72px_repeat(7,minmax(176px,1fr))]" : "grid-cols-[72px_minmax(0,1fr)]";
-  const gridMinWidthClass = viewMode === "week" ? "min-w-[1360px]" : "min-w-[520px]";
+  const gridColsClass = viewMode === "week" ? "grid-cols-[72px_repeat(7,minmax(140px,1fr))]" : "grid-cols-[72px_minmax(0,1fr)]";
+  const gridMinWidthClass = viewMode === "week" ? "min-w-[1120px]" : "min-w-[520px]";
 
   const canRenderGrid = slots.length > 0;
 

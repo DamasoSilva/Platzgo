@@ -62,7 +62,8 @@ export default async function ApprovalsPage({
     select: { id: true, name: true },
   });
 
-  const kind = (asSingle(sp.kind) ?? "all") as Kind;
+  const kindParam = asSingle(sp.kind) ?? "all";
+  const kind = kindParam as Kind;
   const courtIdParam = asSingle(sp.courtId) ?? "";
   const selectedCourtId = courtIdParam && courts.some((c) => c.id === courtIdParam) ? courtIdParam : "";
 
@@ -186,7 +187,7 @@ export default async function ApprovalsPage({
               <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Tipo</label>
               <select
                 name="kind"
-                defaultValue={kind}
+                defaultValue={kindParam}
                 className="mt-1 h-10 rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
               >
                 <option value="all">Tudo</option>
@@ -199,7 +200,7 @@ export default async function ApprovalsPage({
               <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Quadra</label>
               <select
                 name="courtId"
-                defaultValue={selectedCourtId}
+                defaultValue={courtIdParam}
                 className="mt-1 h-10 rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
               >
                 <option value="">Todas</option>
@@ -215,7 +216,7 @@ export default async function ApprovalsPage({
               <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Status (agend.)</label>
               <select
                 name="bookingStatus"
-                defaultValue={bookingStatus ? bookingStatus : "all"}
+                defaultValue={bookingStatusParam}
                 className="mt-1 h-10 rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
               >
                 <option value="PENDING">Pendente</option>
@@ -229,7 +230,7 @@ export default async function ApprovalsPage({
               <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Status (mens.)</label>
               <select
                 name="passStatus"
-                defaultValue={passStatus ? passStatus : "all"}
+                defaultValue={passStatusParam}
                 className="mt-1 h-10 rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
               >
                 <option value="PENDING">Pendente</option>

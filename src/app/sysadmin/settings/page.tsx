@@ -14,16 +14,19 @@ import {
   getPaymentSettingsForSysadmin,
   savePaymentSettingsForSysadmin,
   clearPaymentSecretsForSysadmin,
+  testAsaasSplitWallet,
 } from "@/lib/actions/sysadminSettings";
 
 export default async function SysadminSettingsPage(props: {
-  searchParams?: { ok?: string; err?: string } | Promise<{ ok?: string; err?: string }>;
+  searchParams?: { ok?: string; err?: string; walletOk?: string; walletErr?: string } | Promise<{ ok?: string; err?: string; walletOk?: string; walletErr?: string }>;
 }) {
   await requireRoleOrRedirect("SYSADMIN", "/sysadmin/settings");
 
   const searchParams = props.searchParams ? await Promise.resolve(props.searchParams) : undefined;
   const ok = searchParams?.ok === "1";
   const err = (searchParams?.err ?? "").trim();
+  const walletOk = searchParams?.walletOk === "1";
+  const walletErr = (searchParams?.walletErr ?? "").trim();
 
   const [smtp, notifications, payments] = await Promise.all([
     getSmtpSettingsForSysadmin(),
@@ -50,6 +53,16 @@ export default async function SysadminSettingsPage(props: {
       ) : null}
 
       {err ? <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">{err}</div> : null}
+
+      {walletOk ? (
+        <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+          Wallet Asaas validado.
+        </div>
+      ) : null}
+
+      {walletErr ? (
+        <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">{walletErr}</div>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="ph-card p-6">
@@ -265,7 +278,35 @@ export default async function SysadminSettingsPage(props: {
             <div className="rounded-2xl border border-zinc-200 bg-white/70 p-4 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300">
               <p className="font-semibold text-zinc-900 dark:text-zinc-50">Asaas</p>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <input type="hidden" name="asaasSplitWalletId" defaultValue={payments.asaasSplitWalletId} />
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Wallet ID (split)</label>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <input
+                      name="asaasSplitWalletId"
+                      className="ph-input flex-1"
+                      defaultValue={payments.asaasSplitWalletId}
+                      placeholder="walletId do app"
+                    />
+                    <button
+                      formAction={async () => {
+                        "use server";
+                        try {
+                          await testAsaasSplitWallet();
+                          redirect("/sysadmin/settings?walletOk=1");
+                        } catch (e) {
+                          if ((e as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) throw e;
+                          const msg = e instanceof Error ? e.message : "Erro ao testar";
+                          redirect(`/sysadmin/settings?walletErr=${encodeURIComponent(msg)}`);
+                        }
+                      }}
+                      className="ph-button-secondary"
+                      type="submit"
+                    >
+                      Testar wallet
+                    </button>
+                    {walletOk ? <span className="text-xs font-semibold text-emerald-600">OK</span> : null}
+                  </div>
+                </div>
                 <div>
                   <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">API key</label>
                   <input

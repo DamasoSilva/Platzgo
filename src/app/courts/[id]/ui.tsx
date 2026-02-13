@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 
 import { CustomerHeader } from "@/components/CustomerHeader";
@@ -55,6 +56,7 @@ export function CourtDetailsClient(props: {
   initial: DayData;
 }) {
   const isOwnerPreview = props.viewer?.role === "ADMIN" || props.viewer?.role === "SYSADMIN";
+  const router = useRouter();
 
   const [isPending, startTransition] = useTransition();
   const [day, setDay] = useState<string>(props.day);
@@ -69,6 +71,7 @@ export function CourtDetailsClient(props: {
   const [alertMessage, setAlertMessage] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
   const [monthlyAccepted, setMonthlyAccepted] = useState(false);
   const [alertTime, setAlertTime] = useState<string>(props.initial.dayInfo.opening_time);
+  const [bookingAlert, setBookingAlert] = useState<string | null>(null);
 
   const monthKey = useMemo(() => day.slice(0, 7), [day]);
   const todayYmd = useMemo(() => {
@@ -223,6 +226,7 @@ export function CourtDetailsClient(props: {
                 ? "Agendamento criado. Finalize o pagamento para confirmar."
                 : "Agendamento efetuado com sucesso.",
         });
+        setBookingAlert("Agendamento criado. Acompanhe em Meus agendamentos.");
         refreshDay(day, { keepMessage: true });
       } catch (e) {
         setMessage({ type: "error", text: e instanceof Error ? e.message : "Erro ao criar agendamento" });
@@ -340,6 +344,21 @@ export function CourtDetailsClient(props: {
           </div>
         }
       />
+
+      {bookingAlert ? (
+        <div className="mx-auto mt-4 max-w-4xl rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span>{bookingAlert}</span>
+            <button
+              type="button"
+              onClick={() => router.push("/meus-agendamentos")}
+              className="rounded-full bg-emerald-700 px-4 py-2 text-xs font-bold text-white"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <div className="mx-auto max-w-7xl px-6 pb-8">
         <div>
