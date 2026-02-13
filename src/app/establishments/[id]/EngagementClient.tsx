@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 
 import { toggleFavoriteEstablishment } from "@/lib/actions/favorites";

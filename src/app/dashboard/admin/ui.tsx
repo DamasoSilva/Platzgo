@@ -292,6 +292,8 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
   const [message, setMessage] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [walletTestStatus, setWalletTestStatus] = useState<"idle" | "ok" | "error">("idle");
+  const [walletTestMessage, setWalletTestMessage] = useState<string | null>(null);
 
   const viewerNav =
     props.viewerRole === "SYSADMIN" ? (
@@ -444,12 +446,25 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
 
   async function onTestAsaasWallet() {
     setMessage("Testando wallet Asaas...");
+    setWalletTestStatus("idle");
+    setWalletTestMessage(null);
     startTransition(async () => {
       try {
-        await testMyAsaasWallet();
-        setMessage("Wallet Asaas validado com sucesso.");
+        const res = await testMyAsaasWallet();
+        if (res.ok) {
+          setMessage("Wallet Asaas validado com sucesso.");
+          setWalletTestStatus("ok");
+          setWalletTestMessage(null);
+          return;
+        }
+        setMessage(res.message);
+        setWalletTestStatus("error");
+        setWalletTestMessage(res.message);
       } catch (e) {
-        setMessage(e instanceof Error ? e.message : "Erro ao testar wallet Asaas");
+        const text = e instanceof Error ? e.message : "Erro ao testar wallet Asaas";
+        setMessage(text);
+        setWalletTestStatus("error");
+        setWalletTestMessage(text);
       }
     });
   }
@@ -698,7 +713,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                         className="ph-input mt-2"
                         placeholder="walletId do estabelecimento"
                       />
-                      <div className="mt-2">
+                      <div className="mt-2 flex items-center gap-2">
                         <button
                           type="button"
                           onClick={onTestAsaasWallet}
@@ -707,7 +722,13 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                         >
                           Testar wallet
                         </button>
+                        {walletTestStatus === "ok" ? (
+                          <span className="text-xs font-semibold text-emerald-600">OK</span>
+                        ) : null}
                       </div>
+                      {walletTestStatus === "error" && walletTestMessage ? (
+                        <p className="mt-2 text-xs text-red-600">{walletTestMessage}</p>
+                      ) : null}
                       <p className="mt-2 text-xs text-zinc-500">
                         Necessario para repasse automatico. Sem esse ID, o pagamento online fica indisponivel.
                       </p>

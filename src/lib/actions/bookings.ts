@@ -11,7 +11,7 @@ import { requireRole } from "@/lib/authz";
 import { NotificationType } from "@/generated/prisma/enums";
 import { enqueueEmail } from "@/lib/emailQueue";
 import { canSendEmail, getNotificationSettings } from "@/lib/notificationSettings";
-import { dateWithTime } from "@/lib/utils/time";
+import { dateWithTime, toTimeZoneDate } from "@/lib/utils/time";
 import { formatBRLFromCents } from "@/lib/utils/currency";
 import { logAudit } from "@/lib/audit";
 import { getPaymentConfig } from "@/lib/payments";
@@ -354,8 +354,8 @@ export async function createBooking(input: CreateBookingInput) {
       await assertOperatingHours({
         tx,
         establishmentId: court.establishment.id,
-        start: occStart,
-        end: occEnd,
+        start: toTimeZoneDate(occStart, "America/Sao_Paulo"),
+        end: toTimeZoneDate(occEnd, "America/Sao_Paulo"),
         open_weekdays: court.establishment.open_weekdays ?? [0, 1, 2, 3, 4, 5, 6],
         opening_time: court.establishment.opening_time,
         closing_time: court.establishment.closing_time,
@@ -597,8 +597,8 @@ export async function createAdminBooking(input: CreateAdminBookingInput) {
       await assertOperatingHours({
         tx,
         establishmentId: court.establishment.id,
-        start: occStart,
-        end: occEnd,
+        start: toTimeZoneDate(occStart, "America/Sao_Paulo"),
+        end: toTimeZoneDate(occEnd, "America/Sao_Paulo"),
         open_weekdays: court.establishment.open_weekdays ?? [0, 1, 2, 3, 4, 5, 6],
         opening_time: court.establishment.opening_time,
         closing_time: court.establishment.closing_time,
@@ -1400,8 +1400,8 @@ export async function rescheduleBookingAsCustomer(input: {
     await assertOperatingHours({
       tx,
       establishmentId: court.establishment.id,
-      start,
-      end,
+      start: toTimeZoneDate(start, "America/Sao_Paulo"),
+      end: toTimeZoneDate(end, "America/Sao_Paulo"),
       open_weekdays: court.establishment.open_weekdays ?? [0, 1, 2, 3, 4, 5, 6],
       opening_time: court.establishment.opening_time,
       closing_time: court.establishment.closing_time,
