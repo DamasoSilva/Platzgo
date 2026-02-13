@@ -9,8 +9,9 @@ import { EstablishmentApprovalStatus, NotificationType, Role } from "@/generated
 import { enqueueEmail } from "@/lib/emailQueue";
 import { courtValidatedEmailToOwner, getAppUrl, sysadminApprovalTaskEmail } from "@/lib/emailTemplates";
 import { getNotificationSettings } from "@/lib/notificationSettings";
-import { getPaymentConfig } from "@/lib/payments";
+import { getPaymentConfig, PAYMENT_SETTING_KEYS } from "@/lib/payments";
 import { slugify } from "@/lib/utils/slug";
+import { getSystemSetting } from "@/lib/systemSettings";
 
 function isVideoUrl(url: string): boolean {
   return /\.(mp4|webm)(\?|#|$)/i.test(url);
@@ -91,7 +92,11 @@ function onlyDigits(v: string | null | undefined): string {
   return (v ?? "").replace(/\D/g, "");
 }
 
-async function ensureAsaasCustomerForUser(userId: string, config: { apiKey?: string; baseUrl?: string }) {
+async function ensureAsaasCustomerForUser(
+  userId: string,
+  config: { apiKey?: string; baseUrl?: string },
+  cpfCnpj?: string | null
+) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { id: true, name: true, email: true, whatsapp_number: true, asaas_customer_id: true },
@@ -105,6 +110,7 @@ async function ensureAsaasCustomerForUser(userId: string, config: { apiKey?: str
     name: user.name ?? user.email,
     email: user.email,
     phone: onlyDigits(user.whatsapp_number) || undefined,
+    cpfCnpj: cpfCnpj || undefined,
   };
 
   const res = await fetch(`${config.baseUrl ?? "https://sandbox.asaas.com/api/v3"}/customers`, {
@@ -132,13 +138,24 @@ async function validateAsaasWalletId(walletId: string, userId: string): Promise<
   const config = await getPaymentConfig();
   if (!config.asaas.apiKey) return { ok: false, message: "Asaas nao configurado" };
 
+  const testCpfCnpjRaw = await getSystemSetting(PAYMENT_SETTING_KEYS.asaasTestCpfCnpj);
+  const testCpfCnpj = (testCpfCnpjRaw ?? "").replace(/\D/g, "");
+  if (!testCpfCnpj) return { ok: false, message: "CPF/CNPJ de teste nao configurado" };
+  if (!(testCpfCnpj.length === 11 || testCpfCnpj.length === 14)) {
+    return { ok: false, message: "CPF/CNPJ de teste invalido" };
+  }
+
   const baseUrl = config.asaas.baseUrl ?? "https://sandbox.asaas.com/api/v3";
 
   try {
-    const customer = await ensureAsaasCustomerForUser(userId, {
-      apiKey: config.asaas.apiKey,
-      baseUrl: config.asaas.baseUrl,
-    });
+    const customer = await ensureAsaasCustomerForUser(
+      userId,
+      {
+        apiKey: config.asaas.apiKey,
+        baseUrl: config.asaas.baseUrl,
+      },
+      testCpfCnpj
+    );
 
     const dueDate = new Date().toISOString().slice(0, 10);
     const payload = {

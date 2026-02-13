@@ -193,6 +193,7 @@ export default async function SysadminSettingsPage(props: {
                   asaasBaseUrl: String(formData.get("asaasBaseUrl") ?? ""),
                   asaasSplitWalletId: String(formData.get("asaasSplitWalletId") ?? ""),
                   asaasSplitPercent: String(formData.get("asaasSplitPercent") ?? ""),
+                  asaasTestCpfCnpj: String(formData.get("asaasTestCpfCnpj") ?? ""),
                 });
                 redirect("/sysadmin/settings?ok=1");
               } catch (e) {
@@ -337,6 +338,15 @@ export default async function SysadminSettingsPage(props: {
                     </button>
                     {walletOk ? <span className="text-xs font-semibold text-emerald-600">OK</span> : null}
                   </div>
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">CPF/CNPJ de teste</label>
+                  <input
+                    name="asaasTestCpfCnpj"
+                    className="ph-input mt-2"
+                    defaultValue={payments.asaasTestCpfCnpj}
+                    placeholder="Somente numeros"
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">API key</label>

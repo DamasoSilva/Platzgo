@@ -33,6 +33,7 @@ export const PAYMENT_SETTING_KEYS = {
   asaasBaseUrl: "payments.asaas.base_url",
   asaasSplitWalletId: "payments.asaas.split_wallet_id",
   asaasSplitPercent: "payments.asaas.split_percent",
+  asaasTestCpfCnpj: "payments.asaas.test_cpf_cnpj",
 } as const;
 
 function normalizeProviders(raw: string | null | undefined): EnabledPaymentProvider[] {

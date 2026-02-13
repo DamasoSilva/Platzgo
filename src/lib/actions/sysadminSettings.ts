@@ -91,6 +91,7 @@ export async function getPaymentSettingsForSysadmin() {
     asaasBaseUrl,
     asaasSplitWalletId,
     asaasSplitPercent,
+    asaasTestCpfCnpj,
   ] = await Promise.all([
     getSystemSetting(PAYMENT_SETTING_KEYS.enabled),
     getSystemSetting(PAYMENT_SETTING_KEYS.provider),
@@ -103,6 +104,7 @@ export async function getPaymentSettingsForSysadmin() {
     getSystemSetting(PAYMENT_SETTING_KEYS.asaasBaseUrl),
     getSystemSetting(PAYMENT_SETTING_KEYS.asaasSplitWalletId),
     getSystemSetting(PAYMENT_SETTING_KEYS.asaasSplitPercent),
+    getSystemSetting(PAYMENT_SETTING_KEYS.asaasTestCpfCnpj),
   ]);
 
   return {
@@ -117,6 +119,7 @@ export async function getPaymentSettingsForSysadmin() {
     asaasBaseUrl: asaasBaseUrl ?? "",
     asaasSplitWalletId: asaasSplitWalletId ?? "",
     asaasSplitPercent: asaasSplitPercent ?? "",
+    asaasTestCpfCnpj: asaasTestCpfCnpj ?? "",
   };
 }
 
@@ -132,6 +135,7 @@ export async function savePaymentSettingsForSysadmin(input: {
   asaasBaseUrl?: string;
   asaasSplitWalletId?: string;
   asaasSplitPercent?: string;
+  asaasTestCpfCnpj?: string;
 }) {
   await requireRole("SYSADMIN");
 
@@ -168,6 +172,9 @@ export async function savePaymentSettingsForSysadmin(input: {
   if (typeof input.asaasSplitPercent === "string") {
     await setSystemSetting(PAYMENT_SETTING_KEYS.asaasSplitPercent, input.asaasSplitPercent.trim());
   }
+  if (typeof input.asaasTestCpfCnpj === "string") {
+    await setSystemSetting(PAYMENT_SETTING_KEYS.asaasTestCpfCnpj, input.asaasTestCpfCnpj.trim());
+  }
 
   return { ok: true };
 }
@@ -186,15 +193,22 @@ export async function clearPaymentSecretsForSysadmin() {
 export async function testAsaasSplitWallet() {
   const session = await requireRole("SYSADMIN");
 
-  const [asaasApiKey, asaasBaseUrl, walletIdRaw] = await Promise.all([
+  const [asaasApiKey, asaasBaseUrl, walletIdRaw, testCpfCnpjRaw] = await Promise.all([
     getSystemSecret(PAYMENT_SETTING_KEYS.asaasApiKey),
     getSystemSetting(PAYMENT_SETTING_KEYS.asaasBaseUrl),
     getSystemSetting(PAYMENT_SETTING_KEYS.asaasSplitWalletId),
+    getSystemSetting(PAYMENT_SETTING_KEYS.asaasTestCpfCnpj),
   ]);
 
   const walletId = (walletIdRaw ?? "").trim();
   if (!walletId) throw new Error("Wallet ID nao configurado");
   if (!asaasApiKey) throw new Error("Asaas nao configurado");
+
+  const testCpfCnpj = (testCpfCnpjRaw ?? "").replace(/\D/g, "");
+  if (!testCpfCnpj) throw new Error("CPF/CNPJ de teste nao configurado");
+  if (!(testCpfCnpj.length === 11 || testCpfCnpj.length === 14)) {
+    throw new Error("CPF/CNPJ de teste invalido");
+  }
 
   const baseUrl = (asaasBaseUrl ?? "https://sandbox.asaas.com/api/v3").trim() || "https://sandbox.asaas.com/api/v3";
   const user = await prisma.user.findUnique({
@@ -212,6 +226,7 @@ export async function testAsaasSplitWallet() {
       name: user.name ?? user.email,
       email: user.email,
       phone: onlyDigits(user.whatsapp_number) || undefined,
+      cpfCnpj: testCpfCnpj,
     };
 
     const createRes = await fetch(`${baseUrl}/customers`, {
