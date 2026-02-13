@@ -266,7 +266,7 @@ export async function testAsaasSplitWallet() {
   const payload = {
     customer: customerId,
     billingType: "PIX",
-    value: 0.01,
+    value: 5,
     dueDate,
     description: "Teste de wallet Asaas",
     externalReference: `wallet-test:${walletId}`,

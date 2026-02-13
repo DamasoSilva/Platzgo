@@ -173,7 +173,7 @@ async function validateAsaasWalletId(walletId: string, userId: string): Promise<
     const payload = {
       customer,
       billingType: "PIX",
-      value: 0.01,
+      value: 5,
       dueDate,
       description: "Teste de wallet Asaas",
       externalReference: `wallet-test:${walletId}`,
