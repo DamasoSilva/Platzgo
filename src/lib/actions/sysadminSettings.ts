@@ -211,6 +211,35 @@ export async function testAsaasSplitWallet() {
   return { ok: true };
 }
 
+export async function listAsaasWallets() {
+  await requireRole("SYSADMIN");
+
+  const [asaasApiKey, asaasBaseUrl] = await Promise.all([
+    getSystemSecret(PAYMENT_SETTING_KEYS.asaasApiKey),
+    getSystemSetting(PAYMENT_SETTING_KEYS.asaasBaseUrl),
+  ]);
+
+  if (!asaasApiKey) throw new Error("Asaas nao configurado");
+
+  const baseUrl = (asaasBaseUrl ?? "https://sandbox.asaas.com/api/v3").trim() || "https://sandbox.asaas.com/api/v3";
+  const res = await fetch(`${baseUrl}/wallets?limit=50&offset=0`, {
+    headers: { access_token: asaasApiKey },
+  });
+
+  if (!res.ok) {
+    const data = (await res.json().catch(() => null)) as
+      | null
+      | { message?: string; error?: string; errors?: Array<{ description?: string }> };
+    const detail = data?.errors?.[0]?.description || data?.message || data?.error || null;
+    throw new Error(detail ? `Falha ao listar wallets: ${detail}` : "Falha ao listar wallets");
+  }
+
+  const data = (await res.json().catch(() => null)) as null | { data?: Array<{ id?: string }> };
+  const wallets = (data?.data ?? []).map((w) => w.id).filter(Boolean) as string[];
+
+  return { ok: true, wallets };
+}
+
 export async function sendTestEmailToMe() {
   const session = await requireRole("SYSADMIN");
   const to = session.user.email;

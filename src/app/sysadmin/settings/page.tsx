@@ -15,10 +15,13 @@ import {
   savePaymentSettingsForSysadmin,
   clearPaymentSecretsForSysadmin,
   testAsaasSplitWallet,
+  listAsaasWallets,
 } from "@/lib/actions/sysadminSettings";
 
 export default async function SysadminSettingsPage(props: {
-  searchParams?: { ok?: string; err?: string; walletOk?: string; walletErr?: string } | Promise<{ ok?: string; err?: string; walletOk?: string; walletErr?: string }>;
+  searchParams?:
+    | { ok?: string; err?: string; walletOk?: string; walletErr?: string; walletList?: string }
+    | Promise<{ ok?: string; err?: string; walletOk?: string; walletErr?: string; walletList?: string }>;
 }) {
   await requireRoleOrRedirect("SYSADMIN", "/sysadmin/settings");
 
@@ -27,6 +30,7 @@ export default async function SysadminSettingsPage(props: {
   const err = (searchParams?.err ?? "").trim();
   const walletOk = searchParams?.walletOk === "1";
   const walletErr = (searchParams?.walletErr ?? "").trim();
+  const walletList = (searchParams?.walletList ?? "").trim();
 
   const [smtp, notifications, payments] = await Promise.all([
     getSmtpSettingsForSysadmin(),
@@ -62,6 +66,12 @@ export default async function SysadminSettingsPage(props: {
 
       {walletErr ? (
         <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">{walletErr}</div>
+      ) : null}
+
+      {walletList ? (
+        <div className="mb-4 rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-800">
+          Wallets encontradas: {walletList}
+        </div>
       ) : null}
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -287,6 +297,27 @@ export default async function SysadminSettingsPage(props: {
                       defaultValue={payments.asaasSplitWalletId}
                       placeholder="walletId do app"
                     />
+                    <button
+                      formAction={async () => {
+                        "use server";
+                        try {
+                          const res = await listAsaasWallets();
+                          const preview = res.wallets.slice(0, 5).join(", ");
+                          const label = res.wallets.length
+                            ? `${res.wallets.length} encontrados: ${preview}${res.wallets.length > 5 ? " ..." : ""}`
+                            : "nenhum wallet encontrado";
+                          redirect(`/sysadmin/settings?walletList=${encodeURIComponent(label)}`);
+                        } catch (e) {
+                          if ((e as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) throw e;
+                          const msg = e instanceof Error ? e.message : "Erro ao listar";
+                          redirect(`/sysadmin/settings?walletErr=${encodeURIComponent(msg)}`);
+                        }
+                      }}
+                      className="ph-button-secondary"
+                      type="submit"
+                    >
+                      Listar wallets
+                    </button>
                     <button
                       formAction={async () => {
                         "use server";
