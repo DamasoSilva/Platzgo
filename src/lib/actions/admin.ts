@@ -177,36 +177,6 @@ async function validateAsaasWalletId(walletId: string, userId: string): Promise<
   return { ok: true };
 }
 
-async function validateAsaasWalletId(walletId: string): Promise<{ ok: true } | { ok: false; message: string }> {
-  const config = await getPaymentConfig();
-  if (!config.asaas.apiKey) return { ok: false, message: "Asaas nao configurado" };
-
-  const baseUrl = config.asaas.baseUrl ?? "https://sandbox.asaas.com/api/v3";
-
-  try {
-    const res = await fetch(`${baseUrl}/wallets/${walletId}`, {
-      headers: { access_token: config.asaas.apiKey },
-    });
-
-    if (!res.ok) {
-      const data = (await res.json().catch(() => null)) as
-        | null
-        | { message?: string; error?: string; errors?: Array<{ description?: string }> };
-      const detail = data?.errors?.[0]?.description || data?.message || data?.error || null;
-      return {
-        ok: false,
-        message: detail
-          ? `Wallet Asaas invalido: ${detail} (HTTP ${res.status})`
-          : `Wallet Asaas invalido ou nao encontrado (HTTP ${res.status})`,
-      };
-    }
-  } catch {
-    return { ok: false, message: "Falha ao validar wallet Asaas" };
-  }
-
-  return { ok: true };
-}
-
 function clampInt(value: unknown, fallback: number, min: number, max: number): number {
   const n = typeof value === "number" ? value : Number(String(value ?? "").trim());
   if (!Number.isFinite(n)) return fallback;
