@@ -105,7 +105,9 @@ async function validateAsaasWalletId(walletId: string): Promise<{ ok: true } | {
       const detail = data?.errors?.[0]?.description || data?.message || data?.error || null;
       return {
         ok: false,
-        message: detail ? `Wallet Asaas invalido: ${detail}` : "Wallet Asaas invalido ou nao encontrado",
+        message: detail
+          ? `Wallet Asaas invalido: ${detail} (HTTP ${res.status})`
+          : `Wallet Asaas invalido ou nao encontrado (HTTP ${res.status})`,
       };
     }
   } catch {

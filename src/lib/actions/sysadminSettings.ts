@@ -205,7 +205,9 @@ export async function testAsaasSplitWallet() {
       | null
       | { message?: string; error?: string; errors?: Array<{ description?: string }> };
     const detail = data?.errors?.[0]?.description || data?.message || data?.error || null;
-    throw new Error(detail ? `Wallet Asaas invalido: ${detail}` : "Wallet Asaas invalido ou nao encontrado");
+    throw new Error(
+      detail ? `Wallet Asaas invalido: ${detail} (HTTP ${res.status})` : `Wallet Asaas invalido ou nao encontrado (HTTP ${res.status})`
+    );
   }
 
   return { ok: true };
