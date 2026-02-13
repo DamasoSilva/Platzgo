@@ -87,6 +87,96 @@ function normalizePaymentProvider(input?: string | null): PaymentProvider | unde
   return undefined;
 }
 
+function onlyDigits(v: string | null | undefined): string {
+  return (v ?? "").replace(/\D/g, "");
+}
+
+async function ensureAsaasCustomerForUser(userId: string, config: { apiKey?: string; baseUrl?: string }) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, name: true, email: true, whatsapp_number: true, asaas_customer_id: true },
+  });
+
+  if (!user) throw new Error("Usuario nao encontrado");
+  if (user.asaas_customer_id) return user.asaas_customer_id;
+  if (!config.apiKey) throw new Error("Asaas nao configurado");
+
+  const payload = {
+    name: user.name ?? user.email,
+    email: user.email,
+    phone: onlyDigits(user.whatsapp_number) || undefined,
+  };
+
+  const res = await fetch(`${config.baseUrl ?? "https://sandbox.asaas.com/api/v3"}/customers`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      access_token: config.apiKey,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json().catch(() => null);
+  if (!res.ok || !data?.id) throw new Error("Falha ao criar cliente no Asaas");
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { asaas_customer_id: String(data.id) },
+    select: { id: true },
+  });
+
+  return String(data.id);
+}
+
+async function validateAsaasWalletId(walletId: string, userId: string): Promise<{ ok: true } | { ok: false; message: string }> {
+  const config = await getPaymentConfig();
+  if (!config.asaas.apiKey) return { ok: false, message: "Asaas nao configurado" };
+
+  const baseUrl = config.asaas.baseUrl ?? "https://sandbox.asaas.com/api/v3";
+
+  try {
+    const customer = await ensureAsaasCustomerForUser(userId, {
+      apiKey: config.asaas.apiKey,
+      baseUrl: config.asaas.baseUrl,
+    });
+
+    const dueDate = new Date().toISOString().slice(0, 10);
+    const payload = {
+      customer,
+      billingType: "PIX",
+      value: 0.01,
+      dueDate,
+      description: "Teste de wallet Asaas",
+      externalReference: `wallet-test:${walletId}`,
+      split: [{ walletId, percentualValue: 100 }],
+    };
+
+    const res = await fetch(`${baseUrl}/payments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        access_token: config.asaas.apiKey,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data?.id) {
+      const detail = data?.errors?.[0]?.description || data?.message || data?.error || null;
+      return {
+        ok: false,
+        message: detail
+          ? `Wallet Asaas invalido: ${detail} (HTTP ${res.status})`
+          : `Wallet Asaas invalido ou nao encontrado (HTTP ${res.status})`,
+      };
+    }
+  } catch {
+    return { ok: false, message: "Falha ao validar wallet Asaas" };
+  }
+
+  return { ok: true };
+}
+
 async function validateAsaasWalletId(walletId: string): Promise<{ ok: true } | { ok: false; message: string }> {
   const config = await getPaymentConfig();
   if (!config.asaas.apiKey) return { ok: false, message: "Asaas nao configurado" };
@@ -723,7 +813,7 @@ export async function testMyAsaasWallet(): Promise<{ ok: true } | { ok: false; m
 
   const walletId = establishment.asaas_wallet_id?.trim();
   if (!walletId) return { ok: false, message: "Wallet ID nao configurado" };
-  return await validateAsaasWalletId(walletId);
+  return await validateAsaasWalletId(walletId, session.user.id);
 }
 
 export async function updateMyEstablishmentPayments(input: {
@@ -754,7 +844,7 @@ export async function updateMyEstablishmentPayments(input: {
 
   if (enableOnline && paymentProviders?.includes("ASAAS")) {
     if (!walletId) throw new Error("Wallet ID nao configurado");
-    const validation = await validateAsaasWalletId(walletId);
+    const validation = await validateAsaasWalletId(walletId, session.user.id);
     if (!validation.ok) throw new Error(validation.message);
   }
 

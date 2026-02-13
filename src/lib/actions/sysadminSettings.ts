@@ -6,6 +6,7 @@ import { requireRole } from "@/lib/authz";
 import { enqueueEmail, processEmailQueueBatch } from "@/lib/emailQueue";
 import { getAppUrl, passwordChangedEmail } from "@/lib/emailTemplates";
 import { saveNotificationSettings, getNotificationSettings, type NotificationSettingsInput } from "@/lib/notificationSettings";
+import { prisma } from "@/lib/prisma";
 import {
   setSystemSetting,
   setSystemSecret,
@@ -183,7 +184,7 @@ export async function clearPaymentSecretsForSysadmin() {
 }
 
 export async function testAsaasSplitWallet() {
-  await requireRole("SYSADMIN");
+  const session = await requireRole("SYSADMIN");
 
   const [asaasApiKey, asaasBaseUrl, walletIdRaw] = await Promise.all([
     getSystemSecret(PAYMENT_SETTING_KEYS.asaasApiKey),
@@ -196,14 +197,67 @@ export async function testAsaasSplitWallet() {
   if (!asaasApiKey) throw new Error("Asaas nao configurado");
 
   const baseUrl = (asaasBaseUrl ?? "https://sandbox.asaas.com/api/v3").trim() || "https://sandbox.asaas.com/api/v3";
-  const res = await fetch(`${baseUrl}/wallets/${walletId}`, {
-    headers: { access_token: asaasApiKey },
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { id: true, name: true, email: true, whatsapp_number: true, asaas_customer_id: true },
   });
 
-  if (!res.ok) {
-    const data = (await res.json().catch(() => null)) as
-      | null
-      | { message?: string; error?: string; errors?: Array<{ description?: string }> };
+  if (!user) throw new Error("Usuario nao encontrado");
+
+  const onlyDigits = (v: string | null | undefined) => (v ?? "").replace(/\D/g, "");
+
+  let customerId = user.asaas_customer_id ?? null;
+  if (!customerId) {
+    const payload = {
+      name: user.name ?? user.email,
+      email: user.email,
+      phone: onlyDigits(user.whatsapp_number) || undefined,
+    };
+
+    const createRes = await fetch(`${baseUrl}/customers`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        access_token: asaasApiKey,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const createData = await createRes.json().catch(() => null);
+    if (!createRes.ok || !createData?.id) {
+      throw new Error("Falha ao criar cliente no Asaas");
+    }
+
+    customerId = String(createData.id);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { asaas_customer_id: customerId },
+      select: { id: true },
+    });
+  }
+
+  const dueDate = new Date().toISOString().slice(0, 10);
+  const payload = {
+    customer: customerId,
+    billingType: "PIX",
+    value: 0.01,
+    dueDate,
+    description: "Teste de wallet Asaas",
+    externalReference: `wallet-test:${walletId}`,
+    split: [{ walletId, percentualValue: 100 }],
+  };
+
+  const res = await fetch(`${baseUrl}/payments`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      access_token: asaasApiKey,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json().catch(() => null);
+  if (!res.ok || !data?.id) {
     const detail = data?.errors?.[0]?.description || data?.message || data?.error || null;
     throw new Error(
       detail ? `Wallet Asaas invalido: ${detail} (HTTP ${res.status})` : `Wallet Asaas invalido ou nao encontrado (HTTP ${res.status})`
