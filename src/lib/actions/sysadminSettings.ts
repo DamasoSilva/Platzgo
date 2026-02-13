@@ -221,6 +221,17 @@ export async function testAsaasSplitWallet() {
   const onlyDigits = (v: string | null | undefined) => (v ?? "").replace(/\D/g, "");
 
   let customerId = user.asaas_customer_id ?? null;
+  if (customerId) {
+    await fetch(`${baseUrl}/customers/${customerId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        access_token: asaasApiKey,
+      },
+      body: JSON.stringify({ cpfCnpj: testCpfCnpj }),
+    }).catch(() => null);
+  }
+
   if (!customerId) {
     const payload = {
       name: user.name ?? user.email,

@@ -103,7 +103,19 @@ async function ensureAsaasCustomerForUser(
   });
 
   if (!user) throw new Error("Usuario nao encontrado");
-  if (user.asaas_customer_id) return user.asaas_customer_id;
+  if (user.asaas_customer_id) {
+    if (cpfCnpj) {
+      await fetch(`${config.baseUrl ?? "https://sandbox.asaas.com/api/v3"}/customers/${user.asaas_customer_id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          access_token: config.apiKey ?? "",
+        },
+        body: JSON.stringify({ cpfCnpj }),
+      }).catch(() => null);
+    }
+    return user.asaas_customer_id;
+  }
   if (!config.apiKey) throw new Error("Asaas nao configurado");
 
   const payload = {
