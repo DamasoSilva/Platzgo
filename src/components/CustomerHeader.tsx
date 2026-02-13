@@ -147,6 +147,12 @@ export function CustomerHeader(props: Props) {
         {props.rightSlot ? <div className="flex items-center gap-3">{props.rightSlot}</div> : null}
 
         {isLoggedIn && role === "CUSTOMER" ? (
+          <Link href="/sorteio-times" className={"sm:hidden " + pill}>
+            Sorteio
+          </Link>
+        ) : null}
+
+        {isLoggedIn && role === "CUSTOMER" ? (
           <div className="hidden items-center gap-2 sm:flex">
             <Link href="/meus-agendamentos" className={pill}>
               Meus agendamentos

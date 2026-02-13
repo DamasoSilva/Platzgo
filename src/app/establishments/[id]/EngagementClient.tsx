@@ -65,18 +65,7 @@ export function EngagementClient(props: {
         </button>
       </div>
 
-      <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
-        <p className="font-semibold text-zinc-900 dark:text-zinc-50">Avaliações agora ficam em Meus agendamentos</p>
-        <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
-          Após concluir um agendamento, você pode avaliar por lá.
-        </p>
-        <div className="mt-3">
-          <Link href="/meus-agendamentos" className="ph-button-secondary">
-            Ir para Meus agendamentos
-          </Link>
-        </div>
-        {message ? <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">{message}</p> : null}
-      </div>
+      {message ? <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">{message}</p> : null}
 
       <div className="mt-4 space-y-3">
         {props.reviews.length === 0 ? (
