@@ -112,6 +112,7 @@ export function CustomerHeader(props: Props) {
   const signOutCallbackUrl = role === "ADMIN" ? "/signin?logout=1&callbackUrl=%2Fdashboard" : "/signin?logout=1&callbackUrl=%2F";
 
   const [open, setOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const name = useMemo(() => firstTwoNames(props.viewer?.name), [props.viewer?.name]);
   const avatarInitials = useMemo(() => initials(props.viewer?.name), [props.viewer?.name]);
@@ -123,147 +124,237 @@ export function CustomerHeader(props: Props) {
       ? "inline-flex h-10 items-center justify-center rounded-full border border-white/15 bg-white/5 px-4 text-sm text-white backdrop-blur hover:bg-white/10 dark:hover:bg-white/20"
       : "inline-flex h-10 items-center justify-center rounded-full border border-zinc-200 bg-white px-4 text-sm text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800";
 
+  const homeLabel = role === "CUSTOMER" ? "Agende Já" : "Início";
+
   return (
     <header
       className={
-        "sticky top-0 z-40 w-full border-b backdrop-blur shadow-sm " +
+        "sticky top-0 z-40 w-full border-b backdrop-blur shadow-md " +
         (variant === "dark"
-          ? "border-white/10 bg-black/65 text-white"
-          : "border-zinc-200 bg-white/85 text-zinc-900 dark:border-white/10 dark:bg-[#121212]/85")
+          ? "border-white/10 bg-black/70 text-white"
+          : "border-zinc-200 bg-white/90 text-zinc-900 dark:border-white/10 dark:bg-[#121212]/90")
       }
     >
-      <div className="relative z-20 mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-3">
+      <div className="relative z-20 mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-4">
         <div>
-        <Link href={homeHref} onClick={onHomeClick} className={"flex items-center gap-3 text-lg font-semibold tracking-tight " + baseText}>
-          <span className="relative h-12 w-24 overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo" alt="PlatzGo!" className="h-full w-full object-contain" />
-          </span>
-        </Link>
-        <p className={"text-xs font-semibold " + subText}>{props.subtitle ?? "A partida começa AQUI"}</p>
+          <Link href={homeHref} onClick={onHomeClick} className={"flex items-center gap-3 text-lg font-semibold tracking-tight " + baseText}>
+            <span className="relative h-12 w-24 overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo" alt="PlatzGo!" className="h-full w-full object-contain" />
+            </span>
+          </Link>
+          <p className={"text-xs font-semibold " + subText}>{props.subtitle ?? "A partida começa AQUI"}</p>
         </div>
 
         <div className="flex items-center gap-3">
-        {props.rightSlot ? <div className="flex items-center gap-3">{props.rightSlot}</div> : null}
+          {props.rightSlot ? <div className="hidden items-center gap-3 sm:flex">{props.rightSlot}</div> : null}
 
-        {isLoggedIn && role === "CUSTOMER" ? (
-          <Link href="/sorteio-times" className={"sm:hidden " + pill}>
-            Sorteio
-          </Link>
-        ) : null}
+          {isLoggedIn && role === "CUSTOMER" ? (
+            <div className="hidden items-center gap-2 sm:flex">
+              <Link href="/meus-agendamentos" className={pill}>
+                Meus agendamentos
+              </Link>
+              <Link href="/sorteio-times" className={pill}>
+                Sorteio de times
+              </Link>
+            </div>
+          ) : null}
 
-        {isLoggedIn && role === "CUSTOMER" ? (
-          <div className="hidden items-center gap-2 sm:flex">
-            <Link href="/meus-agendamentos" className={pill}>
-              Meus agendamentos
+          {!isLoggedIn ? (
+            <Link href={`/signin?callbackUrl=${encodeURIComponent(signInCallbackUrl)}`} className={pill}>
+              Entrar
             </Link>
-            <Link href="/sorteio-times" className={pill}>
-              Sorteio de times
-            </Link>
-          </div>
-        ) : null}
-
-        {!isLoggedIn ? (
-          <Link href={`/signin?callbackUrl=${encodeURIComponent(signInCallbackUrl)}`} className={pill}>
-            Entrar
-          </Link>
-        ) : (
-          <div className="relative">
-            <button
-              type="button"
-              className={
-                variant === "dark"
-                    ? "flex h-10 items-center gap-3 rounded-full border border-white/15 bg-white/5 px-4 text-sm text-white backdrop-blur hover:bg-white/10 dark:hover:bg-white/20"
-                  : "flex h-10 items-center gap-3 rounded-full border border-zinc-200 bg-white px-4 text-sm text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
-              }
-              onClick={() => setOpen((s) => !s)}
-            >
-              <span className="hidden sm:block font-semibold">{name || "Usuário"}</span>
-              <span className="relative h-8 w-8 overflow-hidden rounded-full bg-white/10">
-                {props.viewer?.image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={props.viewer.image} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <span
-                    className={
-                      "flex h-full w-full items-center justify-center text-xs font-bold " +
-                      (variant === "dark" ? "text-white" : "text-zinc-900 dark:text-zinc-50")
-                    }
-                  >
-                    {avatarInitials}
-                  </span>
-                )}
-              </span>
-            </button>
-
-            {open ? (
-              <div
+          ) : (
+            <div className="relative hidden sm:block">
+              <button
+                type="button"
                 className={
-                  "absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border shadow-xl " +
-                  (variant === "dark"
-                    ? "border-white/10 bg-black/60 text-white backdrop-blur"
-                    : "border-zinc-200 bg-white text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100")
+                  variant === "dark"
+                    ? "flex h-10 items-center gap-3 rounded-full border border-white/15 bg-white/5 px-4 text-sm text-white backdrop-blur hover:bg-white/10 dark:hover:bg-white/20"
+                    : "flex h-10 items-center gap-3 rounded-full border border-zinc-200 bg-white px-4 text-sm text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
                 }
-                onMouseLeave={() => setOpen(false)}
+                onClick={() => setOpen((s) => !s)}
               >
-                {role === "SYSADMIN" ? (
-                  <>
-                    <Link href="/sysadmin" className="block px-4 py-3 text-sm hover:bg-white/10 dark:hover:bg-white/5" onClick={() => setOpen(false)}>
-                      Painel do sysadmin
-                    </Link>
-                    <Link href="/dashboard/admin" className="block px-4 py-3 text-sm hover:bg-white/10 dark:hover:bg-white/5" onClick={() => setOpen(false)}>
-                      Painel do administrador
-                    </Link>
-                    <Link href="/" className="block px-4 py-3 text-sm hover:bg-white/10 dark:hover:bg-white/5" onClick={() => setOpen(false)}>
-                      Ver como cliente
-                    </Link>
-                  </>
-                ) : null}
+                <span className="hidden sm:block font-semibold">{name || "Usuário"}</span>
+                <span className="relative h-8 w-8 overflow-hidden rounded-full bg-white/10">
+                  {props.viewer?.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={props.viewer.image} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span
+                      className={
+                        "flex h-full w-full items-center justify-center text-xs font-bold " +
+                        (variant === "dark" ? "text-white" : "text-zinc-900 dark:text-zinc-50")
+                      }
+                    >
+                      {avatarInitials}
+                    </span>
+                  )}
+                </span>
+              </button>
 
-                <Link href="/perfil" className="block px-4 py-3 text-sm hover:bg-white/10 dark:hover:bg-white/5" onClick={() => setOpen(false)}>
-                  Meu perfil
-                </Link>
-                <Link
-                  href="/meus-agendamentos"
-                  className="block px-4 py-3 text-sm hover:bg-white/10 dark:hover:bg-white/5"
-                  onClick={() => setOpen(false)}
+              {open ? (
+                <div
+                  className={
+                    "absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border shadow-xl " +
+                    (variant === "dark"
+                      ? "border-white/10 bg-black/60 text-white backdrop-blur"
+                      : "border-zinc-200 bg-white text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100")
+                  }
+                  onMouseLeave={() => setOpen(false)}
                 >
-                  Meus agendamentos
-                </Link>
-                {role === "CUSTOMER" ? (
+                  {role === "SYSADMIN" ? (
+                    <>
+                      <Link href="/sysadmin" className="block px-4 py-3 text-sm hover:bg-white/10 dark:hover:bg-white/5" onClick={() => setOpen(false)}>
+                        Painel do sysadmin
+                      </Link>
+                      <Link href="/dashboard/admin" className="block px-4 py-3 text-sm hover:bg-white/10 dark:hover:bg-white/5" onClick={() => setOpen(false)}>
+                        Painel do administrador
+                      </Link>
+                      <Link href="/" className="block px-4 py-3 text-sm hover:bg-white/10 dark:hover:bg-white/5" onClick={() => setOpen(false)}>
+                        Ver como cliente
+                      </Link>
+                    </>
+                  ) : null}
+
+                  <Link href="/perfil" className="block px-4 py-3 text-sm hover:bg-white/10 dark:hover:bg-white/5" onClick={() => setOpen(false)}>
+                    Meu perfil
+                  </Link>
                   <Link
-                    href="/sorteio-times"
+                    href="/meus-agendamentos"
                     className="block px-4 py-3 text-sm hover:bg-white/10 dark:hover:bg-white/5"
                     onClick={() => setOpen(false)}
                   >
-                    Sorteio de times
+                    Meus agendamentos
                   </Link>
-                ) : null}
+                  {role === "CUSTOMER" ? (
+                    <Link
+                      href="/sorteio-times"
+                      className="block px-4 py-3 text-sm hover:bg-white/10 dark:hover:bg-white/5"
+                      onClick={() => setOpen(false)}
+                    >
+                      Sorteio de times
+                    </Link>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="block w-full px-4 py-3 text-left text-sm hover:bg-white/10 dark:hover:bg-white/5"
+                    onClick={() => signOut({ callbackUrl: signOutCallbackUrl })}
+                  >
+                    Sair
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          )}
+
+          {showHomeButton ? (
+            <Link
+              href={homeHref}
+              onClick={onHomeClick}
+              className={
+                "hidden h-10 items-center justify-center rounded-full bg-[#CCFF00] px-5 text-sm font-bold text-black transition-all hover:scale-105 sm:inline-flex"
+              }
+            >
+              {homeLabel}
+            </Link>
+          ) : null}
+
+          <button
+            type="button"
+            className={
+              "inline-flex h-10 w-10 items-center justify-center rounded-full border sm:hidden " +
+              (variant === "dark"
+                ? "border-white/20 text-white hover:bg-white/10"
+                : "border-zinc-200 text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-800")
+            }
+            aria-label="Abrir menu"
+            onClick={() => setMenuOpen((s) => !s)}
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+              <path
+                d="M4 6h16M4 12h16M4 18h16"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeWidth="2"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {menuOpen ? (
+        <div
+          className={
+            "border-t px-6 py-4 sm:hidden " +
+            (variant === "dark"
+              ? "border-white/10 bg-black/70"
+              : "border-zinc-200 bg-white/95 dark:border-white/10 dark:bg-[#121212]/95")
+          }
+        >
+          <div className="flex flex-col gap-2">
+            {showHomeButton ? (
+              <Link
+                href={homeHref}
+                onClick={(e) => {
+                  onHomeClick(e);
+                  setMenuOpen(false);
+                }}
+                className={pill}
+              >
+                {homeLabel}
+              </Link>
+            ) : null}
+            {isLoggedIn && role === "CUSTOMER" ? (
+              <>
+                <Link href="/meus-agendamentos" className={pill} onClick={() => setMenuOpen(false)}>
+                  Meus agendamentos
+                </Link>
+                <Link href="/sorteio-times" className={pill} onClick={() => setMenuOpen(false)}>
+                  Sorteio de times
+                </Link>
+              </>
+            ) : null}
+
+            {role === "SYSADMIN" ? (
+              <>
+                <Link href="/sysadmin" className={pill} onClick={() => setMenuOpen(false)}>
+                  Painel do sysadmin
+                </Link>
+                <Link href="/dashboard/admin" className={pill} onClick={() => setMenuOpen(false)}>
+                  Painel do administrador
+                </Link>
+                <Link href="/" className={pill} onClick={() => setMenuOpen(false)}>
+                  Ver como cliente
+                </Link>
+              </>
+            ) : null}
+
+            {isLoggedIn ? (
+              <>
+                <Link href="/perfil" className={pill} onClick={() => setMenuOpen(false)}>
+                  Meu perfil
+                </Link>
                 <button
                   type="button"
-                  className="block w-full px-4 py-3 text-left text-sm hover:bg-white/10 dark:hover:bg-white/5"
-                  onClick={() => signOut({ callbackUrl: signOutCallbackUrl })}
+                  className={pill}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    signOut({ callbackUrl: signOutCallbackUrl });
+                  }}
                 >
                   Sair
                 </button>
-              </div>
-            ) : null}
+              </>
+            ) : (
+              <Link href={`/signin?callbackUrl=${encodeURIComponent(signInCallbackUrl)}`} className={pill} onClick={() => setMenuOpen(false)}>
+                Entrar
+              </Link>
+            )}
           </div>
-        )}
-
-        {showHomeButton ? (
-          <Link
-            href={homeHref}
-            onClick={onHomeClick}
-            className={
-              "inline-flex h-10 items-center justify-center rounded-full bg-[#CCFF00] px-5 text-sm font-bold text-black transition-all hover:scale-105"
-            }
-          >
-            Início
-          </Link>
-        ) : null}
         </div>
-      </div>
+      ) : null}
     </header>
   );
 }

@@ -125,6 +125,13 @@ function addDays(base: Date, days: number): Date {
   return d;
 }
 
+function weekStartFromYmd(ymd: string): string {
+  const [y, m, d] = ymd.split("-").map(Number);
+  const dt = new Date(y || 0, (m || 1) - 1, d || 1);
+  const start = addDays(dt, -dt.getDay());
+  return toYMD(start);
+}
+
 function asLocalDateTime(ymd: string, hhmm: string): Date {
   const [y, m, d] = ymd.split("-").map(Number);
   const [hh, mm] = hhmm.split(":").map(Number);
@@ -303,6 +310,7 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
   }, [days, props.data.weekStart]);
 
   const [viewMode, setViewMode] = useState<"week" | "day">("week");
+  const [agendaMode, setAgendaMode] = useState(false);
   const [focusedDayYmdRaw, setFocusedDayYmdRaw] = useState(() => {
     const today = toYMD(new Date());
     return days.find((d) => d.ymd === today)?.ymd ?? days[0]?.ymd ?? props.data.weekStart;
@@ -324,9 +332,12 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
 
   const canRenderGrid = slots.length > 0;
 
-  const goWeek = (delta: number) => {
-    const next = addDays(weekStart, delta * 7);
-    const nextYmd = toYMD(next);
+  useEffect(() => {
+    if (agendaMode && viewMode !== "week") setViewMode("week");
+  }, [agendaMode, viewMode]);
+
+  const goToWeekFromDay = (ymd: string) => {
+    const nextYmd = weekStartFromYmd(ymd);
     const sp = new URLSearchParams(window.location.search);
     sp.set("week", nextYmd);
     if (!sp.get("courtId")) sp.set("courtId", props.data.selectedCourtId);
@@ -396,11 +407,40 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" className="ph-button-secondary" onClick={() => goWeek(-1)}>
-            Semana anterior
-          </button>
-          <button type="button" className="ph-button-secondary" onClick={() => goWeek(1)}>
-            Próxima semana
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">Ir para data</label>
+            <input
+              type="date"
+              className="ph-input h-10"
+              value={focusedDayYmd}
+              onChange={(e) => {
+                const ymd = e.target.value;
+                if (!ymd) return;
+                setFocusedDayYmdRaw(ymd);
+                setAgendaMode(true);
+                setViewMode("week");
+                goToWeekFromDay(ymd);
+              }}
+            />
+          </div>
+          <button
+            type="button"
+            className={
+              agendaMode
+                ? "ph-button"
+                : "ph-button-secondary"
+            }
+            onClick={() => {
+              if (!focusedDayYmd) {
+                setMessage("Selecione uma semana para usar o formato agenda.");
+                return;
+              }
+              const next = !agendaMode;
+              setAgendaMode(next);
+              if (next) setViewMode("week");
+            }}
+          >
+            Formato agenda
           </button>
           <button
             type="button"
@@ -461,8 +501,17 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
               <div className="w-px bg-zinc-200 dark:bg-zinc-800" />
               <button
                 type="button"
-                className={viewMode === "day" ? "px-3 py-2 text-xs font-semibold text-zinc-900 dark:text-zinc-50" : "px-3 py-2 text-xs font-semibold text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-50"}
-                onClick={() => setViewMode("day")}
+                className={
+                  agendaMode
+                    ? "px-3 py-2 text-xs font-semibold text-zinc-400 cursor-not-allowed"
+                    : viewMode === "day"
+                      ? "px-3 py-2 text-xs font-semibold text-zinc-900 dark:text-zinc-50"
+                      : "px-3 py-2 text-xs font-semibold text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-50"
+                }
+                onClick={() => {
+                  if (agendaMode) return;
+                  setViewMode("day");
+                }}
               >
                 Dia
               </button>
@@ -488,7 +537,7 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
 
         {!canRenderGrid ? (
           <p className="mt-4 text-sm text-zinc-600 dark:text-zinc-400">Configure corretamente abertura/fechamento em “Meu espaço”.</p>
-        ) : isAllCourts ? (
+        ) : isAllCourts || agendaMode ? (
           <div className="mt-5 max-h-[70vh] overflow-auto pr-2">
             <div className="space-y-4">
               {visibleDays.map((d) => {
@@ -519,10 +568,15 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
                       <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
                         {d.label} <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">({formatDMY(d.ymd)})</span>
                       </div>
-                      <button type="button" className="ph-button-secondary" onClick={() => {
-                        setViewMode("day");
-                        setFocusedDayYmdRaw(d.ymd);
-                      }}>
+                      <button
+                        type="button"
+                        className="ph-button-secondary"
+                        onClick={() => {
+                          setAgendaMode(false);
+                          setViewMode("day");
+                          setFocusedDayYmdRaw(d.ymd);
+                        }}
+                      >
                         Ver dia
                       </button>
                     </div>
