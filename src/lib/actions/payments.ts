@@ -1,6 +1,8 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { getPaymentConfig } from "@/lib/payments";
 import { PaymentProvider, PaymentStatus, BookingStatus, NotificationType, PayoutStatus } from "@/generated/prisma/enums";
 import { getAppUrl } from "@/lib/emailTemplates";
@@ -121,12 +123,95 @@ async function createAsaasPayment(params: {
 
   const checkoutUrl = data.invoiceUrl ?? data.paymentLink ?? data.bankSlipUrl ?? null;
 
+  let pixPayload: string | null = null;
+  let pixQrBase64: string | null = null;
+  try {
+    const pixRes = await fetch(`${config.asaas.baseUrl ?? "https://sandbox.asaas.com/api/v3"}/payments/${data.id}/pixQrCode`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        access_token: config.asaas.apiKey,
+      },
+    });
+    const pixData = await pixRes.json().catch(() => null);
+    if (pixRes.ok && pixData?.payload) {
+      pixPayload = String(pixData.payload);
+      pixQrBase64 = typeof pixData.encodedImage === "string" ? pixData.encodedImage : null;
+    }
+  } catch {
+    // Ignora falha ao gerar PIX
+  }
+
   return {
     providerPaymentId: String(data.id),
     checkoutUrl,
     payoutMode: shouldSplit ? "split" : null,
     payoutAmountCents: shouldSplit ? Math.round(params.amountCents * (ownerPercent / 100)) : null,
+    pixPayload,
+    pixQrBase64,
   };
+}
+
+export async function refreshPixForBooking(input: { bookingId: string }) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) throw new Error("Nao autenticado");
+
+  const payment = await prisma.payment.findFirst({
+    where: {
+      bookingId: input.bookingId,
+      status: { in: [PaymentStatus.PENDING, PaymentStatus.AUTHORIZED] },
+    },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      provider: true,
+      provider_payment_id: true,
+      metadata: true,
+      booking: { select: { customerId: true } },
+    },
+  });
+
+  if (!payment || !payment.booking?.customerId) throw new Error("Pagamento nao encontrado");
+  if (payment.booking.customerId !== session.user.id) throw new Error("Sem permissao");
+  if (payment.provider !== PaymentProvider.ASAAS || !payment.provider_payment_id) {
+    throw new Error("Pagamento nao suportado");
+  }
+
+  const config = await getPaymentConfig();
+  if (!config.asaas.apiKey) throw new Error("Asaas nao configurado");
+
+  const pixRes = await fetch(
+    `${config.asaas.baseUrl ?? "https://sandbox.asaas.com/api/v3"}/payments/${payment.provider_payment_id}/pixQrCode`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        access_token: config.asaas.apiKey,
+      },
+    }
+  );
+  const pixData = await pixRes.json().catch(() => null);
+  if (!pixRes.ok || !pixData?.payload) {
+    throw new Error("Nao foi possivel atualizar o PIX");
+  }
+
+  const pixPayload = String(pixData.payload);
+  const pixQrBase64 = typeof pixData.encodedImage === "string" ? pixData.encodedImage : null;
+  const prevMeta = (payment.metadata as Record<string, unknown> | null) ?? {};
+
+  await prisma.payment.update({
+    where: { id: payment.id },
+    data: {
+      metadata: {
+        ...prevMeta,
+        pix_payload: pixPayload,
+        pix_qr_base64: pixQrBase64 ?? undefined,
+      },
+    },
+    select: { id: true },
+  });
+
+  return { pixPayload, pixQrBase64 };
 }
 
 async function createMercadoPagoPreference(params: {
@@ -175,7 +260,14 @@ async function createMercadoPagoPreference(params: {
   }
 
   const checkoutUrl = data.init_point ?? data.sandbox_init_point ?? null;
-  return { providerPaymentId: String(data.id), checkoutUrl, payoutMode: null, payoutAmountCents: null };
+  return {
+    providerPaymentId: String(data.id),
+    checkoutUrl,
+    payoutMode: null,
+    payoutAmountCents: null,
+    pixPayload: null,
+    pixQrBase64: null,
+  };
 }
 
 async function createAsaasTransfer(params: {
@@ -328,11 +420,18 @@ export async function startPaymentForBooking(input: { bookingId: string; provide
       bookingId: booking.id,
       status: { in: [PaymentStatus.PENDING, PaymentStatus.AUTHORIZED, PaymentStatus.PAID] },
     },
-    select: { id: true, provider: true, checkout_url: true },
+    select: { id: true, provider: true, checkout_url: true, metadata: true },
   });
 
   if (existing) {
-    return { paymentId: existing.id, provider: existing.provider, checkoutUrl: existing.checkout_url ?? null };
+    const meta = (existing.metadata as { pix_payload?: string; pix_qr_base64?: string } | null) ?? null;
+    return {
+      paymentId: existing.id,
+      provider: existing.provider,
+      checkoutUrl: existing.checkout_url ?? null,
+      pixPayload: meta?.pix_payload ?? null,
+      pixQrBase64: meta?.pix_qr_base64 ?? null,
+    };
   }
 
   if (!booking.court.establishment.online_payments_enabled) {
@@ -414,16 +513,26 @@ export async function startPaymentForBooking(input: { bookingId: string; provide
                 start: booking.start_time.toISOString(),
                 end: booking.end_time.toISOString(),
                 payout_mode: "split",
+                pix_payload: result.pixPayload ?? undefined,
+                pix_qr_base64: result.pixQrBase64 ?? undefined,
               }
             : {
                 start: booking.start_time.toISOString(),
                 end: booking.end_time.toISOString(),
+                pix_payload: result.pixPayload ?? undefined,
+                pix_qr_base64: result.pixQrBase64 ?? undefined,
               },
       },
       select: { id: true },
     });
 
-    return { paymentId: payment.id, provider, checkoutUrl: result.checkoutUrl ?? null };
+    return {
+      paymentId: payment.id,
+      provider,
+      checkoutUrl: result.checkoutUrl ?? null,
+      pixPayload: result.pixPayload ?? null,
+      pixQrBase64: result.pixQrBase64 ?? null,
+    };
   } catch (e) {
     await prisma.payment.update({
       where: { id: payment.id },

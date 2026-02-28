@@ -132,6 +132,14 @@ function weekStartFromYmd(ymd: string): string {
   return toYMD(start);
 }
 
+function ymdDiffDays(startYmd: string, endYmd: string): number {
+  const [sy, sm, sd] = startYmd.split("-").map(Number);
+  const [ey, em, ed] = endYmd.split("-").map(Number);
+  const start = new Date(sy || 0, (sm || 1) - 1, sd || 1);
+  const end = new Date(ey || 0, (em || 1) - 1, ed || 1);
+  return Math.floor((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
+}
+
 function asLocalDateTime(ymd: string, hhmm: string): Date {
   const [y, m, d] = ymd.split("-").map(Number);
   const [hh, mm] = hhmm.split(":").map(Number);
@@ -311,6 +319,8 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
 
   const [viewMode, setViewMode] = useState<"week" | "day">("week");
   const [agendaMode, setAgendaMode] = useState(false);
+  const [dateStartYmd, setDateStartYmd] = useState(() => days[0]?.ymd ?? props.data.weekStart);
+  const [dateEndYmd, setDateEndYmd] = useState(() => days[days.length - 1]?.ymd ?? props.data.weekStart);
   const [focusedDayYmdRaw, setFocusedDayYmdRaw] = useState(() => {
     const today = toYMD(new Date());
     return days.find((d) => d.ymd === today)?.ymd ?? days[0]?.ymd ?? props.data.weekStart;
@@ -322,10 +332,13 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
   }, [days, focusedDayYmdRaw, props.data.weekStart]);
 
   const visibleDays = useMemo(() => {
+    if (agendaMode) {
+      return days.filter((d) => d.ymd >= dateStartYmd && d.ymd <= dateEndYmd);
+    }
     if (viewMode === "week") return days;
     const d = days.find((x) => x.ymd === focusedDayYmd);
     return d ? [d] : days.slice(0, 1);
-  }, [days, focusedDayYmd, viewMode]);
+  }, [agendaMode, dateEndYmd, dateStartYmd, days, focusedDayYmd, viewMode]);
 
   const gridColsClass = viewMode === "week" ? "grid-cols-[72px_repeat(7,minmax(140px,1fr))]" : "grid-cols-[72px_minmax(0,1fr)]";
   const gridMinWidthClass = viewMode === "week" ? "min-w-[1120px]" : "min-w-[520px]";
@@ -408,18 +421,49 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
 
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">Ir para data</label>
+            <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">Data inicio</label>
             <input
               type="date"
               className="ph-input h-10"
-              value={focusedDayYmd}
+              value={dateStartYmd}
               onChange={(e) => {
                 const ymd = e.target.value;
                 if (!ymd) return;
+                setDateStartYmd(ymd);
+                if (dateEndYmd < ymd) setDateEndYmd(ymd);
                 setFocusedDayYmdRaw(ymd);
-                setAgendaMode(true);
                 setViewMode("week");
                 goToWeekFromDay(ymd);
+                const nextRange = Math.max(0, ymdDiffDays(ymd, dateEndYmd < ymd ? ymd : dateEndYmd)) + 1;
+                if (nextRange > 7) {
+                  setAgendaMode(false);
+                  setMessage("Intervalo acima de 7 dias. Mostrando formato semanal.");
+                } else {
+                  setAgendaMode(true);
+                }
+              }}
+            />
+            <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">Data fim</label>
+            <input
+              type="date"
+              className="ph-input h-10"
+              value={dateEndYmd}
+              onChange={(e) => {
+                const ymd = e.target.value;
+                if (!ymd) return;
+                if (ymd < dateStartYmd) {
+                  setMessage("Data fim deve ser maior ou igual a data inicio.");
+                  setDateEndYmd(dateStartYmd);
+                  return;
+                }
+                setDateEndYmd(ymd);
+                const nextRange = Math.max(0, ymdDiffDays(dateStartYmd, ymd)) + 1;
+                if (nextRange > 7) {
+                  setAgendaMode(false);
+                  setMessage("Intervalo acima de 7 dias. Mostrando formato semanal.");
+                } else {
+                  setAgendaMode(true);
+                }
               }}
             />
           </div>
@@ -431,13 +475,20 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
                 : "ph-button-secondary"
             }
             onClick={() => {
-              if (!focusedDayYmd) {
+              if (!dateStartYmd) {
                 setMessage("Selecione uma semana para usar o formato agenda.");
                 return;
               }
-              const next = !agendaMode;
-              setAgendaMode(next);
-              if (next) setViewMode("week");
+              const rangeDays = Math.max(0, ymdDiffDays(dateStartYmd, dateEndYmd)) + 1;
+              if (rangeDays > 7) {
+                setAgendaMode(false);
+                setMessage("Selecione um intervalo de ate 7 dias para usar o formato agenda.");
+                return;
+              }
+              setFocusedDayYmdRaw(dateStartYmd);
+              setAgendaMode(!agendaMode);
+              setViewMode("week");
+              goToWeekFromDay(dateStartYmd);
             }}
           >
             Formato agenda

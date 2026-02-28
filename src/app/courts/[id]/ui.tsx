@@ -36,6 +36,13 @@ type BlockRange = {
   end: Date;
 };
 
+type BookingAlertBox = {
+  title: string;
+  rows: Array<{ label: string; value: string }>;
+  note?: string;
+  redirectTo: string;
+};
+
 function addMinutes(d: Date, minutes: number): Date {
   return new Date(d.getTime() + minutes * 60000);
 }
@@ -71,7 +78,10 @@ export function CourtDetailsClient(props: {
   const [alertMessage, setAlertMessage] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
   const [monthlyAccepted, setMonthlyAccepted] = useState(false);
   const [alertTime, setAlertTime] = useState<string>(props.initial.dayInfo.opening_time);
-  const [bookingAlert, setBookingAlert] = useState<string | null>(null);
+  const [bookingAlert, setBookingAlert] = useState<BookingAlertBox | null>(null);
+  const [pixPayload, setPixPayload] = useState<string | null>(null);
+  const [pixQrBase64, setPixQrBase64] = useState<string | null>(null);
+  const [pixCopyStatus, setPixCopyStatus] = useState<string | null>(null);
 
   const monthKey = useMemo(() => day.slice(0, 7), [day]);
   const todayYmd = useMemo(() => {
@@ -199,6 +209,9 @@ export function CourtDetailsClient(props: {
     setMessage(null);
     setPaymentUrl(null);
     setPaymentOpened(false);
+    setPixPayload(null);
+    setPixQrBase64(null);
+    setPixCopyStatus(null);
     startTransition(async () => {
       try {
         const res = await createBooking({
@@ -211,12 +224,18 @@ export function CourtDetailsClient(props: {
         });
 
         const checkoutUrl = res && "payment" in res ? res.payment?.checkoutUrl ?? null : null;
+        const pixPayloadFromRes = res && "payment" in res ? res.payment?.pixPayload ?? null : null;
+        const pixQrBase64FromRes = res && "payment" in res ? res.payment?.pixQrBase64 ?? null : null;
         if (checkoutUrl) {
           setPaymentUrl(checkoutUrl);
           setPaymentOpened(false);
         }
+        if (pixPayloadFromRes) setPixPayload(pixPayloadFromRes);
+        if (pixQrBase64FromRes) setPixQrBase64(pixQrBase64FromRes);
 
         const createdCount = Array.isArray(res?.ids) ? res.ids.length : 1;
+        const createdIds = Array.isArray(res?.ids) ? res.ids : [];
+        const primaryId = createdIds[0] ?? null;
         setMessage({
           type: "success",
           text:
@@ -226,7 +245,36 @@ export function CourtDetailsClient(props: {
                 ? "Agendamento criado. Finalize o pagamento para confirmar."
                 : "Agendamento efetuado com sucesso.",
         });
-        setBookingAlert("Agendamento criado. Acompanhe em Meus agendamentos.");
+        const dateLabel = selectedStart
+          ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "full" }).format(selectedStart)
+          : day;
+        const timeLabel = selectedStart && selectedEnd ? `${formatHHMM(selectedStart)}–${formatHHMM(selectedEnd)}` : "";
+        const cancelFee = data.court.establishment.cancel_fee_fixed_cents > 0
+          ? formatBRLFromCents(data.court.establishment.cancel_fee_fixed_cents)
+          : `${data.court.establishment.cancel_fee_percent}%`;
+        const cancelLabel = `Até ${data.court.establishment.cancel_min_hours}h antes. Multa: ${cancelFee}.`;
+        const priceLabel = monthlyIsActive
+          ? "Mensalidade"
+          : totalPriceCents != null
+            ? formatBRLFromCents(totalPriceCents)
+            : formatBRLFromCents(data.court.price_per_hour);
+
+        if (!checkoutUrl) {
+          setBookingAlert({
+            title: createdCount > 1 ? "Agendamentos confirmados" : "Agendamento confirmado",
+            rows: [
+              { label: "Local", value: data.court.establishment.name },
+              { label: "Endereco", value: data.court.establishment.address_text },
+              { label: "Data", value: dateLabel },
+              { label: "Horario", value: timeLabel },
+              { label: "Quadra/Modalidade", value: `${data.court.name} • ${formatSportLabel(data.court.sport_type)}` },
+              { label: "Preco", value: priceLabel },
+              { label: "Cancelamento", value: cancelLabel },
+            ],
+            note: payAtCourt ? "Pagamento direto na quadra." : undefined,
+            redirectTo: primaryId ? `/meus-agendamentos/${primaryId}` : "/meus-agendamentos",
+          });
+        }
         refreshDay(day, { keepMessage: true });
       } catch (e) {
         setMessage({ type: "error", text: e instanceof Error ? e.message : "Erro ao criar agendamento" });
@@ -346,13 +394,40 @@ export function CourtDetailsClient(props: {
       />
 
       {bookingAlert ? (
-        <div className="mx-auto mt-4 max-w-4xl rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <span>{bookingAlert}</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-lg rounded-3xl border border-emerald-200 bg-white p-6 text-emerald-900 shadow-xl dark:border-emerald-900/40 dark:bg-zinc-950 dark:text-emerald-100">
+            <div className="text-lg font-semibold">{bookingAlert.title}</div>
+            <div className="mt-4 space-y-2 text-sm">
+              {bookingAlert.rows.map((row) => (
+                <div key={row.label} className="flex flex-wrap justify-between gap-2">
+                  <span className="text-zinc-600 dark:text-zinc-300">{row.label}</span>
+                  <span className="font-semibold text-zinc-900 dark:text-zinc-50">{row.value}</span>
+                </div>
+              ))}
+            </div>
+            {bookingAlert.note ? (
+              <p className="mt-4 text-xs text-zinc-600 dark:text-zinc-400">{bookingAlert.note}</p>
+            ) : null}
+            {paymentUrl && !pixPayload ? (
+              <div className="mt-4">
+                <a
+                  href={paymentUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center rounded-full bg-[#CCFF00] px-4 py-2 text-xs font-bold text-black"
+                >
+                  Ir para pagamento
+                </a>
+              </div>
+            ) : null}
             <button
               type="button"
-              onClick={() => router.push("/meus-agendamentos")}
-              className="rounded-full bg-emerald-700 px-4 py-2 text-xs font-bold text-white"
+              onClick={() => {
+                const next = bookingAlert.redirectTo;
+                setBookingAlert(null);
+                router.push(next);
+              }}
+              className="mt-6 w-full rounded-full bg-emerald-700 px-4 py-3 text-sm font-bold text-white"
             >
               OK
             </button>
@@ -530,7 +605,7 @@ export function CourtDetailsClient(props: {
                   }
                 >
                   {message.text}
-                  {paymentUrl ? (
+                  {paymentUrl && !pixPayload ? (
                     <div className="mt-3">
                       <a
                         href={paymentUrl}
@@ -540,6 +615,41 @@ export function CourtDetailsClient(props: {
                       >
                         Ir para pagamento
                       </a>
+                    </div>
+                  ) : null}
+                  {pixPayload ? (
+                    <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-100">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="font-semibold">PIX Copia e Cola</span>
+                        <button
+                          type="button"
+                          className="rounded-full bg-emerald-700 px-3 py-1 text-[11px] font-bold text-white"
+                          onClick={async () => {
+                            try {
+                              await navigator.clipboard.writeText(pixPayload);
+                              setPixCopyStatus("Chave PIX copiada.");
+                            } catch {
+                              setPixCopyStatus("Nao foi possivel copiar.");
+                            }
+                          }}
+                        >
+                          Copiar
+                        </button>
+                      </div>
+                      <div className="mt-2 break-words rounded-xl bg-white px-3 py-2 text-[11px] text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+                        {pixPayload}
+                      </div>
+                      {pixCopyStatus ? <div className="mt-2 text-[11px]">{pixCopyStatus}</div> : null}
+                      {pixQrBase64 ? (
+                        <div className="mt-3 flex justify-center">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={`data:image/png;base64,${pixQrBase64}`}
+                            alt="QR Code PIX"
+                            className="h-40 w-40 rounded-lg border border-emerald-200 bg-white p-2"
+                          />
+                        </div>
+                      ) : null}
                     </div>
                   ) : null}
                   {!props.userId ? (
@@ -575,7 +685,7 @@ export function CourtDetailsClient(props: {
 
               <div className={"mt-5 space-y-4 " + (isOwnerPreview ? "opacity-60 pointer-events-none" : "")}
               >
-                <div className="grid gap-3 sm:grid-cols-3">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Data</label>
                     <input
@@ -606,8 +716,11 @@ export function CourtDetailsClient(props: {
                       <option value={120}>120 min</option>
                     </select>
                   </div>
+                </div>
 
-                  <div>
+                <details className="rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
+                  <summary className="cursor-pointer text-sm font-semibold text-zinc-900 dark:text-zinc-50">Repetição semanal</summary>
+                  <div className="mt-3">
                     <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Repetir por semanas</label>
                     <input
                       type="number"
@@ -621,7 +734,7 @@ export function CourtDetailsClient(props: {
                       0 = sem recorrência semanal (máx. 3 semanas; acima disso use mensalidade)
                     </p>
                   </div>
-                </div>
+                </details>
 
                 <div>
                   <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Grade de Horários Disponíveis</p>
@@ -718,51 +831,51 @@ export function CourtDetailsClient(props: {
                   </div>
                 ) : null}
 
-                <div className="rounded-3xl border border-zinc-200 bg-white p-4 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Alerta de disponibilidade</p>
-                      <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                <details className="rounded-3xl border border-zinc-200 bg-white p-4 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
+                  <summary className="cursor-pointer text-sm font-semibold text-zinc-900 dark:text-zinc-50">Alerta de disponibilidade</summary>
+                  <div className="mt-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400">
                         Se não encontrou horário, receba aviso quando ficar disponível.
                       </p>
+                      {selectedStart ? (
+                        <button
+                          type="button"
+                          onClick={() => setAlertTime(formatHHMM(selectedStart))}
+                          className="ph-button-secondary-xs"
+                        >
+                          Usar horário selecionado
+                        </button>
+                      ) : null}
                     </div>
-                    {selectedStart ? (
-                      <button
-                        type="button"
-                        onClick={() => setAlertTime(formatHHMM(selectedStart))}
-                        className="ph-button-secondary-xs"
-                      >
-                        Usar horário selecionado
-                      </button>
-                    ) : null}
-                  </div>
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Horário</label>
-                      <input
-                        type="time"
-                        step={1800}
-                        value={alertTime}
-                        onChange={(e) => setAlertTime(e.target.value)}
-                        className="ph-input mt-2"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Duração</label>
-                      <div className="mt-2 rounded-xl bg-zinc-100 px-4 py-3 text-sm text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100">
-                        {durationMinutes} min
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Horário</label>
+                        <input
+                          type="time"
+                          step={1800}
+                          value={alertTime}
+                          onChange={(e) => setAlertTime(e.target.value)}
+                          className="ph-input mt-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Duração</label>
+                        <div className="mt-2 rounded-xl bg-zinc-100 px-4 py-3 text-sm text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100">
+                          {durationMinutes} min
+                        </div>
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      disabled={isPending || isOwnerPreview}
+                      onClick={confirmAlert}
+                      className="ph-button-secondary mt-4 w-full"
+                    >
+                      Criar alerta
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    disabled={isPending || isOwnerPreview}
-                    onClick={confirmAlert}
-                    className="ph-button-secondary mt-4 w-full"
-                  >
-                    Criar alerta
-                  </button>
-                </div>
+                </details>
 
                 <button
                   onClick={confirmBooking}

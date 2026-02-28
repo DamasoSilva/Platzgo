@@ -177,8 +177,17 @@ function parseSearchSportOptionLines(raw: string): Array<{ sport_type: SportType
 }
 
 export async function listSearchSportOptionsForPublic() {
-  return prisma.searchSportOption.findMany({
+  const activeSports = await prisma.court.findMany({
     where: { is_active: true },
+    select: { sport_type: true },
+    distinct: ["sport_type"],
+  });
+
+  const sportTypes = activeSports.map((s) => s.sport_type);
+  if (sportTypes.length === 0) return [];
+
+  return prisma.searchSportOption.findMany({
+    where: { is_active: true, sport_type: { in: sportTypes } },
     orderBy: [{ public_id: "asc" }],
     select: { sport_type: true, label: true },
   });

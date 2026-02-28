@@ -34,7 +34,6 @@ type Props = {
     day: string;
     q?: string;
     maxPrice?: number | null;
-    minRating?: number | null;
     onlyFavorites?: boolean;
     locationSource?: "user" | "query" | "default";
   };
@@ -61,7 +60,6 @@ export function SearchClient(props: Props) {
   const [day, setDay] = useState<string>(props.initial.day);
   const [q, setQ] = useState<string>(props.initial.q ?? "");
   const [maxPrice, setMaxPrice] = useState<number>(props.initial.maxPrice ?? 0);
-  const [minRating, setMinRating] = useState<number>(props.initial.minRating ?? 0);
   const [onlyFavorites, setOnlyFavorites] = useState<boolean>(props.initial.onlyFavorites ?? false);
   const [sortBy, setSortBy] = useState<"distance" | "rating">("distance");
 
@@ -92,6 +90,8 @@ export function SearchClient(props: Props) {
     return sportSelectOptions.some((o) => o.sport_type === sport) ? sport : "ALL";
   }, [sport, sportSelectOptions]);
 
+  const effectiveRadiusKm = useMemo(() => (radiusKm > 0 ? radiusKm : 100), [radiusKm]);
+
   const searchHref = useMemo(() => {
     const params = new URLSearchParams();
     params.set("lat", String(lat));
@@ -101,10 +101,9 @@ export function SearchClient(props: Props) {
     params.set("day", day);
     if (q.trim()) params.set("q", q.trim());
     if (maxPrice > 0) params.set("maxPrice", String(maxPrice));
-    if (minRating > 0) params.set("minRating", String(minRating));
     if (onlyFavorites) params.set("onlyFavorites", "1");
     return `/?${params.toString()}`;
-  }, [day, effectiveSport, lat, lng, radiusKm, q, maxPrice, minRating, onlyFavorites]);
+  }, [day, effectiveSport, lat, lng, radiusKm, q, maxPrice, onlyFavorites]);
 
   useEffect(() => {
     if (!props.viewer.isLoggedIn) return;
@@ -119,6 +118,7 @@ export function SearchClient(props: Props) {
   const [hoveredEstId, setHoveredEstId] = useState<string | null>(null);
 
   const mapDivRef = useRef<HTMLDivElement | null>(null);
+  const resultsRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<Map<string, google.maps.Marker>>(new Map());
 
@@ -206,7 +206,6 @@ export function SearchClient(props: Props) {
           viewerUserId: props.viewer.userId,
           sport: effectiveSport,
           maxPrice: maxPrice > 0 ? maxPrice : null,
-          minRating: minRating > 0 ? minRating : null,
           day,
           q,
           onlyFavorites,
@@ -297,6 +296,14 @@ export function SearchClient(props: Props) {
     const t = setTimeout(() => marker.setAnimation(null), 700);
     return () => clearTimeout(t);
   }, [hoveredEstId]);
+
+  useEffect(() => {
+    if (!hasSearched) return;
+    const t = setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+    return () => clearTimeout(t);
+  }, [hasSearched, results.length]);
 
   const weekdayLabels = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"] as const;
 
@@ -415,7 +422,7 @@ export function SearchClient(props: Props) {
                 type="number"
                 value={radiusKm}
                 onChange={(e) => setRadiusKm(Number(e.target.value))}
-                min={1}
+                min={0}
                 className="mt-2 w-full rounded-xl bg-zinc-100/90 px-4 py-3 text-sm text-black outline-none focus:ring-2 focus:ring-[#CCFF00]"
               />
             </div>
@@ -429,21 +436,6 @@ export function SearchClient(props: Props) {
                 onChange={(e) => setMaxPrice(Number(e.target.value))}
                 className="mt-2 w-full rounded-xl bg-zinc-100/90 px-4 py-3 text-sm text-black outline-none focus:ring-2 focus:ring-[#CCFF00]"
               />
-            </div>
-
-            <div className="lg:col-span-2">
-              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300">Avaliação mínima</label>
-              <select
-                value={minRating}
-                onChange={(e) => setMinRating(Number(e.target.value))}
-                className="mt-2 w-full rounded-xl bg-zinc-100/90 px-4 py-3 text-sm text-black outline-none focus:ring-2 focus:ring-[#CCFF00]"
-              >
-                {[0, 3, 4, 4.5].map((v) => (
-                  <option key={v} value={v}>
-                    {v === 0 ? "Qualquer" : `${v}+`}
-                  </option>
-                ))}
-              </select>
             </div>
 
             <div className="lg:col-span-12 flex flex-wrap items-center gap-4">
@@ -490,7 +482,7 @@ export function SearchClient(props: Props) {
                 } catch {
                   // ignora
                 }
-                fetchNearby({ userLat: lat, userLng: lng, radiusKm });
+                fetchNearby({ userLat: lat, userLng: lng, radiusKm: effectiveRadiusKm });
               }}
               className="inline-flex items-center justify-center bg-[#CCFF00] text-black font-bold py-3 px-6 rounded-full hover:scale-105 transition-all disabled:opacity-60"
             >
@@ -530,10 +522,10 @@ export function SearchClient(props: Props) {
         ) : null}
 
         {hasSearched ? (
-          <div className="mt-10 grid gap-6 lg:grid-cols-12">
+          <div ref={resultsRef} className="mt-10 grid gap-6 lg:grid-cols-12">
             <section className="lg:col-span-8 space-y-4">
               <div className="text-sm text-zinc-600 dark:text-zinc-300">
-                {cards.length} estabelecimentos encontrados • {radiusKm} km
+                {cards.length} estabelecimentos encontrados • {effectiveRadiusKm} km
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

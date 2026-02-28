@@ -41,7 +41,6 @@ export default async function Home(props: {
         day?: string;
         q?: string;
         maxPrice?: string;
-        minRating?: string;
         onlyFavorites?: string;
       }
     | Promise<{
@@ -52,7 +51,6 @@ export default async function Home(props: {
         day?: string;
         q?: string;
         maxPrice?: string;
-        minRating?: string;
         onlyFavorites?: string;
       }>;
 }) {
@@ -88,11 +86,10 @@ export default async function Home(props: {
 
   const lat = hasCoordsFromQuery ? latFromQuery : hasCoordsFromUser ? userLat! : -23.55052;
   const lng = hasCoordsFromQuery ? lngFromQuery : hasCoordsFromUser ? userLng! : -46.633308;
-  const radiusKm = parseNumber(searchParams?.radiusKm, 20);
+  const radiusKm = parseNumber(searchParams?.radiusKm, 0);
   const sport = parseSport(searchParams?.sport);
   const day = parseDay(searchParams?.day);
   const maxPrice = parseNumber(searchParams?.maxPrice, 0);
-  const minRating = parseNumber(searchParams?.minRating, 0);
   const onlyFavorites = searchParams?.onlyFavorites === "1";
 
   return (
@@ -121,7 +118,6 @@ export default async function Home(props: {
         day,
         q: searchParams?.q,
         maxPrice: maxPrice > 0 ? maxPrice : null,
-        minRating: minRating > 0 ? minRating : null,
         onlyFavorites,
         locationSource: hasCoordsFromQuery ? "query" : hasCoordsFromUser ? "user" : "default",
       }}

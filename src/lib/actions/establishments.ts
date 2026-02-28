@@ -9,7 +9,6 @@ export type NearbyEstablishmentsInput = {
   viewerUserId?: string | null;
   sport?: import("@/generated/prisma/enums").SportType | "ALL";
   maxPrice?: number | null;
-  minRating?: number | null;
   day?: string;
   q?: string;
   onlyFavorites?: boolean;
@@ -22,12 +21,12 @@ type NearbyRow = {
 
 export async function getNearbyEstablishments(input: NearbyEstablishmentsInput) {
   const { userLat, userLng, radiusKm } = input;
+  const effectiveRadiusKm = Number.isFinite(radiusKm) && radiusKm > 0 ? radiusKm : 100;
   const q = (input.q ?? "").trim();
   const maxPrice =
     typeof input.maxPrice === "number" && input.maxPrice > 0
       ? Math.round(input.maxPrice * 100)
       : null;
-  const minRating = typeof input.minRating === "number" && input.minRating > 0 ? input.minRating : null;
   const sport = input.sport && input.sport !== "ALL" ? input.sport : null;
   const onlyFavorites = Boolean(input.onlyFavorites);
   const viewerUserId = input.viewerUserId ?? null;
@@ -41,7 +40,7 @@ export async function getNearbyEstablishments(input: NearbyEstablishmentsInput) 
   if (!Number.isFinite(userLat) || !Number.isFinite(userLng)) {
     throw new Error("Latitude/longitude do usuário inválidas");
   }
-  if (!Number.isFinite(radiusKm) || radiusKm <= 0) {
+  if (!Number.isFinite(effectiveRadiusKm) || effectiveRadiusKm <= 0) {
     throw new Error("radiusKm inválido");
   }
 
@@ -68,7 +67,7 @@ export async function getNearbyEstablishments(input: NearbyEstablishmentsInput) 
             * power(sin(radians((${userLng} - e."longitude") / 2)), 2)
         )
       )
-    ) <= ${radiusKm}
+    ) <= ${effectiveRadiusKm}
     ORDER BY distance_km ASC;
   `;
 
@@ -162,6 +161,5 @@ export async function getNearbyEstablishments(input: NearbyEstablishmentsInput) 
         isFavorite: viewerUserId ? favoriteSet.has(establishment.id) : false,
       };
     })
-    .filter((v): v is NonNullable<typeof v> => v !== null)
-    .filter((e) => (minRating ? e.avgRating >= minRating : true));
+    .filter((v): v is NonNullable<typeof v> => v !== null);
 }

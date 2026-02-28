@@ -100,6 +100,24 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
     },
   });
 
+  const payment = await prisma.payment.findFirst({
+    where: {
+      bookingId: booking.id,
+      status: { in: ["PENDING", "AUTHORIZED"] },
+    },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      status: true,
+      provider: true,
+      checkout_url: true,
+      expires_at: true,
+      metadata: true,
+    },
+  });
+
+  const paymentMeta = (payment?.metadata as { pix_payload?: string; pix_qr_base64?: string } | null) ?? null;
+
   return (
     <div className="ph-page">
       <ThemedBackground />
@@ -139,6 +157,17 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                   status: booking.rescheduledTo.status,
                   start_time: booking.rescheduledTo.start_time.toISOString(),
                   end_time: booking.rescheduledTo.end_time.toISOString(),
+                }
+              : null,
+            payment: payment
+              ? {
+                  id: payment.id,
+                  status: String(payment.status),
+                  provider: String(payment.provider),
+                  checkoutUrl: payment.checkout_url ?? null,
+                  pixPayload: paymentMeta?.pix_payload ?? null,
+                  pixQrBase64: paymentMeta?.pix_qr_base64 ?? null,
+                  expiresAt: payment.expires_at ? payment.expires_at.toISOString() : null,
                 }
               : null,
           }}

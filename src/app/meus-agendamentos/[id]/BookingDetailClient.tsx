@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { BookingStatus } from "@/generated/prisma/enums";
 import { cancelBookingAsCustomer, rescheduleBookingAsCustomer } from "@/lib/actions/bookings";
+import { refreshPixForBooking } from "@/lib/actions/payments";
 import { getCourtBookingsForDay } from "@/lib/actions/courts";
 import { computeTotalPriceCents } from "@/lib/utils/pricing";
 import { formatBRLFromCents } from "@/lib/utils/currency";
@@ -47,6 +48,15 @@ type BookingDetail = {
   };
   rescheduledFrom?: { id: string } | null;
   rescheduledTo?: { id: string; status: BookingStatus; start_time: string; end_time: string } | null;
+  payment?: {
+    id: string;
+    status: string;
+    provider: string;
+    checkoutUrl: string | null;
+    pixPayload: string | null;
+    pixQrBase64: string | null;
+    expiresAt: string | null;
+  } | null;
 };
 
 function formatDateTimeBR(d: Date): string {
@@ -65,6 +75,17 @@ function formatDateBR(d: Date): string {
     month: "2-digit",
     year: "numeric",
   }).format(d);
+}
+
+function pad2(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
+function formatCountdown(seconds: number): string {
+  const s = Math.max(0, Math.floor(seconds));
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${pad2(m)}:${pad2(r)}`;
 }
 
 function toYMD(d: Date): string {
@@ -132,6 +153,9 @@ export function BookingDetailClient(props: { booking: BookingDetail }) {
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [showReschedule, setShowReschedule] = useState(false);
+  const [pixCopyStatus, setPixCopyStatus] = useState<string | null>(null);
+  const [payment, setPayment] = useState(props.booking.payment ?? null);
+  const [countdownSeconds, setCountdownSeconds] = useState<number | null>(null);
 
   const todayYmd = useMemo(() => toYMD(new Date()), []);
 
@@ -243,6 +267,27 @@ export function BookingDetailClient(props: { booking: BookingDetail }) {
     });
     return monthlyIsActive ? 0 : cents;
   }, [availability.court.discount_percentage_over_90min, availability.court.price_per_hour, durationMinutes, monthlyIsActive, selectedEnd, selectedStart]);
+
+  useEffect(() => {
+    if (!payment?.expiresAt) {
+      setCountdownSeconds(null);
+      return;
+    }
+    const expiresAt = new Date(payment.expiresAt).getTime();
+    if (!Number.isFinite(expiresAt)) {
+      setCountdownSeconds(null);
+      return;
+    }
+
+    const tick = () => {
+      const diff = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+      setCountdownSeconds(diff);
+    };
+
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [payment?.expiresAt]);
 
   function refreshAvailability(nextDay: string) {
     setMessage(null);
@@ -382,6 +427,100 @@ export function BookingDetailClient(props: { booking: BookingDetail }) {
           O dono do estabelecimento receberá uma solicitação de aprovação para o reagendamento.
         </p>
       </div>
+
+      {payment ? (
+        <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-100">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="font-semibold">Pagamento pendente</p>
+            {countdownSeconds !== null ? (
+              <span className="text-xs text-emerald-800 dark:text-emerald-200">
+                {countdownSeconds > 0 ? `Expira em ${formatCountdown(countdownSeconds)}` : "Expirado"}
+              </span>
+            ) : null}
+          </div>
+
+          {payment.pixPayload ? (
+            <div className="mt-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="font-semibold">PIX Copia e Cola</span>
+                <button
+                  type="button"
+                  className="rounded-full bg-emerald-700 px-3 py-1 text-[11px] font-bold text-white"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(payment.pixPayload!);
+                      setPixCopyStatus("Chave PIX copiada.");
+                    } catch {
+                      setPixCopyStatus("Nao foi possivel copiar.");
+                    }
+                  }}
+                >
+                  Copiar
+                </button>
+              </div>
+              <div className="mt-2 break-words rounded-xl bg-white px-3 py-2 text-[11px] text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+                {payment.pixPayload}
+              </div>
+              {pixCopyStatus ? <div className="mt-2 text-[11px]">{pixCopyStatus}</div> : null}
+              {payment.pixQrBase64 ? (
+                <div className="mt-3 flex justify-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`data:image/png;base64,${payment.pixQrBase64}`}
+                    alt="QR Code PIX"
+                    className="h-40 w-40 rounded-lg border border-emerald-200 bg-white p-2"
+                  />
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {payment.expiresAt && new Date(payment.expiresAt).getTime() <= Date.now() ? (
+            <div className="mt-3">
+              <button
+                type="button"
+                className="rounded-full bg-emerald-700 px-4 py-2 text-xs font-bold text-white"
+                disabled={isPending}
+                onClick={() => {
+                  setPixCopyStatus(null);
+                  startTransition(async () => {
+                    try {
+                      const res = await refreshPixForBooking({ bookingId: props.booking.id });
+                      setPayment((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              pixPayload: res.pixPayload,
+                              pixQrBase64: res.pixQrBase64,
+                            }
+                          : prev
+                      );
+                      setPixCopyStatus("PIX atualizado.");
+                    } catch (e) {
+                      setPixCopyStatus(e instanceof Error ? e.message : "Nao foi possivel atualizar.");
+                    }
+                  });
+                }}
+              >
+                Atualizar PIX
+              </button>
+            </div>
+          ) : null}
+
+          {!payment.pixPayload && payment.checkoutUrl ? (
+            <div className="mt-3">
+              <a
+                href={payment.checkoutUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center rounded-full bg-[#CCFF00] px-4 py-2 text-xs font-bold text-black"
+              >
+                Ir para pagamento
+              </a>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       {props.booking.status === BookingStatus.CANCELLED ? (
         <div className="mt-4 rounded-2xl border border-zinc-200 bg-white/70 p-4 text-sm text-zinc-700 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/50 dark:text-zinc-300">
