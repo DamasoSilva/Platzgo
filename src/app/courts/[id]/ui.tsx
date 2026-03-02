@@ -47,6 +47,27 @@ function addMinutes(d: Date, minutes: number): Date {
   return new Date(d.getTime() + minutes * 60000);
 }
 
+function maxDate(a: Date, b: Date): Date {
+  return a.getTime() >= b.getTime() ? a : b;
+}
+
+function nextSlotAfterNow(now: Date): Date {
+  const d = new Date(now);
+  d.setSeconds(0, 0);
+
+  const m = d.getMinutes();
+  const mod = m % 30;
+  if (mod !== 0) {
+    d.setMinutes(m + (30 - mod));
+  }
+
+  if (d.getTime() <= now.getTime()) {
+    d.setMinutes(d.getMinutes() + 30);
+  }
+
+  return d;
+}
+
 function overlaps(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date): boolean {
   return aStart < bEnd && aEnd > bStart;
 }
@@ -122,9 +143,13 @@ export function CourtDetailsClient(props: {
     const { open, close } = openClose;
     if (data.dayInfo.is_closed || !(close > open)) return out;
 
+    const isToday = day === todayYmd;
+    const minStart = isToday ? maxDate(open, nextSlotAfterNow(new Date())) : open;
+
     const bufferMinutes = data.court.establishment.booking_buffer_minutes ?? 0;
 
     for (let t = new Date(open); t <= close; t = addMinutes(t, stepMinutes)) {
+      if (t < minStart) continue;
       const end = addMinutes(t, durationMinutes);
       if (end > close) break;
 
@@ -425,7 +450,7 @@ export function CourtDetailsClient(props: {
               onClick={() => {
                 const next = bookingAlert.redirectTo;
                 setBookingAlert(null);
-                router.push(next);
+                router.replace(next);
               }}
               className="mt-6 w-full rounded-full bg-emerald-700 px-4 py-3 text-sm font-bold text-white"
             >
@@ -444,9 +469,9 @@ export function CourtDetailsClient(props: {
           </p>
         </div>
 
-        {courtPhotos.length ? (
-          <div className="mt-6 grid gap-3 lg:grid-cols-12">
-            <div className="lg:col-span-7">
+        <div className="mt-6 grid gap-6 lg:grid-cols-12">
+          <div className="lg:col-span-7 space-y-3">
+            {courtPhotos.length ? (
               <div className="h-72 overflow-hidden rounded-3xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -455,74 +480,21 @@ export function CourtDetailsClient(props: {
                   className="h-full w-full object-cover"
                 />
               </div>
-            </div>
-            <div className="lg:col-span-5 grid grid-cols-2 gap-3">
-              {courtPhotos.slice(1, 5).map((url, idx) => (
-                <div
-                  key={url}
-                  className="h-34 overflow-hidden rounded-3xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={url} alt={`Foto da quadra ${data.court.name} ${idx + 2}`} className="h-full w-full object-cover" />
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
+            ) : null}
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-12">
-          <div className="lg:col-span-7 space-y-6">
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6">
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Sobre</h2>
-              <p className="mt-3 text-sm leading-7 text-zinc-700 dark:text-zinc-300">
-                {data.court.establishment.description ?? "Sem descrição."}
-              </p>
-
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-3xl bg-zinc-100 dark:bg-zinc-800 p-4">
-                  <p className="text-xs font-medium text-zinc-600 dark:text-zinc-300">Endereço</p>
-                  <p className="mt-1 text-sm text-zinc-900 dark:text-zinc-50">
-                    {data.court.establishment.address_text}
-                  </p>
-                  <a
-                    href={mapsHref}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-2 inline-block text-sm text-zinc-900 dark:text-zinc-100 underline"
+            {courtPhotos.length > 1 ? (
+              <div className="grid grid-cols-2 gap-3">
+                {courtPhotos.slice(1, 5).map((url, idx) => (
+                  <div
+                    key={url}
+                    className="h-34 overflow-hidden rounded-3xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900"
                   >
-                    Ver no mapa
-                  </a>
-
-                  <div className="mt-3 overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-                    <iframe
-                      title="Mapa"
-                      src={mapsEmbedSrc}
-                      className="h-56 w-full"
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                    />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt={`Foto da quadra ${data.court.name} ${idx + 2}`} className="h-full w-full object-cover" />
                   </div>
-                </div>
-
-                <div className="rounded-3xl bg-zinc-100 dark:bg-zinc-800 p-4">
-                  <p className="text-xs font-medium text-zinc-600 dark:text-zinc-300">Comodidades</p>
-                  <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                    {(data.court.amenities ?? []).length ? (
-                      (data.court.amenities ?? []).map((t) => (
-                        <span
-                          key={t}
-                          className="rounded-full bg-white/70 px-3 py-1 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100"
-                        >
-                          {t}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-sm text-zinc-600 dark:text-zinc-300">Sem comodidades informadas.</span>
-                    )}
-                  </div>
-                </div>
+                ))}
               </div>
-            </div>
+            ) : null}
           </div>
 
           <div className="lg:col-span-5">
@@ -884,6 +856,60 @@ export function CourtDetailsClient(props: {
                 >
                   {isPending ? "Processando..." : "Confirmar Agendamento"}
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Sobre</h2>
+            <p className="mt-3 text-sm leading-7 text-zinc-700 dark:text-zinc-300">
+              {data.court.establishment.description ?? "Sem descrição."}
+            </p>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-3xl bg-zinc-100 dark:bg-zinc-800 p-4">
+                <p className="text-xs font-medium text-zinc-600 dark:text-zinc-300">Endereço</p>
+                <p className="mt-1 text-sm text-zinc-900 dark:text-zinc-50">
+                  {data.court.establishment.address_text}
+                </p>
+                <a
+                  href={mapsHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 inline-block text-sm text-zinc-900 dark:text-zinc-100 underline"
+                >
+                  Ver no mapa
+                </a>
+
+                <div className="mt-3 overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+                  <iframe
+                    title="Mapa"
+                    src={mapsEmbedSrc}
+                    className="h-56 w-full"
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-3xl bg-zinc-100 dark:bg-zinc-800 p-4">
+                <p className="text-xs font-medium text-zinc-600 dark:text-zinc-300">Comodidades</p>
+                <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                  {(data.court.amenities ?? []).length ? (
+                    (data.court.amenities ?? []).map((t) => (
+                      <span
+                        key={t}
+                        className="rounded-full bg-white/70 px-3 py-1 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100"
+                      >
+                        {t}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-sm text-zinc-600 dark:text-zinc-300">Sem comodidades informadas.</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
