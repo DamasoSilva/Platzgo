@@ -202,6 +202,14 @@ export function CourtDetailsClient(props: {
     });
   }, [data.court.discount_percentage_over_90min, data.court.price_per_hour, durationMinutes, selectedEnd, selectedStart]);
 
+  const hasMonthly = typeof data.court.monthly_price_cents === "number" && data.court.monthly_price_cents > 0;
+  const monthlyTerms = (data.court.monthly_terms ?? "").trim();
+  const monthlyStatus = data.monthlyPass?.status ?? null;
+  const monthlyIsPending = monthlyStatus === "PENDING";
+  const monthlyIsActive = monthlyStatus === "ACTIVE";
+  const canRequestMonthly = hasMonthly && !monthlyIsPending && !monthlyIsActive;
+  const monthlyPriorityNote = "Renovação priorizada na penúltima semana; novos mensalistas liberados na última semana.";
+
   const paymentProvider =
     (data.paymentDefaultProvider && data.paymentProviders?.includes(data.paymentDefaultProvider)
       ? data.paymentDefaultProvider
@@ -455,14 +463,6 @@ export function CourtDetailsClient(props: {
 
   const establishmentCover = (data.court.establishment.photo_urls ?? []).find((u) => (u ?? "").trim()) ?? null;
   const courtPhotos = data.court.photo_urls?.length ? data.court.photo_urls : establishmentCover ? [establishmentCover] : [];
-
-  const hasMonthly = typeof data.court.monthly_price_cents === "number" && data.court.monthly_price_cents > 0;
-  const monthlyTerms = (data.court.monthly_terms ?? "").trim();
-  const monthlyStatus = data.monthlyPass?.status ?? null;
-  const monthlyIsPending = monthlyStatus === "PENDING";
-  const monthlyIsActive = monthlyStatus === "ACTIVE";
-  const canRequestMonthly = hasMonthly && !monthlyIsPending && !monthlyIsActive;
-  const monthlyPriorityNote = "Renovação priorizada na penúltima semana; novos mensalistas liberados na última semana.";
 
   return (
     <div className="ph-page">
