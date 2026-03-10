@@ -27,16 +27,15 @@ const PROFILE_MAX_PHOTOS = 7;
 const PROFILE_MAX_VIDEOS = 2;
 
 const weekdayLabels = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"] as const;
-type PaymentProviderKey = "asaas" | "mercadopago";
+type PaymentProviderKey = "asaas";
 
 const PAYMENT_OPTIONS: Array<{ id: PaymentProviderKey; label: string }> = [
   { id: "asaas", label: "Asaas" },
-  { id: "mercadopago", label: "MercadoPago" },
 ];
 
 function providerToKey(value: string | null | undefined): PaymentProviderKey | null {
   const v = (value ?? "").toLowerCase();
-  return v === "asaas" || v === "mercadopago" ? v : null;
+  return v === "asaas" ? v : null;
 }
 
 function isVideoUrl(url: string): boolean {
@@ -323,6 +322,8 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
   useEffect(() => {
     setForm(buildFormState(props.establishment));
   }, [props.establishment]);
+
+  const confirmationLocked = form.online_payments_enabled;
 
   const publicSlug = useMemo(() => {
     if (props.establishment?.slug) return props.establishment.slug;
@@ -652,12 +653,17 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
 
                 <button
                   type="button"
-                  onClick={() => setForm((s) => ({ ...s, requires_booking_confirmation: !s.requires_booking_confirmation }))}
+                  onClick={() => {
+                    if (confirmationLocked) return;
+                    setForm((s) => ({ ...s, requires_booking_confirmation: !s.requires_booking_confirmation }));
+                  }}
+                  disabled={confirmationLocked}
                   className={
                     "inline-flex h-10 items-center rounded-full border px-4 text-sm font-bold transition-all " +
                     (form.requires_booking_confirmation
                       ? "border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900/40"
-                      : "border-black/10 bg-[#CCFF00] text-black hover:brightness-95")
+                      : "border-black/10 bg-[#CCFF00] text-black hover:brightness-95") +
+                    (confirmationLocked ? " opacity-60 pointer-events-none" : "")
                   }
                 >
                   {form.requires_booking_confirmation ? "Exige confirmação" : "Não exige"}
@@ -668,11 +674,20 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                 <input
                   type="checkbox"
                   checked={!form.requires_booking_confirmation}
-                  onChange={(e) => setForm((s) => ({ ...s, requires_booking_confirmation: !e.target.checked }))}
+                  onChange={(e) => {
+                    if (confirmationLocked) return;
+                    setForm((s) => ({ ...s, requires_booking_confirmation: !e.target.checked }));
+                  }}
+                  disabled={confirmationLocked}
                   className="h-4 w-4 rounded border-zinc-300 text-[#CCFF00] focus:ring-[#CCFF00]"
                 />
                 Retirar obrigatoriedade de confirmação
               </label>
+              {confirmationLocked ? (
+                <p className="mt-2 text-xs text-amber-600">
+                  Pagamentos online ativos: confirmação automática é obrigatória.
+                </p>
+              ) : null}
             </div>
 
             <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
@@ -688,7 +703,14 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                   onClick={() => {
                     setWalletTestStatus("idle");
                     setWalletTestMessage(null);
-                    setForm((s) => ({ ...s, online_payments_enabled: !s.online_payments_enabled }));
+                    setForm((s) => {
+                      const nextOnline = !s.online_payments_enabled;
+                      return {
+                        ...s,
+                        online_payments_enabled: nextOnline,
+                        requires_booking_confirmation: nextOnline ? false : s.requires_booking_confirmation,
+                      };
+                    });
                   }}
                   className={
                     "inline-flex h-10 items-center rounded-full border px-4 text-sm font-bold transition-all " +

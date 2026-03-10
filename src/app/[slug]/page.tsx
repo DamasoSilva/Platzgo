@@ -77,9 +77,14 @@ function coerceDay(value: unknown): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+function coerceTime(value: unknown): string | null {
+  if (typeof value === "string" && /^\d{2}:\d{2}$/.test(value)) return value;
+  return null;
+}
+
 export default async function EstablishmentSlugPage(props: {
   params: { slug: string } | Promise<{ slug: string }>;
-  searchParams?: { day?: string } | Promise<{ day?: string }>;
+  searchParams?: { day?: string; time?: string } | Promise<{ day?: string; time?: string }>;
 }) {
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id ?? null;
@@ -87,6 +92,7 @@ export default async function EstablishmentSlugPage(props: {
   const params = await Promise.resolve(props.params);
   const searchParams = props.searchParams ? await Promise.resolve(props.searchParams) : undefined;
   const day = coerceDay(searchParams?.day);
+  const time = coerceTime(searchParams?.time);
 
   const normalizedSlug = slugify(params.slug);
   const estId = await resolveEstablishmentIdBySlug(params.slug);
@@ -96,7 +102,7 @@ export default async function EstablishmentSlugPage(props: {
   }
 
   const basePath = `/${normalizedSlug}`;
-  const callbackUrl = `${basePath}?day=${encodeURIComponent(day)}`;
+  const callbackUrl = `${basePath}?day=${encodeURIComponent(day)}${time ? `&time=${encodeURIComponent(time)}` : ""}`;
   if (!userId) {
     redirect(`/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`);
   }
@@ -196,7 +202,7 @@ export default async function EstablishmentSlugPage(props: {
           </div>
 
           <div className="mt-6">
-            <DayPickerClient establishmentId={est.id} initialDay={day} basePath={basePath} />
+            <DayPickerClient establishmentId={est.id} initialDay={day} initialTime={time} basePath={basePath} />
           </div>
 
           {coverUrl ? (
@@ -225,7 +231,10 @@ export default async function EstablishmentSlugPage(props: {
                     </p>
 
                     <div className="mt-4 flex flex-wrap items-center gap-2">
-                      <Link href={{ pathname: `/courts/${c.id}`, query: { day } }} className="ph-button-sm">
+                      <Link
+                        href={{ pathname: `/courts/${c.id}`, query: { day, time: time ?? undefined } }}
+                        className="ph-button-sm"
+                      >
                         Ver horarios
                       </Link>
 

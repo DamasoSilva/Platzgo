@@ -25,6 +25,11 @@ function parseDay(v: unknown): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+function parseTime(v: unknown): string | null {
+  if (typeof v === "string" && /^\d{2}:\d{2}$/.test(v)) return v;
+  return null;
+}
+
 function parseSport(v: unknown): SportType | "ALL" {
   if (v === "ALL") return "ALL";
   if (typeof v !== "string") return "ALL";
@@ -39,6 +44,7 @@ export default async function Home(props: {
         radiusKm?: string;
         sport?: string;
         day?: string;
+        time?: string;
         q?: string;
         maxPrice?: string;
         onlyFavorites?: string;
@@ -49,6 +55,7 @@ export default async function Home(props: {
         radiusKm?: string;
         sport?: string;
         day?: string;
+        time?: string;
         q?: string;
         maxPrice?: string;
         onlyFavorites?: string;
@@ -89,6 +96,7 @@ export default async function Home(props: {
   const radiusKm = parseNumber(searchParams?.radiusKm, 0);
   const sport = parseSport(searchParams?.sport);
   const day = parseDay(searchParams?.day);
+  const time = parseTime(searchParams?.time);
   const maxPrice = parseNumber(searchParams?.maxPrice, 0);
   const onlyFavorites = searchParams?.onlyFavorites === "1";
 
@@ -116,6 +124,7 @@ export default async function Home(props: {
         radiusKm,
         sport,
         day,
+        time,
         q: searchParams?.q,
         maxPrice: maxPrice > 0 ? maxPrice : null,
         onlyFavorites,

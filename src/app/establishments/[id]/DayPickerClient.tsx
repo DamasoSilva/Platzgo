@@ -7,12 +7,21 @@ function isYMD(v: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(v);
 }
 
-export function DayPickerClient(props: { establishmentId: string; initialDay: string; basePath?: string }) {
+export function DayPickerClient(props: {
+  establishmentId: string;
+  initialDay: string;
+  initialTime?: string | null;
+  basePath?: string;
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   const initial = useMemo(() => (isYMD(props.initialDay) ? props.initialDay : ""), [props.initialDay]);
   const [day, setDay] = useState<string>(initial);
+  const timeParam = useMemo(
+    () => (typeof props.initialTime === "string" && /^\d{2}:\d{2}$/.test(props.initialTime) ? props.initialTime : ""),
+    [props.initialTime]
+  );
 
   return (
     <div className="rounded-3xl ph-surface p-5">
@@ -27,7 +36,8 @@ export function DayPickerClient(props: { establishmentId: string; initialDay: st
             if (!isYMD(next)) return;
             startTransition(() => {
               const base = props.basePath ?? `/establishments/${props.establishmentId}`;
-              router.push(`${base}?day=${encodeURIComponent(next)}`);
+              const timeQuery = timeParam ? `&time=${encodeURIComponent(timeParam)}` : "";
+              router.push(`${base}?day=${encodeURIComponent(next)}${timeQuery}`);
             });
           }}
           className="ph-input w-[220px]"

@@ -16,8 +16,16 @@ function toYMD(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-export default async function BookingDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function BookingDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams?: { confirmed?: string } | Promise<{ confirmed?: string }>;
+}) {
   const { id } = await params;
+  const sp = searchParams ? await Promise.resolve(searchParams) : undefined;
+  const showConfirmation = sp?.confirmed === "1";
 
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id;
@@ -46,7 +54,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
           id: true,
           name: true,
           sport_type: true,
-          establishment: { select: { name: true, whatsapp_number: true } },
+          establishment: { select: { name: true, whatsapp_number: true, address_text: true } },
         },
       },
       rescheduledFrom: { select: { id: true } },
@@ -171,6 +179,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                 }
               : null,
           }}
+          showConfirmation={showConfirmation}
         />
       </div>
       </div>

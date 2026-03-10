@@ -42,9 +42,14 @@ function coerceDay(value: unknown): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+function coerceTime(value: unknown): string | null {
+  if (typeof value === "string" && /^\d{2}:\d{2}$/.test(value)) return value;
+  return null;
+}
+
 export default async function EstablishmentPage(props: {
   params: { id: string } | Promise<{ id: string }>;
-  searchParams?: { day?: string } | Promise<{ day?: string }>;
+  searchParams?: { day?: string; time?: string } | Promise<{ day?: string; time?: string }>;
 }) {
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id ?? null;
@@ -52,8 +57,11 @@ export default async function EstablishmentPage(props: {
   const params = await Promise.resolve(props.params);
   const searchParams = props.searchParams ? await Promise.resolve(props.searchParams) : undefined;
   const day = coerceDay(searchParams?.day);
+  const time = coerceTime(searchParams?.time);
 
-  const callbackUrl = `/establishments/${params.id}?day=${encodeURIComponent(day)}`;
+  const callbackUrl = `/establishments/${params.id}?day=${encodeURIComponent(day)}${
+    time ? `&time=${encodeURIComponent(time)}` : ""
+  }`;
   if (!userId) {
     redirect(`/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`);
   }
@@ -153,7 +161,12 @@ export default async function EstablishmentPage(props: {
           </div>
 
           <div className="mt-6">
-            <DayPickerClient establishmentId={est.id} initialDay={day} basePath={`/establishments/${est.id}`} />
+            <DayPickerClient
+              establishmentId={est.id}
+              initialDay={day}
+              initialTime={time}
+              basePath={`/establishments/${est.id}`}
+            />
           </div>
 
           {coverUrl ? (
@@ -186,7 +199,7 @@ export default async function EstablishmentPage(props: {
 
                     <div className="mt-4 flex flex-wrap items-center gap-2">
                       <Link
-                        href={{ pathname: `/courts/${c.id}`, query: { day } }}
+                        href={{ pathname: `/courts/${c.id}`, query: { day, time: time ?? undefined } }}
                         className="ph-button-sm"
                       >
                         Ver horários

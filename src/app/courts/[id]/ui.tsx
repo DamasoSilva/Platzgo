@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 
 import { CustomerHeader } from "@/components/CustomerHeader";
 import { ThemedBackground } from "@/components/ThemedBackground";
-import { createBooking } from "@/lib/actions/bookings";
+import { createBooking, getMyBookingStatus } from "@/lib/actions/bookings";
 import { getCourtBookingsForDay } from "@/lib/actions/courts";
 import { createAvailabilityAlert } from "@/lib/actions/availabilityAlerts";
 import { requestMonthlyPass } from "@/lib/actions/monthlyPasses";
@@ -86,12 +86,31 @@ function isValidCpfCnpj(value: string): boolean {
   return digits.length === 11 || digits.length === 14;
 }
 
+function parsePixExpiresAt(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed;
+}
+
+function formatCountdown(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  if (h > 0) {
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  }
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
 export function CourtDetailsClient(props: {
   userId: string | null;
   customerCpfCnpj?: string | null;
   viewer?: { name?: string | null; image?: string | null; role?: import("@/generated/prisma/enums").Role | null };
   courtId: string;
   day: string;
+  initialTime?: string | null;
   initial: DayData;
 }) {
   const isOwnerPreview = props.viewer?.role === "ADMIN" || props.viewer?.role === "SYSADMIN";
@@ -115,12 +134,22 @@ export function CourtDetailsClient(props: {
   const [pixPayload, setPixPayload] = useState<string | null>(null);
   const [pixQrBase64, setPixQrBase64] = useState<string | null>(null);
   const [pixCopyStatus, setPixCopyStatus] = useState<string | null>(null);
+  const [pixExpiresAt, setPixExpiresAt] = useState<Date | null>(null);
+  const [pixRemaining, setPixRemaining] = useState<string | null>(null);
+  const [pixExpired, setPixExpired] = useState(false);
+  const [pixModalOpen, setPixModalOpen] = useState(false);
+  const [pixAmountCents, setPixAmountCents] = useState<number | null>(null);
+  const [pendingBookingId, setPendingBookingId] = useState<string | null>(null);
   const [cpfCnpj, setCpfCnpj] = useState(props.customerCpfCnpj ?? "");
   const [cpfPromptOpen, setCpfPromptOpen] = useState(false);
   const [cpfPromptError, setCpfPromptError] = useState<string | null>(null);
   const [cpfPromptNext, setCpfPromptNext] = useState(false);
 
   const monthKey = useMemo(() => day.slice(0, 7), [day]);
+  const initialTime = useMemo(() => {
+    if (!props.initialTime) return null;
+    return /^\d{2}:\d{2}$/.test(props.initialTime) ? props.initialTime : null;
+  }, [props.initialTime]);
   const todayYmd = useMemo(() => {
     const d = new Date();
     const yyyy = d.getFullYear();
@@ -189,6 +218,13 @@ export function CourtDetailsClient(props: {
     if (!selectedStart) return null;
     return addMinutes(selectedStart, durationMinutes);
   }, [selectedStart, durationMinutes]);
+
+  useEffect(() => {
+    if (!initialTime) return;
+    if (selectedStart) return;
+    const match = slotOptions.find((slot) => formatHHMM(slot.start) === initialTime);
+    if (match) setSelectedStart(match.start);
+  }, [initialTime, selectedStart, slotOptions]);
 
   const cpfDigits = useMemo(() => normalizeCpfCnpj(cpfCnpj), [cpfCnpj]);
   const cpfValid = cpfDigits.length === 11 || cpfDigits.length === 14;
@@ -261,16 +297,85 @@ export function CourtDetailsClient(props: {
   }
 
   useEffect(() => {
-    if (paymentUrl && !paymentOpened) {
+    if (paymentUrl && !paymentOpened && !pixPayload && !pixQrBase64) {
       window.open(paymentUrl, "_blank", "noopener,noreferrer");
       setPaymentOpened(true);
     }
-  }, [paymentOpened, paymentUrl]);
+  }, [paymentOpened, paymentUrl, pixPayload, pixQrBase64]);
+
+  useEffect(() => {
+    if (!pixExpiresAt) {
+      setPixRemaining(null);
+      setPixExpired(false);
+      return;
+    }
+
+    const tick = () => {
+      const diff = pixExpiresAt.getTime() - Date.now();
+      if (diff <= 0) {
+        setPixRemaining("00:00");
+        setPixExpired(true);
+        return;
+      }
+      setPixRemaining(formatCountdown(diff));
+      setPixExpired(false);
+    };
+
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [pixExpiresAt]);
+
+  useEffect(() => {
+    if (!pendingBookingId) return;
+    let active = true;
+    let attempts = 0;
+
+    const poll = async () => {
+      attempts += 1;
+      try {
+        const res = await getMyBookingStatus({ bookingId: pendingBookingId });
+        if (!active) return;
+        if (res.status === "CONFIRMED") {
+          setPendingBookingId(null);
+          router.replace(`/meus-agendamentos/${pendingBookingId}?confirmed=1`);
+          return;
+        }
+        if (res.status === "CANCELLED") {
+          setPendingBookingId(null);
+          return;
+        }
+      } catch {
+        // ignora falhas temporárias
+      }
+
+      if (attempts >= 60) {
+        setPendingBookingId(null);
+      }
+    };
+
+    poll();
+    const timer = setInterval(poll, 5000);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [pendingBookingId, router]);
 
   function refreshDay(nextDay: string, opts?: { keepMessage?: boolean }) {
-    if (!opts?.keepMessage) setMessage(null);
-    if (!opts?.keepMessage) setPaymentUrl(null);
-    if (!opts?.keepMessage) setPaymentOpened(false);
+    if (!opts?.keepMessage) {
+      setMessage(null);
+      setPaymentUrl(null);
+      setPaymentOpened(false);
+      setPixPayload(null);
+      setPixQrBase64(null);
+      setPixCopyStatus(null);
+      setPixExpiresAt(null);
+      setPixRemaining(null);
+      setPixExpired(false);
+      setPixModalOpen(false);
+      setPixAmountCents(null);
+    }
     setSelectedStart(null);
     const safeDay = nextDay < todayYmd ? todayYmd : nextDay;
     if (safeDay !== nextDay) {
@@ -313,6 +418,11 @@ export function CourtDetailsClient(props: {
     setPixPayload(null);
     setPixQrBase64(null);
     setPixCopyStatus(null);
+    setPixExpiresAt(null);
+    setPixRemaining(null);
+    setPixExpired(false);
+    setPixModalOpen(false);
+    setPixAmountCents(null);
     startTransition(async () => {
       try {
         const res = await createBooking({
@@ -331,16 +441,31 @@ export function CourtDetailsClient(props: {
         const checkoutUrl = res.payment?.checkoutUrl ?? null;
         const pixPayloadFromRes = res.payment?.pixPayload ?? null;
         const pixQrBase64FromRes = res.payment?.pixQrBase64 ?? null;
+        const pixExpiresAtFromRes = parsePixExpiresAt(res.payment?.pixExpiresAt ?? null);
+        const pixAmountFromRes =
+          typeof res.payment?.amountCents === "number"
+            ? res.payment.amountCents
+            : typeof res.total_price_cents === "number"
+              ? res.total_price_cents
+              : null;
         if (checkoutUrl) {
           setPaymentUrl(checkoutUrl);
           setPaymentOpened(false);
         }
-        if (pixPayloadFromRes) setPixPayload(pixPayloadFromRes);
-        if (pixQrBase64FromRes) setPixQrBase64(pixQrBase64FromRes);
+        if (pixPayloadFromRes || pixQrBase64FromRes) {
+          if (pixPayloadFromRes) setPixPayload(pixPayloadFromRes);
+          if (pixQrBase64FromRes) setPixQrBase64(pixQrBase64FromRes);
+          setPixExpiresAt(pixExpiresAtFromRes);
+          setPixAmountCents(pixAmountFromRes);
+          setPixModalOpen(Boolean(pixPayloadFromRes || pixQrBase64FromRes));
+        }
 
         const createdCount = Array.isArray(res.ids) ? res.ids.length : 1;
         const createdIds = Array.isArray(res.ids) ? res.ids : [];
         const primaryId = createdIds[0] ?? null;
+        if (res.payment && primaryId) {
+          setPendingBookingId(primaryId);
+        }
         setMessage({
           type: "success",
           text:
@@ -505,7 +630,7 @@ export function CourtDetailsClient(props: {
             {bookingAlert.note ? (
               <p className="mt-4 text-xs text-zinc-600 dark:text-zinc-400">{bookingAlert.note}</p>
             ) : null}
-            {paymentUrl && !pixPayload ? (
+            {paymentUrl && !pixPayload && !pixQrBase64 ? (
               <div className="mt-4">
                 <a
                   href={paymentUrl}
@@ -574,6 +699,101 @@ export function CourtDetailsClient(props: {
                 Cancelar
               </button>
             </div>
+          </div>
+        </div>
+      ) : null}
+
+      {pixModalOpen && (pixPayload || pixQrBase64) ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-md rounded-3xl border border-emerald-200 bg-white p-6 text-emerald-900 shadow-xl dark:border-emerald-900/40 dark:bg-zinc-950 dark:text-emerald-100">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-20 overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/logo" alt="PlatzGo" className="h-full w-full object-contain" />
+                </div>
+                <div className="h-6 w-px bg-emerald-200 dark:bg-emerald-900/50" />
+                <div className="h-8 w-20 overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/asaas-logo.svg" alt="Asaas" className="h-full w-full object-contain" />
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPixModalOpen(false)}
+                className="rounded-full border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-900 dark:border-emerald-900/50 dark:text-emerald-100"
+              >
+                Fechar
+              </button>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 dark:border-emerald-900/40 dark:bg-emerald-950/30">
+              <p className="text-xs font-semibold text-emerald-800 dark:text-emerald-100">Valor do pagamento</p>
+              <p className="mt-1 text-2xl font-semibold text-emerald-900 dark:text-emerald-50">
+                {typeof pixAmountCents === "number" ? formatBRLFromCents(pixAmountCents) : "--"}
+              </p>
+              <div className="mt-2 flex items-center justify-between text-xs text-emerald-800 dark:text-emerald-200">
+                <span>Expira em</span>
+                <span className={pixExpired ? "font-semibold text-red-700 dark:text-red-300" : "font-semibold"}>
+                  {pixRemaining ?? "--:--"}
+                </span>
+              </div>
+              {pixExpired ? (
+                <p className="mt-2 text-[11px] text-red-700 dark:text-red-300">
+                  PIX expirado. Gere um novo pagamento.
+                </p>
+              ) : null}
+            </div>
+
+            {pixQrBase64 ? (
+              <div className="mt-4 flex justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`data:image/png;base64,${pixQrBase64}`}
+                  alt="QR Code PIX"
+                  className="h-48 w-48 rounded-2xl border border-emerald-200 bg-white p-2"
+                />
+              </div>
+            ) : null}
+
+            {pixPayload ? (
+              <div className="mt-4 rounded-2xl border border-emerald-200 bg-white p-3 text-xs text-emerald-900 dark:border-emerald-900/40 dark:bg-zinc-950 dark:text-emerald-100">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-semibold">PIX copia e cola</span>
+                  <button
+                    type="button"
+                    className="rounded-full bg-emerald-700 px-3 py-1 text-[11px] font-bold text-white"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(pixPayload);
+                        setPixCopyStatus("Chave PIX copiada.");
+                      } catch {
+                        setPixCopyStatus("Nao foi possivel copiar.");
+                      }
+                    }}
+                  >
+                    Copiar
+                  </button>
+                </div>
+                <div className="mt-2 break-words rounded-xl bg-emerald-50 px-3 py-2 text-[11px] text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100">
+                  {pixPayload}
+                </div>
+                {pixCopyStatus ? <div className="mt-2 text-[11px]">{pixCopyStatus}</div> : null}
+              </div>
+            ) : null}
+
+            {paymentUrl ? (
+              <div className="mt-4">
+                <a
+                  href={paymentUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center rounded-full bg-[#CCFF00] px-4 py-2 text-xs font-bold text-black"
+                >
+                  Abrir pagina de pagamento
+                </a>
+              </div>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -695,7 +915,7 @@ export function CourtDetailsClient(props: {
                   }
                 >
                   {message.text}
-                  {paymentUrl && !pixPayload ? (
+                  {paymentUrl && !pixPayload && !pixQrBase64 ? (
                     <div className="mt-3">
                       <a
                         href={paymentUrl}
@@ -707,39 +927,15 @@ export function CourtDetailsClient(props: {
                       </a>
                     </div>
                   ) : null}
-                  {pixPayload ? (
-                    <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-100">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="font-semibold">PIX Copia e Cola</span>
-                        <button
-                          type="button"
-                          className="rounded-full bg-emerald-700 px-3 py-1 text-[11px] font-bold text-white"
-                          onClick={async () => {
-                            try {
-                              await navigator.clipboard.writeText(pixPayload);
-                              setPixCopyStatus("Chave PIX copiada.");
-                            } catch {
-                              setPixCopyStatus("Nao foi possivel copiar.");
-                            }
-                          }}
-                        >
-                          Copiar
-                        </button>
-                      </div>
-                      <div className="mt-2 break-words rounded-xl bg-white px-3 py-2 text-[11px] text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
-                        {pixPayload}
-                      </div>
-                      {pixCopyStatus ? <div className="mt-2 text-[11px]">{pixCopyStatus}</div> : null}
-                      {pixQrBase64 ? (
-                        <div className="mt-3 flex justify-center">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={`data:image/png;base64,${pixQrBase64}`}
-                            alt="QR Code PIX"
-                            className="h-40 w-40 rounded-lg border border-emerald-200 bg-white p-2"
-                          />
-                        </div>
-                      ) : null}
+                  {pixPayload && !pixModalOpen ? (
+                    <div className="mt-3">
+                      <button
+                        type="button"
+                        onClick={() => setPixModalOpen(true)}
+                        className="inline-flex items-center rounded-full bg-emerald-700 px-4 py-2 text-xs font-bold text-white"
+                      >
+                        Ver PIX
+                      </button>
                     </div>
                   ) : null}
                   {!props.userId ? (
@@ -922,15 +1118,6 @@ export function CourtDetailsClient(props: {
                     >
                       Informar CPF/CNPJ
                     </button>
-                  </div>
-                ) : null}
-
-                {data.paymentsEnabled && !payAtCourt && paymentProvider ? (
-                  <div className="rounded-2xl border border-zinc-200 bg-white p-4 text-xs text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
-                    <p className="font-semibold text-zinc-900 dark:text-zinc-50">Forma de pagamento</p>
-                    <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
-                      {paymentProvider === "asaas" ? "Asaas" : "MercadoPago"}
-                    </p>
                   </div>
                 ) : null}
 

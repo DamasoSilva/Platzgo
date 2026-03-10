@@ -9,6 +9,12 @@ function toYMD(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+function coerceQueryString(value: string | string[] | undefined): string | undefined {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) return value[value.length - 1];
+  return undefined;
+}
+
 function parseYmdToLocalMidnight(ymd: string | undefined): Date | null {
   if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return null;
   const [y, m, d] = ymd.split("-").map(Number);
@@ -54,9 +60,9 @@ export default async function DashboardFinanceiroPage({
   const { establishmentId } = await requireAdminWithSetupOrRedirect("/dashboard/financeiro");
   const sp = (await searchParams) ?? {};
 
-  const startParam = typeof sp.start === "string" ? sp.start : undefined;
-  const endParam = typeof sp.end === "string" ? sp.end : undefined;
-  const courtIdParam = typeof sp.courtId === "string" ? sp.courtId : undefined;
+  const startParam = coerceQueryString(sp.start);
+  const endParam = coerceQueryString(sp.end);
+  const courtIdParam = coerceQueryString(sp.courtId);
 
   const today = new Date();
   const defaultStart = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0);
@@ -194,7 +200,7 @@ export default async function DashboardFinanceiroPage({
           <a href={exportHref} className="ph-button">Exportar CSV</a>
         </div>
 
-        <form method="get" className="mt-5 grid gap-4 sm:grid-cols-4">
+        <form method="get" action="/dashboard/financeiro" className="mt-5 grid gap-4 sm:grid-cols-4">
           <div>
             <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Início</label>
             <input type="date" name="start" defaultValue={startValue} className="ph-input mt-2" />

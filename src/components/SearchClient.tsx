@@ -32,6 +32,7 @@ type Props = {
     radiusKm: number;
     sport: SportType | "ALL";
     day: string;
+    time?: string | null;
     q?: string;
     maxPrice?: number | null;
     onlyFavorites?: boolean;
@@ -58,6 +59,9 @@ export function SearchClient(props: Props) {
   const [radiusKm, setRadiusKm] = useState<number>(props.initial.radiusKm);
   const [sport, setSport] = useState<SportType | "ALL">(props.initial.sport);
   const [day, setDay] = useState<string>(props.initial.day);
+  const [time, setTime] = useState<string>(
+    typeof props.initial.time === "string" && /^\d{2}:\d{2}$/.test(props.initial.time) ? props.initial.time : ""
+  );
   const [q, setQ] = useState<string>(props.initial.q ?? "");
   const [maxPrice, setMaxPrice] = useState<number>(props.initial.maxPrice ?? 0);
   const [onlyFavorites, setOnlyFavorites] = useState<boolean>(props.initial.onlyFavorites ?? false);
@@ -99,11 +103,12 @@ export function SearchClient(props: Props) {
     params.set("radiusKm", String(radiusKm));
     params.set("sport", effectiveSport);
     params.set("day", day);
+    if (time) params.set("time", time);
     if (q.trim()) params.set("q", q.trim());
     if (maxPrice > 0) params.set("maxPrice", String(maxPrice));
     if (onlyFavorites) params.set("onlyFavorites", "1");
     return `/?${params.toString()}`;
-  }, [day, effectiveSport, lat, lng, radiusKm, q, maxPrice, onlyFavorites]);
+  }, [day, effectiveSport, lat, lng, radiusKm, time, q, maxPrice, onlyFavorites]);
 
   useEffect(() => {
     if (!props.viewer.isLoggedIn) return;
@@ -417,6 +422,17 @@ export function SearchClient(props: Props) {
             </div>
 
             <div className="lg:col-span-2">
+              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300">Horario</label>
+              <input
+                type="time"
+                step={1800}
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                className="mt-2 w-full rounded-xl bg-zinc-100/90 px-4 py-3 text-sm text-black outline-none focus:ring-2 focus:ring-[#CCFF00]"
+              />
+            </div>
+
+            <div className="lg:col-span-2">
               <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300">Raio (KM)</label>
               <input
                 type="number"
@@ -530,7 +546,8 @@ export function SearchClient(props: Props) {
 
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {cards.map((c) => {
-                  const dest = `/establishments/${c.estId}?day=${encodeURIComponent(day)}`;
+                  const timeParam = time ? `&time=${encodeURIComponent(time)}` : "";
+                  const dest = `/establishments/${c.estId}?day=${encodeURIComponent(day)}${timeParam}`;
                   const href = props.viewer.isLoggedIn
                     ? dest
                     : {

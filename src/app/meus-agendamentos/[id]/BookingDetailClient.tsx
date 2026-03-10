@@ -26,7 +26,7 @@ type BookingDetail = {
     id: string;
     name: string;
     sport_type: string;
-    establishment: { name: string; whatsapp_number: string | null };
+    establishment: { name: string; whatsapp_number: string | null; address_text?: string | null };
   };
   availabilityInitial: {
     day: string; // YYYY-MM-DD
@@ -148,7 +148,7 @@ function statusLabel(s: BookingStatus): string {
   }
 }
 
-export function BookingDetailClient(props: { booking: BookingDetail }) {
+export function BookingDetailClient(props: { booking: BookingDetail; showConfirmation?: boolean }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
@@ -156,11 +156,23 @@ export function BookingDetailClient(props: { booking: BookingDetail }) {
   const [pixCopyStatus, setPixCopyStatus] = useState<string | null>(null);
   const [payment, setPayment] = useState(props.booking.payment ?? null);
   const [countdownSeconds, setCountdownSeconds] = useState<number | null>(null);
+  const [confirmationOpen, setConfirmationOpen] = useState(
+    Boolean(props.showConfirmation) && props.booking.status === BookingStatus.CONFIRMED
+  );
 
   const todayYmd = useMemo(() => toYMD(new Date()), []);
 
   const startDate = useMemo(() => new Date(props.booking.start_time), [props.booking.start_time]);
   const endDate = useMemo(() => new Date(props.booking.end_time), [props.booking.end_time]);
+  const dateLabel = useMemo(
+    () => new Intl.DateTimeFormat("pt-BR", { dateStyle: "full" }).format(startDate),
+    [startDate]
+  );
+  const timeLabel = useMemo(() => `${formatHHMM(startDate)}–${formatHHMM(endDate)}`, [endDate, startDate]);
+  const priceLabel =
+    props.booking.total_price_cents === 0
+      ? "Mensalidade"
+      : formatBRLFromCents(props.booking.total_price_cents);
 
   const originalDurationMinutes = useMemo(() => {
     const mins = Math.round((endDate.getTime() - startDate.getTime()) / 60000);
@@ -289,6 +301,12 @@ export function BookingDetailClient(props: { booking: BookingDetail }) {
     return () => clearInterval(id);
   }, [payment?.expiresAt]);
 
+  useEffect(() => {
+    if (props.showConfirmation && props.booking.status === BookingStatus.CONFIRMED) {
+      setConfirmationOpen(true);
+    }
+  }, [props.booking.status, props.showConfirmation]);
+
   function refreshAvailability(nextDay: string) {
     setMessage(null);
     setSelectedStart(null);
@@ -358,6 +376,57 @@ export function BookingDetailClient(props: { booking: BookingDetail }) {
 
   return (
     <div className="mt-6 rounded-3xl ph-surface p-6">
+      {confirmationOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-lg rounded-3xl border border-emerald-200 bg-white p-6 text-emerald-900 shadow-xl dark:border-emerald-900/40 dark:bg-zinc-950 dark:text-emerald-100">
+            <div className="text-lg font-semibold">Agendamento confirmado</div>
+            <div className="mt-4 space-y-2 text-sm">
+              <div className="flex flex-wrap justify-between gap-2">
+                <span className="text-zinc-600 dark:text-zinc-300">Local</span>
+                <span className="font-semibold text-zinc-900 dark:text-zinc-50">
+                  {props.booking.court.establishment.name}
+                </span>
+              </div>
+              {props.booking.court.establishment.address_text ? (
+                <div className="flex flex-wrap justify-between gap-2">
+                  <span className="text-zinc-600 dark:text-zinc-300">Endereco</span>
+                  <span className="font-semibold text-zinc-900 dark:text-zinc-50">
+                    {props.booking.court.establishment.address_text}
+                  </span>
+                </div>
+              ) : null}
+              <div className="flex flex-wrap justify-between gap-2">
+                <span className="text-zinc-600 dark:text-zinc-300">Data</span>
+                <span className="font-semibold text-zinc-900 dark:text-zinc-50">{dateLabel}</span>
+              </div>
+              <div className="flex flex-wrap justify-between gap-2">
+                <span className="text-zinc-600 dark:text-zinc-300">Horario</span>
+                <span className="font-semibold text-zinc-900 dark:text-zinc-50">{timeLabel}</span>
+              </div>
+              <div className="flex flex-wrap justify-between gap-2">
+                <span className="text-zinc-600 dark:text-zinc-300">Quadra/Modalidade</span>
+                <span className="font-semibold text-zinc-900 dark:text-zinc-50">
+                  {props.booking.court.name} • {formatSportLabel(props.booking.court.sport_type)}
+                </span>
+              </div>
+              <div className="flex flex-wrap justify-between gap-2">
+                <span className="text-zinc-600 dark:text-zinc-300">Preco</span>
+                <span className="font-semibold text-zinc-900 dark:text-zinc-50">{priceLabel}</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setConfirmationOpen(false);
+                router.replace(`/meus-agendamentos/${props.booking.id}`);
+              }}
+              className="mt-6 w-full rounded-full bg-emerald-700 px-4 py-3 text-sm font-bold text-white"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      ) : null}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <h1 className="truncate text-lg font-semibold text-zinc-900 dark:text-zinc-50">

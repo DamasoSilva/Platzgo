@@ -37,9 +37,14 @@ function coerceDay(value: unknown): string {
   return value;
 }
 
+function coerceTime(value: unknown): string | null {
+  if (typeof value === "string" && /^\d{2}:\d{2}$/.test(value)) return value;
+  return null;
+}
+
 export default async function CourtPage(props: {
   params: { id: string } | Promise<{ id: string }>;
-  searchParams?: { day?: string } | Promise<{ day?: string }>;
+  searchParams?: { day?: string; time?: string } | Promise<{ day?: string; time?: string }>;
 }) {
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id ?? null;
@@ -54,6 +59,7 @@ export default async function CourtPage(props: {
   const searchParams = props.searchParams ? await Promise.resolve(props.searchParams) : undefined;
 
   const day = coerceDay(searchParams?.day);
+  const time = coerceTime(searchParams?.time);
 
   let data: Awaited<ReturnType<typeof getCourtBookingsForDay>>;
   try {
@@ -79,6 +85,7 @@ export default async function CourtPage(props: {
       }}
       courtId={params.id}
       day={day}
+      initialTime={time}
       initial={data}
     />
   );

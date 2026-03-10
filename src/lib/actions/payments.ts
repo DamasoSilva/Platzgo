@@ -26,6 +26,16 @@ function clampPercent(value: unknown): number {
   return Math.min(100, Math.max(0, n));
 }
 
+function parseAsaasExpiration(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const raw = value.trim();
+  if (!raw) return null;
+  const normalized = raw.includes("T") ? raw : raw.replace(" ", "T");
+  const parsed = new Date(normalized);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toISOString();
+}
+
 async function ensureAsaasCustomer(userId: string, config: { apiKey?: string; baseUrl?: string }) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -159,6 +169,7 @@ async function createAsaasPayment(params: {
 
   let pixPayload: string | null = null;
   let pixQrBase64: string | null = null;
+  let pixExpiresAt: string | null = null;
   try {
     const pixRes = await fetch(`${config.asaas.baseUrl ?? "https://sandbox.asaas.com/api/v3"}/payments/${data.id}/pixQrCode`, {
       method: "GET",
@@ -171,6 +182,10 @@ async function createAsaasPayment(params: {
     if (pixRes.ok && pixData?.payload) {
       pixPayload = String(pixData.payload);
       pixQrBase64 = typeof pixData.encodedImage === "string" ? pixData.encodedImage : null;
+      pixExpiresAt =
+        parseAsaasExpiration(pixData.expirationDate) ||
+        parseAsaasExpiration(pixData.expirationDateTime) ||
+        parseAsaasExpiration(pixData.expiresAt);
     }
   } catch {
     // Ignora falha ao gerar PIX
@@ -183,6 +198,7 @@ async function createAsaasPayment(params: {
     payoutAmountCents: shouldSplit ? Math.round(params.amountCents * (ownerPercent / 100)) : null,
     pixPayload,
     pixQrBase64,
+    pixExpiresAt,
   };
 }
 
@@ -232,7 +248,12 @@ export async function refreshPixForBooking(input: { bookingId: string }) {
 
   const pixPayload = String(pixData.payload);
   const pixQrBase64 = typeof pixData.encodedImage === "string" ? pixData.encodedImage : null;
-  const prevMeta = (payment.metadata as Record<string, unknown> | null) ?? {};
+  const pixExpiresAt =
+    parseAsaasExpiration(pixData.expirationDate) ||
+    parseAsaasExpiration(pixData.expirationDateTime) ||
+    parseAsaasExpiration(pixData.expiresAt);
+  const prevMeta = (payment.metadata as { pix_expires_at?: string } | null) ?? {};
+  const prevPixExpiresAt = typeof prevMeta.pix_expires_at === "string" ? prevMeta.pix_expires_at : null;
 
   await prisma.payment.update({
     where: { id: payment.id },
@@ -241,12 +262,13 @@ export async function refreshPixForBooking(input: { bookingId: string }) {
         ...prevMeta,
         pix_payload: pixPayload,
         pix_qr_base64: pixQrBase64 ?? undefined,
+        pix_expires_at: pixExpiresAt ?? prevPixExpiresAt ?? undefined,
       },
     },
     select: { id: true },
   });
 
-  return { pixPayload, pixQrBase64 };
+  return { pixPayload, pixQrBase64, pixExpiresAt: pixExpiresAt ?? prevPixExpiresAt ?? null };
 }
 
 async function createMercadoPagoPreference(params: {
@@ -302,6 +324,7 @@ async function createMercadoPagoPreference(params: {
     payoutAmountCents: null,
     pixPayload: null,
     pixQrBase64: null,
+    pixExpiresAt: null,
   };
 }
 
@@ -456,17 +479,22 @@ export async function startPaymentForBooking(input: { bookingId: string; provide
       bookingId: booking.id,
       status: { in: [PaymentStatus.PENDING, PaymentStatus.AUTHORIZED, PaymentStatus.PAID] },
     },
-    select: { id: true, provider: true, checkout_url: true, metadata: true },
+    select: { id: true, provider: true, checkout_url: true, metadata: true, expires_at: true, amount_cents: true },
   });
 
   if (existing) {
-    const meta = (existing.metadata as { pix_payload?: string; pix_qr_base64?: string } | null) ?? null;
+    const meta =
+      (existing.metadata as { pix_payload?: string; pix_qr_base64?: string; pix_expires_at?: string } | null) ?? null;
+    const pixExpiresAt =
+      meta?.pix_expires_at ?? (existing.expires_at ? existing.expires_at.toISOString() : null);
     return {
       paymentId: existing.id,
       provider: existing.provider,
       checkoutUrl: existing.checkout_url ?? null,
       pixPayload: meta?.pix_payload ?? null,
       pixQrBase64: meta?.pix_qr_base64 ?? null,
+      pixExpiresAt,
+      amountCents: existing.amount_cents,
     };
   }
 
@@ -500,6 +528,9 @@ export async function startPaymentForBooking(input: { bookingId: string; provide
 
   const provider = selected === "asaas" ? PaymentProvider.ASAAS : PaymentProvider.MERCADOPAGO;
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+  const requiresConfirmation = booking.court.establishment.online_payments_enabled
+    ? false
+    : booking.court.establishment.requires_booking_confirmation !== false;
 
   const payment = await prisma.payment.create({
     data: {
@@ -508,7 +539,7 @@ export async function startPaymentForBooking(input: { bookingId: string; provide
       amount_cents: toCents(booking.total_price_cents),
       status: PaymentStatus.PENDING,
       expires_at: expiresAt,
-      requires_confirmation: booking.court.establishment.requires_booking_confirmation !== false,
+      requires_confirmation: requiresConfirmation,
       metadata: {
         start: booking.start_time.toISOString(),
         end: booking.end_time.toISOString(),
@@ -526,7 +557,7 @@ export async function startPaymentForBooking(input: { bookingId: string; provide
             amountCents: booking.total_price_cents,
             customerId: booking.customerId,
             description,
-            requiresConfirmation: booking.court.establishment.requires_booking_confirmation !== false,
+            requiresConfirmation,
             establishmentWalletId: booking.court.establishment.asaas_wallet_id,
             commissionPercent: config.asaas.splitPercent ?? null,
           })
@@ -535,6 +566,8 @@ export async function startPaymentForBooking(input: { bookingId: string; provide
             amountCents: booking.total_price_cents,
             title: description,
           });
+
+    const pixExpiresAt = result.pixExpiresAt ?? expiresAt.toISOString();
 
     await prisma.payment.update({
       where: { id: payment.id },
@@ -551,12 +584,14 @@ export async function startPaymentForBooking(input: { bookingId: string; provide
                 payout_mode: "split",
                 pix_payload: result.pixPayload ?? undefined,
                 pix_qr_base64: result.pixQrBase64 ?? undefined,
+                pix_expires_at: pixExpiresAt ?? undefined,
               }
             : {
                 start: booking.start_time.toISOString(),
                 end: booking.end_time.toISOString(),
                 pix_payload: result.pixPayload ?? undefined,
                 pix_qr_base64: result.pixQrBase64 ?? undefined,
+                pix_expires_at: pixExpiresAt ?? undefined,
               },
       },
       select: { id: true },
@@ -568,6 +603,8 @@ export async function startPaymentForBooking(input: { bookingId: string; provide
       checkoutUrl: result.checkoutUrl ?? null,
       pixPayload: result.pixPayload ?? null,
       pixQrBase64: result.pixQrBase64 ?? null,
+      pixExpiresAt,
+      amountCents: booking.total_price_cents,
     };
   } catch (e) {
     await prisma.payment.update({

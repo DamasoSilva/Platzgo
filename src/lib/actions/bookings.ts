@@ -6,7 +6,7 @@ import { Prisma } from "@/generated/prisma/client";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { BookingStatus, MonthlyPassStatus, PaymentStatus } from "@/generated/prisma/enums";
+import { BookingStatus, MonthlyPassStatus, PaymentProvider, PaymentStatus } from "@/generated/prisma/enums";
 import { requireRole } from "@/lib/authz";
 import { NotificationType } from "@/generated/prisma/enums";
 import { enqueueEmail } from "@/lib/emailQueue";
@@ -14,7 +14,7 @@ import { canSendEmail, getNotificationSettings } from "@/lib/notificationSetting
 import { dateWithTime, toTimeZoneDate } from "@/lib/utils/time";
 import { formatBRLFromCents } from "@/lib/utils/currency";
 import { logAudit } from "@/lib/audit";
-import { getPaymentConfig } from "@/lib/payments";
+import { extractAsaasErrorMessage, getPaymentConfig } from "@/lib/payments";
 import { releaseAsaasPayoutForPayment, startPaymentForBooking } from "@/lib/actions/payments";
 import {
   bookingCancelledEmailToCustomer,
@@ -86,6 +86,74 @@ function expandRangeWithBuffer(start: Date, end: Date, bufferMinutes: number) {
     start: new Date(start.getTime() - bufferMs),
     end: new Date(end.getTime() + bufferMs),
   };
+}
+
+function toAsaasValueFromCents(cents: number): number {
+  return Math.round(cents) / 100;
+}
+
+async function requestAsaasRefund(params: { providerPaymentId: string; valueCents?: number | null }) {
+  const config = await getPaymentConfig();
+  if (!config.asaas.apiKey) throw new Error("Asaas não configurado");
+
+  const payload =
+    typeof params.valueCents === "number" && params.valueCents > 0
+      ? { value: toAsaasValueFromCents(params.valueCents) }
+      : {};
+
+  const res = await fetch(`${config.asaas.baseUrl ?? "https://sandbox.asaas.com/api/v3"}/payments/${params.providerPaymentId}/refund`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      access_token: config.asaas.apiKey,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    const detail = extractAsaasErrorMessage(data);
+    throw new Error(detail ? `Falha ao solicitar estorno no Asaas: ${detail}` : "Falha ao solicitar estorno no Asaas");
+  }
+}
+
+async function finalizeRefund(params: {
+  payment: {
+    id: string;
+    provider: PaymentProvider;
+    provider_payment_id: string | null;
+    amount_cents: number;
+    metadata: unknown | null;
+  };
+  refundAmountCents: number;
+  feeCents?: number | null;
+}) {
+  const refundAmount = Math.max(0, Math.round(params.refundAmountCents));
+  const refundFee = Math.max(0, Math.round(params.feeCents ?? 0));
+
+  if (params.payment.provider === PaymentProvider.ASAAS && refundAmount > 0) {
+    if (!params.payment.provider_payment_id) {
+      throw new Error("Pagamento Asaas sem identificador para estorno.");
+    }
+    await requestAsaasRefund({
+      providerPaymentId: params.payment.provider_payment_id,
+      valueCents: refundAmount,
+    });
+  }
+
+  const prevMeta = (params.payment.metadata as Record<string, unknown> | null) ?? {};
+  await prisma.payment.update({
+    where: { id: params.payment.id },
+    data: {
+      status: PaymentStatus.REFUNDED,
+      metadata: {
+        ...prevMeta,
+        refund_amount_cents: refundAmount,
+        refund_fee_cents: refundFee,
+      },
+    },
+    select: { id: true },
+  });
 }
 
 async function lockCourtRow(tx: Prisma.TransactionClient, courtId: string) {
@@ -263,7 +331,9 @@ export async function createBooking(input: CreateBookingInput): Promise<CreateBo
     const discountPercent = durationMinutes >= 90 ? court.discount_percentage_over_90min : 0;
     const discounted = discountPercent > 0 ? Math.round((baseTotal * (100 - discountPercent)) / 100) : baseTotal;
 
-    const requiresConfirmation = court.establishment.requires_booking_confirmation !== false;
+    const requiresConfirmation = paymentsEnabledForBooking
+      ? false
+      : court.establishment.requires_booking_confirmation !== false;
     const globalProviders = paymentConfig.providersEnabled.map((p) => p.toUpperCase());
     const establishmentProviders = court.establishment.payment_providers ?? [];
     const baseProviders = establishmentProviders.length
@@ -721,6 +791,13 @@ export async function confirmBookingAsOwner(input: { bookingId: string }) {
   const notificationSettings = await getNotificationSettings();
 
   const result = await prisma.$transaction(async (tx) => {
+    let autoCancelPayments: Array<{
+      id: string;
+      provider: PaymentProvider;
+      provider_payment_id: string | null;
+      amount_cents: number;
+      metadata: unknown | null;
+    }> = [];
     const b = await tx.booking.findUnique({
       where: { id: input.bookingId },
       select: {
@@ -838,15 +915,9 @@ export async function confirmBookingAsOwner(input: { bookingId: string }) {
           bookingId: { in: pendingOverlaps.map((p) => p.id) },
           status: { in: [PaymentStatus.AUTHORIZED, PaymentStatus.PAID] },
         },
-        select: { id: true },
+        select: { id: true, provider: true, provider_payment_id: true, amount_cents: true, metadata: true },
       });
-
-      if (overlapPayments.length) {
-        await tx.payment.updateMany({
-          where: { id: { in: overlapPayments.map((p) => p.id) } },
-          data: { status: PaymentStatus.REFUNDED },
-        });
-      }
+      autoCancelPayments = overlapPayments;
 
       const notifyTargets = pendingOverlaps.filter((p) => p.customerId);
       if (notifyTargets.length) {
@@ -923,6 +994,7 @@ export async function confirmBookingAsOwner(input: { bookingId: string }) {
     return {
       booking: b,
       payoutPaymentId: payment?.status === PaymentStatus.AUTHORIZED ? payment.id : null,
+      autoCancelPayments,
     };
   });
 
@@ -931,6 +1003,20 @@ export async function confirmBookingAsOwner(input: { bookingId: string }) {
       await releaseAsaasPayoutForPayment(result.payoutPaymentId);
     } catch (e) {
       console.error("Falha ao liberar repasse Asaas:", e);
+    }
+  }
+
+  if (result.autoCancelPayments?.length) {
+    for (const payment of result.autoCancelPayments) {
+      try {
+        await finalizeRefund({
+          payment,
+          refundAmountCents: payment.amount_cents,
+          feeCents: 0,
+        });
+      } catch (e) {
+        console.error("Falha ao estornar pagamento de cancelamento automatico:", e);
+      }
     }
   }
 
@@ -966,27 +1052,27 @@ export async function cancelBookingAsOwner(input: { bookingId: string; reason?: 
 
   const reason = (input.reason ?? "").trim() || "Cancelado pelo estabelecimento.";
 
-  await prisma.booking.update({
-    where: { id: booking.id },
-    data: { status: BookingStatus.CANCELLED, cancel_reason: reason },
-    select: { id: true },
-  });
-
   const payment = await prisma.payment.findFirst({
     where: {
       bookingId: booking.id,
       status: { in: [PaymentStatus.AUTHORIZED, PaymentStatus.PAID] },
     },
-    select: { id: true },
+    select: { id: true, provider: true, provider_payment_id: true, amount_cents: true, metadata: true },
   });
 
   if (payment) {
-    await prisma.payment.update({
-      where: { id: payment.id },
-      data: { status: PaymentStatus.REFUNDED },
-      select: { id: true },
+    await finalizeRefund({
+      payment,
+      refundAmountCents: payment.amount_cents,
+      feeCents: 0,
     });
   }
+
+  await prisma.booking.update({
+    where: { id: booking.id },
+    data: { status: BookingStatus.CANCELLED, cancel_reason: reason },
+    select: { id: true },
+  });
 
   if (booking.customerId) {
     await prisma.notification.create({
@@ -1140,6 +1226,7 @@ export async function cancelBookingAsCustomer(input: { bookingId: string }) {
   if (withinCutoff) {
     const percentFee = Math.round((booking.total_price_cents * feePercent) / 100);
     cancelFeeCents = feeFixed > 0 ? feeFixed : percentFee;
+    cancelFeeCents = Math.max(0, Math.min(cancelFeeCents, booking.total_price_cents));
     if (cancelFeeCents <= 0) {
       throw new Error(`Cancelamento não permitido com menos de ${minHours}h de antecedência.`);
     }
@@ -1148,6 +1235,23 @@ export async function cancelBookingAsCustomer(input: { bookingId: string }) {
   const cancelReason = cancelFeeCents > 0
     ? `Cancelado pelo cliente. Multa: ${formatBRLFromCents(cancelFeeCents)}.`
     : "Cancelado pelo cliente.";
+
+  const payment = await prisma.payment.findFirst({
+    where: {
+      bookingId: booking.id,
+      status: { in: [PaymentStatus.AUTHORIZED, PaymentStatus.PAID] },
+    },
+    select: { id: true, provider: true, provider_payment_id: true, amount_cents: true, metadata: true },
+  });
+
+  if (payment) {
+    const refundAmountCents = Math.max(0, payment.amount_cents - cancelFeeCents);
+    await finalizeRefund({
+      payment,
+      refundAmountCents,
+      feeCents: cancelFeeCents,
+    });
+  }
 
   await prisma.booking.update({
     where: { id: booking.id },
@@ -1158,22 +1262,6 @@ export async function cancelBookingAsCustomer(input: { bookingId: string }) {
     },
     select: { id: true },
   });
-
-  const payment = await prisma.payment.findFirst({
-    where: {
-      bookingId: booking.id,
-      status: { in: [PaymentStatus.AUTHORIZED, PaymentStatus.PAID] },
-    },
-    select: { id: true },
-  });
-
-  if (payment) {
-    await prisma.payment.update({
-      where: { id: payment.id },
-      data: { status: PaymentStatus.REFUNDED },
-      select: { id: true },
-    });
-  }
 
   await prisma.notification.create({
     data: {
@@ -1268,6 +1356,24 @@ export async function cancelBookingAsCustomer(input: { bookingId: string }) {
   revalidatePath(`/courts/${booking.courtId}`);
   revalidatePath("/dashboard/agenda");
   return { ok: true };
+}
+
+export async function getMyBookingStatus(input: { bookingId: string }) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) throw new Error("Não autenticado");
+  if (session.user.role !== "CUSTOMER") throw new Error("Sem permissão");
+  if (!input.bookingId) throw new Error("bookingId é obrigatório");
+
+  const booking = await prisma.booking.findUnique({
+    where: { id: input.bookingId },
+    select: { id: true, status: true, customerId: true },
+  });
+
+  if (!booking || booking.customerId !== session.user.id) {
+    throw new Error("Agendamento não encontrado");
+  }
+
+  return { status: booking.status };
 }
 
 export async function rescheduleBookingAsCustomer(input: {

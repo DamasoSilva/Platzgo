@@ -311,13 +311,12 @@ export async function upsertMyEstablishment(input: UpsertEstablishmentInput) {
   const cancel_fee_fixed_cents = clampInt(input.cancel_fee_fixed_cents, 0, 0, 5_000_00);
   const booking_buffer_minutes = clampInt(input.booking_buffer_minutes, 0, 0, 240);
 
-  const paymentProviders = normalizePaymentProviders(input.payment_providers);
+  const normalizedProviders = normalizePaymentProviders(input.payment_providers) ?? [];
+  const paymentProviders = normalizedProviders.filter((p) => p === "ASAAS");
+  if (paymentProviders.length === 0) paymentProviders.push("ASAAS");
+
   let paymentProvider = normalizePaymentProvider(input.payment_provider);
-  if (paymentProviders && paymentProviders.length > 0) {
-    if (!paymentProvider || !paymentProviders.includes(paymentProvider)) {
-      paymentProvider = paymentProviders[0];
-    }
-  }
+  if (paymentProvider !== "ASAAS") paymentProvider = "ASAAS";
 
   const existing = await prisma.establishment.findFirst({
     where: { ownerId: session.user.id },
@@ -862,6 +861,7 @@ export async function updateMyEstablishmentPayments(input: {
 
   const walletId = input.asaas_wallet_id?.trim() || null;
   const enableOnline = typeof input.online_payments_enabled === "boolean" ? input.online_payments_enabled : false;
+  const requiresBookingConfirmation = enableOnline ? false : undefined;
 
   if (enableOnline && paymentProviders?.includes("ASAAS")) {
     if (!walletId) throw new Error("Wallet ID nao configurado");
@@ -876,6 +876,7 @@ export async function updateMyEstablishmentPayments(input: {
       payment_providers: paymentProviders,
       asaas_wallet_id: walletId,
       online_payments_enabled: enableOnline,
+      requires_booking_confirmation: requiresBookingConfirmation,
     },
   });
 
