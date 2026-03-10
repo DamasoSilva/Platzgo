@@ -449,26 +449,30 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
     setMessage("Salvando pagamentos...");
     setCopyStatus(null);
 
-    if (form.payment_providers.includes("asaas")) {
-      if (!form.asaas_wallet_id.trim()) {
-        setMessage("Wallet ID nao configurado");
-        return;
-      }
-      if (form.online_payments_enabled && walletTestStatus !== "ok") {
-        setMessage("Valide a wallet Asaas antes de ativar pagamentos online.");
-        return;
-      }
+    const wantsAsaas = form.payment_providers.includes("asaas");
+    const walletId = form.asaas_wallet_id.trim();
+    if (wantsAsaas && !walletId) {
+      setMessage("Wallet ID nao configurado");
+      return;
     }
+    const canEnableOnline = !wantsAsaas || walletTestStatus === "ok";
+    const nextOnlineEnabled = form.online_payments_enabled && canEnableOnline;
+    const blockedOnline = wantsAsaas && form.online_payments_enabled && !canEnableOnline;
 
     startTransition(async () => {
       try {
         await updateMyEstablishmentPayments({
           payment_provider: form.payment_provider,
           payment_providers: form.payment_providers,
-          asaas_wallet_id: form.asaas_wallet_id,
-          online_payments_enabled: form.online_payments_enabled,
+          asaas_wallet_id: walletId,
+          online_payments_enabled: nextOnlineEnabled,
         });
-        setMessage("Pagamentos atualizados.");
+        if (blockedOnline) {
+          setMessage("Wallet salva. Pagamento online ficou desativado ate validar a wallet.");
+          setForm((state) => ({ ...state, online_payments_enabled: false }));
+        } else {
+          setMessage("Pagamentos atualizados.");
+        }
         router.refresh();
       } catch (e) {
         setMessage(e instanceof Error ? e.message : "Erro ao salvar pagamentos");
@@ -697,6 +701,10 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                 </button>
               </div>
 
+              <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-100">
+                O pagamento online so ativa apos o teste da wallet Asaas retornar OK.
+              </div>
+
               {form.online_payments_enabled ? (
                 <div className="mt-4 space-y-4">
                   <div className="flex flex-wrap gap-3">
@@ -790,10 +798,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                 <button
                   type="button"
                   onClick={onSavePayments}
-                  disabled={
-                    isPending ||
-                    (form.payment_providers.includes("asaas") && form.online_payments_enabled && walletTestStatus !== "ok")
-                  }
+                  disabled={isPending}
                   className="ph-button disabled:opacity-60"
                 >
                   Salvar pagamento online
