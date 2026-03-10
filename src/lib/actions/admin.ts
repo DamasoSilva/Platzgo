@@ -9,7 +9,7 @@ import { EstablishmentApprovalStatus, NotificationType, Role } from "@/generated
 import { enqueueEmail } from "@/lib/emailQueue";
 import { courtValidatedEmailToOwner, getAppUrl, sysadminApprovalTaskEmail } from "@/lib/emailTemplates";
 import { getNotificationSettings } from "@/lib/notificationSettings";
-import { getPaymentConfig, PAYMENT_SETTING_KEYS } from "@/lib/payments";
+import { extractAsaasErrorMessage, getPaymentConfig, PAYMENT_SETTING_KEYS } from "@/lib/payments";
 import { slugify } from "@/lib/utils/slug";
 import { getSystemSetting } from "@/lib/systemSettings";
 
@@ -148,7 +148,10 @@ async function ensureAsaasCustomerForUser(
   });
 
   const data = await res.json().catch(() => null);
-  if (!res.ok || !data?.id) throw new Error("Falha ao criar cliente no Asaas");
+  const detail = extractAsaasErrorMessage(data);
+  if (!res.ok || !data?.id) {
+    throw new Error(detail ? `Falha ao criar cliente no Asaas: ${detail}` : "Falha ao criar cliente no Asaas");
+  }
 
   await prisma.user.update({
     where: { id: user.id },

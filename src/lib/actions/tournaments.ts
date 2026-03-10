@@ -7,7 +7,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/authz";
-import { getPaymentConfig } from "@/lib/payments";
+import { extractAsaasErrorMessage, getPaymentConfig } from "@/lib/payments";
 import {
   PaymentProvider,
   PaymentStatus,
@@ -99,8 +99,9 @@ async function ensureAsaasCustomer(userId: string, config: { apiKey?: string; ba
   });
 
   const data = await res.json().catch(() => null);
+  const detail = extractAsaasErrorMessage(data);
   if (!res.ok || !data?.id) {
-    throw new Error("Falha ao criar cliente no Asaas");
+    throw new Error(detail ? `Falha ao criar cliente no Asaas: ${detail}` : "Falha ao criar cliente no Asaas");
   }
 
   await prisma.user.update({
@@ -147,8 +148,9 @@ async function createAsaasPixCharge(params: {
   });
 
   const data = await res.json().catch(() => null);
+  const detail = extractAsaasErrorMessage(data);
   if (!res.ok || !data?.id) {
-    throw new Error("Falha ao criar cobranca no Asaas");
+    throw new Error(detail ? `Falha ao criar cobranca no Asaas: ${detail}` : "Falha ao criar cobranca no Asaas");
   }
 
   const checkoutUrl = data.invoiceUrl ?? data.paymentLink ?? data.bankSlipUrl ?? null;

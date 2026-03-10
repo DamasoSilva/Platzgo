@@ -126,3 +126,31 @@ export async function assertPaymentsEnabled() {
   }
   return config;
 }
+
+export function extractAsaasErrorMessage(data: unknown): string | null {
+  if (typeof data === "string") {
+    const text = data.trim();
+    return text ? text : null;
+  }
+
+  if (!data || typeof data !== "object") return null;
+
+  const record = data as Record<string, unknown>;
+  const errors = Array.isArray(record.errors) ? record.errors : [];
+  if (errors.length) {
+    const descriptions = errors
+      .map((err) => {
+        if (!err || typeof err !== "object") return null;
+        const desc = (err as Record<string, unknown>).description;
+        return typeof desc === "string" ? desc.trim() : null;
+      })
+      .filter((desc): desc is string => Boolean(desc));
+    if (descriptions.length) return descriptions.join("; ");
+  }
+
+  const direct = [record.message, record.error, record.details, record.detail].find(
+    (value) => typeof value === "string" && value.trim().length > 0
+  ) as string | undefined;
+
+  return direct ?? null;
+}

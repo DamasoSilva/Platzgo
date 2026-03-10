@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { assertPaymentsEnabled, getPaymentConfig } from "@/lib/payments";
+import { assertPaymentsEnabled, extractAsaasErrorMessage, getPaymentConfig } from "@/lib/payments";
 
 function toCents(value: number): number {
   if (!Number.isFinite(value)) return 0;
@@ -76,8 +76,9 @@ export async function POST(req: NextRequest) {
     const data = await res.json().catch(() => null);
 
     if (!res.ok) {
+      const detail = extractAsaasErrorMessage(data);
       return NextResponse.json(
-        { ok: false, error: "Falha ao criar cobrança no Asaas.", details: data },
+        { ok: false, error: detail ? `Falha ao criar cobrança no Asaas: ${detail}` : "Falha ao criar cobrança no Asaas.", details: data },
         { status: res.status }
       );
     }

@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getPaymentConfig } from "@/lib/payments";
+import { extractAsaasErrorMessage, getPaymentConfig } from "@/lib/payments";
 import { PaymentProvider, PaymentStatus, BookingStatus, NotificationType, PayoutStatus } from "@/generated/prisma/enums";
 import { getAppUrl } from "@/lib/emailTemplates";
 
@@ -65,8 +65,9 @@ async function ensureAsaasCustomer(userId: string, config: { apiKey?: string; ba
   });
 
   const data = await res.json().catch(() => null);
+  const detail = extractAsaasErrorMessage(data);
   if (!res.ok || !data?.id) {
-    throw new Error("Falha ao criar cliente no Asaas");
+    throw new Error(detail ? `Falha ao criar cliente no Asaas: ${detail}` : "Falha ao criar cliente no Asaas");
   }
 
   await prisma.user.update({
@@ -129,8 +130,9 @@ async function createAsaasPayment(params: {
   });
 
   const data = await res.json().catch(() => null);
+  const detail = extractAsaasErrorMessage(data);
   if (!res.ok || !data?.id) {
-    throw new Error("Falha ao criar cobrança no Asaas");
+    throw new Error(detail ? `Falha ao criar cobrança no Asaas: ${detail}` : "Falha ao criar cobrança no Asaas");
   }
 
   const checkoutUrl = data.invoiceUrl ?? data.paymentLink ?? data.bankSlipUrl ?? null;
@@ -204,7 +206,8 @@ export async function refreshPixForBooking(input: { bookingId: string }) {
   );
   const pixData = await pixRes.json().catch(() => null);
   if (!pixRes.ok || !pixData?.payload) {
-    throw new Error("Nao foi possivel atualizar o PIX");
+    const detail = extractAsaasErrorMessage(pixData);
+    throw new Error(detail ? `Nao foi possivel atualizar o PIX: ${detail}` : "Nao foi possivel atualizar o PIX");
   }
 
   const pixPayload = String(pixData.payload);
@@ -306,8 +309,9 @@ async function createAsaasTransfer(params: {
   });
 
   const data = await res.json().catch(() => null);
+  const detail = extractAsaasErrorMessage(data);
   if (!res.ok || !data?.id) {
-    throw new Error("Falha ao criar repasse no Asaas");
+    throw new Error(detail ? `Falha ao criar repasse no Asaas: ${detail}` : "Falha ao criar repasse no Asaas");
   }
 
   return String(data.id);
