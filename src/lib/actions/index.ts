@@ -4,3 +4,4 @@ export * from "./establishments";
 export * from "./admin";
 export * from "./users";
 export * from "./notifications";
+export * from "./tournaments";

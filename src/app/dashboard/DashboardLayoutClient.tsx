@@ -132,6 +132,7 @@ function DashboardLayoutShell(props: {
       { href: "/dashboard", label: "Resumo" },
       { href: "/dashboard/aprovacoes", label: "Aprovações" },
       { href: "/dashboard/agenda", label: "Agenda" },
+      { href: "/dashboard/torneios", label: "Torneios" },
       { href: "/dashboard/quadras", label: "Quadras" },
       { href: "/dashboard/financeiro", label: "Financeiro" },
       ...base,

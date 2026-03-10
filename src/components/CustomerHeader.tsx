@@ -121,8 +121,8 @@ export function CustomerHeader(props: Props) {
   const subText = variant === "dark" ? "text-zinc-300" : "text-zinc-600 dark:text-zinc-400";
   const pill =
     variant === "dark"
-      ? "inline-flex h-10 items-center justify-center rounded-full border border-white/15 bg-white/5 px-4 text-sm text-white backdrop-blur hover:bg-white/10 dark:hover:bg-white/20"
-      : "inline-flex h-10 items-center justify-center rounded-full border border-zinc-200 bg-white px-4 text-sm text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800";
+      ? "inline-flex h-10 items-center justify-center rounded-full border border-white/15 bg-white/5 px-4 text-sm text-white backdrop-blur transition-all duration-150 hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/10 hover:shadow-[0_0_16px_rgba(255,255,255,0.25)] dark:hover:bg-white/20"
+      : "inline-flex h-10 items-center justify-center rounded-full border border-zinc-200 bg-white px-4 text-sm text-zinc-900 transition-all duration-150 hover:-translate-y-0.5 hover:border-zinc-300 hover:bg-zinc-50 hover:shadow-[0_0_16px_rgba(59,130,246,0.25)] dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800 dark:hover:shadow-[0_0_16px_rgba(255,255,255,0.18)]";
 
   const homeLabel = role === "CUSTOMER" ? "Agende Já" : "Início";
 
@@ -149,16 +149,21 @@ export function CustomerHeader(props: Props) {
         <div className="flex items-center gap-3">
           {props.rightSlot ? <div className="hidden items-center gap-3 sm:flex">{props.rightSlot}</div> : null}
 
-          {isLoggedIn && role === "CUSTOMER" ? (
-            <div className="hidden items-center gap-2 sm:flex">
-              <Link href="/meus-agendamentos" className={pill}>
-                Meus agendamentos
-              </Link>
-              <Link href="/sorteio-times" className={pill}>
-                Sorteio de times
-              </Link>
-            </div>
-          ) : null}
+          <div className="hidden items-center gap-2 sm:flex">
+            <Link href="/torneios" className={pill}>
+              Torneios
+            </Link>
+            {isLoggedIn && role === "CUSTOMER" ? (
+              <>
+                <Link href="/meus-agendamentos" className={pill}>
+                  Meus agendamentos
+                </Link>
+                <Link href="/sorteio-times" className={pill}>
+                  Sorteio de times
+                </Link>
+              </>
+            ) : null}
+          </div>
 
           {!isLoggedIn ? (
             <Link href={`/signin?callbackUrl=${encodeURIComponent(signInCallbackUrl)}`} className={pill}>
@@ -228,13 +233,22 @@ export function CustomerHeader(props: Props) {
                     Meus agendamentos
                   </Link>
                   {role === "CUSTOMER" ? (
-                    <Link
-                      href="/sorteio-times"
-                      className="block px-4 py-3 text-sm hover:bg-white/10 dark:hover:bg-white/5"
-                      onClick={() => setOpen(false)}
-                    >
-                      Sorteio de times
-                    </Link>
+                    <>
+                      <Link
+                        href="/torneios"
+                        className="block px-4 py-3 text-sm hover:bg-white/10 dark:hover:bg-white/5"
+                        onClick={() => setOpen(false)}
+                      >
+                        Torneios
+                      </Link>
+                      <Link
+                        href="/sorteio-times"
+                        className="block px-4 py-3 text-sm hover:bg-white/10 dark:hover:bg-white/5"
+                        onClick={() => setOpen(false)}
+                      >
+                        Sorteio de times
+                      </Link>
+                    </>
                   ) : null}
                   <button
                     type="button"
@@ -306,6 +320,9 @@ export function CustomerHeader(props: Props) {
                 {homeLabel}
               </Link>
             ) : null}
+            <Link href="/torneios" className={pill} onClick={() => setMenuOpen(false)}>
+              Torneios
+            </Link>
             {isLoggedIn && role === "CUSTOMER" ? (
               <>
                 <Link href="/meus-agendamentos" className={pill} onClick={() => setMenuOpen(false)}>

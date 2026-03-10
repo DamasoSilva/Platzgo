@@ -76,6 +76,56 @@ enum PaymentStatus {
   FAILED
 }
 
+enum TournamentStatus {
+  DRAFT
+  OPEN
+  RUNNING
+  FINISHED
+  CANCELLED
+}
+
+enum TournamentVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum TournamentOrganizerType {
+  ESTABLISHMENT
+  CUSTOMER
+}
+
+enum TournamentFormat {
+  GROUPS_KO
+  LEAGUE
+  SINGLE_ELIM
+  DOUBLE_ELIM
+}
+
+enum TournamentRegistrationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum TournamentMatchStatus {
+  SCHEDULED
+  FINISHED
+  CANCELLED
+}
+
+enum TeamMemberRole {
+  CAPTAIN
+  PLAYER
+}
+
+enum TournamentInvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  CANCELLED
+}
+
 enum PayoutStatus {
   NONE
   PENDING
@@ -135,6 +185,12 @@ model User {
   availabilityAlerts AvailabilityAlert[]
   accessLogs    AccessLog[]
   emailVerificationCodes EmailVerificationCode[]
+  organizedTournaments Tournament[] @relation("TournamentOrganizer")
+  teamsCreated Team[] @relation("TeamCreator")
+  teamMemberships TeamMember[] @relation("TeamMemberUser")
+  tournamentRegistrationsCreated TournamentRegistration[] @relation("TournamentRegistrationCreator")
+  tournamentRegistrationsApproved TournamentRegistration[] @relation("TournamentRegistrationApprover")
+  tournamentInvitationsSent TournamentInvitation[] @relation("TournamentInvitationSender")
   inactivatedBy User? @relation("UserInactivatedBy", fields: [inactivatedById], references: [id])
   inactivatedUsers User[] @relation("UserInactivatedBy")
 
@@ -233,6 +289,7 @@ model Establishment {
 
   owner  User    @relation(fields: [ownerId], references: [id])
   courts Court[]
+  tournaments Tournament[]
   holidays EstablishmentHoliday[]
   reviews EstablishmentReview[]
   favorites EstablishmentFavorite[]
@@ -266,6 +323,7 @@ model Court {
   monthlyPasses MonthlyPass[]
   inactive_reason CourtInactivationReason? @relation(fields: [inactive_reason_id], references: [id])
   availabilityAlerts AvailabilityAlert[]
+  tournamentMatches TournamentMatch[]
 
   @@index([establishmentId])
 }
@@ -414,6 +472,7 @@ model Payment {
   id                   String          @id @default(cuid())
   bookingId            String?
   monthlyPassId        String?
+  tournamentRegistrationId String?
   provider             PaymentProvider
   status               PaymentStatus   @default(PENDING)
   payout_status         PayoutStatus    @default(NONE)
@@ -433,10 +492,12 @@ model Payment {
 
   booking     Booking?     @relation(fields: [bookingId], references: [id])
   monthlyPass MonthlyPass? @relation(fields: [monthlyPassId], references: [id])
+  tournamentRegistration TournamentRegistration? @relation(fields: [tournamentRegistrationId], references: [id])
   events      PaymentEvent[]
 
   @@index([bookingId])
   @@index([monthlyPassId])
+  @@index([tournamentRegistrationId])
   @@index([provider, status])
   @@index([provider_payment_id])
 }
@@ -453,6 +514,191 @@ model PaymentEvent {
 
   @@index([paymentId])
   @@index([provider_event_id])
+}
+
+model Tournament {
+  id              String                  @id @default(cuid())
+  organizer_user_id String
+  organizer_type  TournamentOrganizerType
+  establishmentId String?
+  visibility      TournamentVisibility   @default(PUBLIC)
+  status          TournamentStatus       @default(DRAFT)
+  name            String
+  description     String?
+  sport_type      SportType
+  start_date      DateTime
+  end_date        DateTime
+  location_name   String?
+  city            String?
+  max_teams       Int
+  entry_fee_cents Int                     @default(0)
+  team_size_min   Int
+  team_size_max   Int
+  format          TournamentFormat
+  rules           String[]                @default([])
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  organizer_user User @relation("TournamentOrganizer", fields: [organizer_user_id], references: [id])
+  establishment Establishment? @relation(fields: [establishmentId], references: [id])
+  categories TournamentCategory[]
+  teams      Team[]
+  registrations TournamentRegistration[]
+  matches    TournamentMatch[]
+  standings  TournamentStanding[]
+  invitations TournamentInvitation[]
+
+  @@index([organizer_user_id])
+  @@index([establishmentId])
+  @@index([visibility, status])
+  @@index([sport_type, start_date])
+}
+
+model TournamentCategory {
+  id            String   @id @default(cuid())
+  tournamentId  String
+  label         String
+  level         String?
+  createdAt     DateTime @default(now())
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@index([tournamentId])
+}
+
+model Team {
+  id            String   @id @default(cuid())
+  tournamentId  String
+  name          String
+  logo_url      String?
+  category_label String?
+  created_by_id String
+  createdAt     DateTime @default(now())
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  created_by User @relation("TeamCreator", fields: [created_by_id], references: [id])
+  members    TeamMember[]
+  registrations TournamentRegistration[]
+  invitations TournamentInvitation[]
+  matchesAsTeamA TournamentMatch[] @relation("TournamentMatchTeamA")
+  matchesAsTeamB TournamentMatch[] @relation("TournamentMatchTeamB")
+  standings TournamentStanding[]
+
+  @@unique([tournamentId, name])
+  @@index([tournamentId])
+  @@index([created_by_id])
+}
+
+model TeamMember {
+  id           String         @id @default(cuid())
+  teamId       String
+  userId       String?
+  full_name    String
+  document_id  String
+  role         TeamMemberRole @default(PLAYER)
+  createdAt    DateTime       @default(now())
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User? @relation("TeamMemberUser", fields: [userId], references: [id])
+
+  @@index([teamId])
+  @@index([userId])
+}
+
+model TournamentRegistration {
+  id           String                      @id @default(cuid())
+  tournamentId String
+  teamId       String
+  createdById  String
+  approvedById String?
+  status       TournamentRegistrationStatus @default(PENDING)
+  paid         Boolean                     @default(false)
+  createdAt    DateTime                    @default(now())
+  updatedAt    DateTime                    @updatedAt
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  team       Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  createdBy  User @relation("TournamentRegistrationCreator", fields: [createdById], references: [id])
+  approvedBy User? @relation("TournamentRegistrationApprover", fields: [approvedById], references: [id])
+  payments   Payment[]
+
+  @@unique([tournamentId, teamId])
+  @@index([tournamentId, status])
+  @@index([createdById])
+  @@index([teamId])
+}
+
+model TournamentInvitation {
+  id            String                    @id @default(cuid())
+  tournamentId  String
+  teamId        String?
+  invited_by_id String
+  contact       String
+  status        TournamentInvitationStatus @default(PENDING)
+  token         String                    @unique
+  expires_at    DateTime?
+  createdAt     DateTime                  @default(now())
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  team       Team? @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  invited_by User @relation("TournamentInvitationSender", fields: [invited_by_id], references: [id])
+
+  @@index([tournamentId])
+  @@index([teamId])
+  @@index([contact])
+}
+
+model TournamentMatch {
+  id           String              @id @default(cuid())
+  tournamentId String
+  round        String
+  group_label  String?
+  courtId      String?
+  start_time   DateTime
+  end_time     DateTime
+  status       TournamentMatchStatus @default(SCHEDULED)
+  teamAId      String?
+  teamBId      String?
+  createdAt    DateTime            @default(now())
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  court Court? @relation(fields: [courtId], references: [id])
+  teamA Team? @relation("TournamentMatchTeamA", fields: [teamAId], references: [id])
+  teamB Team? @relation("TournamentMatchTeamB", fields: [teamBId], references: [id])
+  score TournamentScore?
+
+  @@index([tournamentId, start_time])
+  @@index([courtId])
+}
+
+model TournamentScore {
+  id           String   @id @default(cuid())
+  matchId      String   @unique
+  team_a_score Int
+  team_b_score Int
+  stats        Json?
+  createdAt    DateTime @default(now())
+
+  match TournamentMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+}
+
+model TournamentStanding {
+  id           String   @id @default(cuid())
+  tournamentId String
+  teamId       String
+  points       Int      @default(0)
+  wins         Int      @default(0)
+  losses       Int      @default(0)
+  goals        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  team       Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, teamId])
+  @@index([tournamentId])
+  @@index([teamId])
 }
 
 model Notification {

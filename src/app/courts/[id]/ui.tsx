@@ -469,8 +469,8 @@ export function CourtDetailsClient(props: {
           </p>
         </div>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-12">
-          <div className="lg:col-span-7 space-y-3">
+        <div className="mt-6 grid gap-6 md:grid-cols-12 md:items-start">
+          <div className="md:col-span-7 space-y-3">
             {courtPhotos.length ? (
               <div className="h-72 overflow-hidden rounded-3xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -497,8 +497,8 @@ export function CourtDetailsClient(props: {
             ) : null}
           </div>
 
-          <div className="lg:col-span-5">
-            <div className="sticky top-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6">
+          <div className="md:col-span-5">
+            <div className="md:sticky md:top-6 rounded-3xl border border-zinc-200 bg-gradient-to-b from-white to-zinc-50 p-6 shadow-[0_12px_30px_rgba(0,0,0,0.08)] dark:border-zinc-800 dark:from-zinc-900 dark:to-zinc-950">
               <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{isOwnerPreview ? "Preview" : "Agendar"}</h2>
 
               {hasMonthly ? (
@@ -862,14 +862,14 @@ export function CourtDetailsClient(props: {
         </div>
 
         <div className="mt-6">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6">
+          <div className="relative overflow-hidden rounded-3xl border border-zinc-200 bg-gradient-to-br from-white via-white to-[#F7FBE8] p-6 shadow-[0_12px_30px_rgba(0,0,0,0.08)] dark:border-zinc-800 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-950">
             <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Sobre</h2>
             <p className="mt-3 text-sm leading-7 text-zinc-700 dark:text-zinc-300">
               {data.court.establishment.description ?? "Sem descrição."}
             </p>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-3xl bg-zinc-100 dark:bg-zinc-800 p-4">
+              <div className="rounded-3xl border border-zinc-200/70 bg-gradient-to-br from-zinc-100 to-white p-4 shadow-sm dark:border-zinc-800 dark:from-zinc-900 dark:to-zinc-950">
                 <p className="text-xs font-medium text-zinc-600 dark:text-zinc-300">Endereço</p>
                 <p className="mt-1 text-sm text-zinc-900 dark:text-zinc-50">
                   {data.court.establishment.address_text}
@@ -894,7 +894,7 @@ export function CourtDetailsClient(props: {
                 </div>
               </div>
 
-              <div className="rounded-3xl bg-zinc-100 dark:bg-zinc-800 p-4">
+                <div className="rounded-3xl border border-zinc-200/70 bg-gradient-to-br from-zinc-100 to-white p-4 shadow-sm dark:border-zinc-800 dark:from-zinc-900 dark:to-zinc-950">
                 <p className="text-xs font-medium text-zinc-600 dark:text-zinc-300">Comodidades</p>
                 <div className="mt-2 flex flex-wrap gap-2 text-xs">
                   {(data.court.amenities ?? []).length ? (
