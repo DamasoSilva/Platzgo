@@ -67,9 +67,21 @@ async function ensureAsaasCustomer(userId: string, config: { apiKey?: string; ba
   });
 
   if (!user) throw new Error("Usuario nao encontrado");
-  if (user.asaas_customer_id) return user.asaas_customer_id;
-
   if (!config.apiKey) throw new Error("Asaas nao configurado");
+  const baseUrl = config.baseUrl ?? "https://sandbox.asaas.com/api/v3";
+
+  if (user.asaas_customer_id) {
+    const checkRes = await fetch(`${baseUrl}/customers/${user.asaas_customer_id}`, {
+      headers: { access_token: config.apiKey },
+    }).catch(() => null);
+    if (checkRes?.ok) return user.asaas_customer_id;
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { asaas_customer_id: null },
+      select: { id: true },
+    });
+  }
 
   const payload = {
     name: user.name ?? user.email,
@@ -77,7 +89,7 @@ async function ensureAsaasCustomer(userId: string, config: { apiKey?: string; ba
     phone: onlyDigits(user.whatsapp_number) || undefined,
   };
 
-  const res = await fetch(`${config.baseUrl ?? "https://sandbox.asaas.com/api/v3"}/customers`, {
+  const res = await fetch(`${baseUrl}/customers`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
