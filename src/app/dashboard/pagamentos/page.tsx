@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { requireRoleOrRedirect } from "@/lib/authz";
+import { requireAdminWithSetupOrRedirect } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { PaymentProvider, PaymentStatus } from "@/generated/prisma/enums";
 
@@ -25,13 +25,28 @@ function parseDateInput(value?: string, endOfDay?: boolean) {
 }
 
 function formatDt(d: Date | null | undefined): string {
-  if (!d) return "—";
+  if (!d) return "-";
   return d.toLocaleString("pt-BR");
 }
 
 function formatMoney(cents?: number | null): string {
-  if (typeof cents !== "number") return "—";
+  if (typeof cents !== "number") return "-";
   return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function statusBadge(status: PaymentStatus) {
+  if (status === PaymentStatus.PAID) return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-200";
+  if (status === PaymentStatus.AUTHORIZED) return "bg-sky-500/15 text-sky-700 dark:text-sky-200";
+  if (status === PaymentStatus.PENDING) return "bg-amber-500/15 text-amber-800 dark:text-amber-200";
+  if (status === PaymentStatus.REFUNDED) return "bg-zinc-500/15 text-zinc-700 dark:text-zinc-200";
+  return "bg-rose-500/15 text-rose-800 dark:text-rose-200";
+}
+
+function outcomeLabel(status: PaymentStatus) {
+  if (status === PaymentStatus.PAID) return "Sucesso";
+  if (status === PaymentStatus.REFUNDED) return "Reembolsado";
+  if (status === PaymentStatus.PENDING || status === PaymentStatus.AUTHORIZED) return "Pendente";
+  return "Erro";
 }
 
 function toNumberFromMeta(value: unknown): number | null {
@@ -52,23 +67,8 @@ function readRefundMeta(meta: unknown): { refundAmountCents: number | null; refu
   };
 }
 
-function outcomeLabel(status: PaymentStatus) {
-  if (status === PaymentStatus.PAID) return "Sucesso";
-  if (status === PaymentStatus.REFUNDED) return "Reembolsado";
-  if (status === PaymentStatus.PENDING || status === PaymentStatus.AUTHORIZED) return "Pendente";
-  return "Erro";
-}
-
-function statusBadge(status: PaymentStatus) {
-  if (status === PaymentStatus.PAID) return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-200";
-  if (status === PaymentStatus.AUTHORIZED) return "bg-sky-500/15 text-sky-700 dark:text-sky-200";
-  if (status === PaymentStatus.PENDING) return "bg-amber-500/15 text-amber-800 dark:text-amber-200";
-  if (status === PaymentStatus.REFUNDED) return "bg-zinc-500/15 text-zinc-700 dark:text-zinc-200";
-  return "bg-rose-500/15 text-rose-800 dark:text-rose-200";
-}
-
-export default async function SysadminPaymentsPage(props: { searchParams?: SearchParams | Promise<SearchParams> }) {
-  await requireRoleOrRedirect("SYSADMIN", "/sysadmin/payments");
+export default async function DashboardPaymentsPage(props: { searchParams?: SearchParams | Promise<SearchParams> }) {
+  const { establishmentId } = await requireAdminWithSetupOrRedirect("/dashboard/pagamentos");
 
   const searchParams = props.searchParams ? await Promise.resolve(props.searchParams) : undefined;
   const providerParam = (searchParams?.provider ?? "").toLowerCase().trim();
@@ -91,6 +91,11 @@ export default async function SysadminPaymentsPage(props: { searchParams?: Searc
 
   const payments = await prisma.payment.findMany({
     where: {
+      OR: [
+        { booking: { court: { establishmentId } } },
+        { monthlyPass: { court: { establishmentId } } },
+        { tournamentRegistration: { tournament: { establishmentId } } },
+      ],
       ...(Object.keys(dateFilter).length ? { createdAt: dateFilter } : {}),
       ...(providerFilter ? { provider: providerFilter } : {}),
     },
@@ -111,19 +116,14 @@ export default async function SysadminPaymentsPage(props: { searchParams?: Searc
           id: true,
           start_time: true,
           end_time: true,
-          court: {
-            select: {
-              name: true,
-              establishment: { select: { name: true } },
-            },
-          },
+          court: { select: { name: true } },
           customer: { select: { name: true, email: true } },
         },
       },
       monthlyPass: {
         select: {
           id: true,
-          court: { select: { name: true, establishment: { select: { name: true } } } },
+          court: { select: { name: true } },
           customer: { select: { name: true, email: true } },
         },
       },
@@ -132,48 +132,7 @@ export default async function SysadminPaymentsPage(props: { searchParams?: Searc
           id: true,
           createdBy: { select: { name: true, email: true } },
           team: { select: { name: true } },
-          tournament: { select: { name: true, establishment: { select: { name: true } } } },
-        },
-      },
-    },
-  });
-
-  const events = await prisma.paymentEvent.findMany({
-    where: {
-      ...(Object.keys(dateFilter).length ? { createdAt: dateFilter } : {}),
-      ...(providerFilter ? { payment: { provider: providerFilter } } : {}),
-    },
-    orderBy: { createdAt: "desc" },
-    take: 200,
-    select: {
-      id: true,
-      provider_event_id: true,
-      type: true,
-      payload: true,
-      createdAt: true,
-      payment: {
-        select: {
-          id: true,
-          provider: true,
-          status: true,
-          amount_cents: true,
-          provider_payment_id: true,
-          bookingId: true,
-          monthlyPassId: true,
-          booking: {
-            select: {
-              id: true,
-              start_time: true,
-              end_time: true,
-              court: {
-                select: {
-                  name: true,
-                  establishment: { select: { name: true } },
-                },
-              },
-              customer: { select: { name: true, email: true } },
-            },
-          },
+          tournament: { select: { name: true } },
         },
       },
     },
@@ -214,7 +173,7 @@ export default async function SysadminPaymentsPage(props: { searchParams?: Searc
     }
   );
 
-  const rangeLabel = startDate || endDate ? `${startParam || "..."} → ${endParam || "..."}` : "Todas as datas";
+  const rangeLabel = startDate || endDate ? `${startParam || "..."} -> ${endParam || "..."}` : "Todas as datas";
 
   return (
     <div className="space-y-6">
@@ -223,14 +182,10 @@ export default async function SysadminPaymentsPage(props: { searchParams?: Searc
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Pagamentos</h1>
             <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-              Retornos das APIs e webhooks por administradora. Configurações ficam em {" "}
-              <Link className="underline" href="/sysadmin/settings">
-                Sistema
-              </Link>
-              .
+              Acompanhamento das transacoes do seu estabelecimento.
             </p>
           </div>
-          <Link className="ph-button-secondary" href="/sysadmin">
+          <Link className="ph-button-secondary" href="/dashboard">
             Voltar
           </Link>
         </div>
@@ -253,14 +208,14 @@ export default async function SysadminPaymentsPage(props: { searchParams?: Searc
             <input name="end" type="date" defaultValue={endParam} className="ph-input mt-2" />
           </div>
           <button type="submit" className="ph-button h-11 self-end">Filtrar</button>
-          <Link className="ph-button-secondary h-11 self-end" href="/sysadmin/payments">
+          <Link className="ph-button-secondary h-11 self-end" href="/dashboard/pagamentos">
             Limpar
           </Link>
         </form>
 
         <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-zinc-600 dark:text-zinc-300">
           <span className="rounded-full bg-zinc-100 px-3 py-1 dark:bg-zinc-900/60">
-            {payments.length} transações
+            {payments.length} transacoes
           </span>
           <span className="rounded-full bg-zinc-100 px-3 py-1 dark:bg-zinc-900/60">{rangeLabel}</span>
         </div>
@@ -272,33 +227,33 @@ export default async function SysadminPaymentsPage(props: { searchParams?: Searc
           <p className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
             {formatMoney(totals.paidCents)}
           </p>
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{totals.paidCount} transações</p>
+          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{totals.paidCount} transacoes</p>
         </div>
         <div className="ph-card p-5">
           <p className="text-xs text-zinc-500 dark:text-zinc-400">Reembolsado</p>
           <p className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
             {formatMoney(totals.refundCents)}
           </p>
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{totals.refundCount} transações</p>
+          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{totals.refundCount} transacoes</p>
         </div>
         <div className="ph-card p-5">
           <p className="text-xs text-zinc-500 dark:text-zinc-400">Pendente</p>
           <p className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
             {formatMoney(totals.pendingCents)}
           </p>
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{totals.pendingCount} transações</p>
+          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{totals.pendingCount} transacoes</p>
         </div>
         <div className="ph-card p-5">
           <p className="text-xs text-zinc-500 dark:text-zinc-400">Erro</p>
           <p className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
             {formatMoney(totals.errorCents)}
           </p>
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{totals.errorCount} transações</p>
+          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{totals.errorCount} transacoes</p>
         </div>
       </div>
 
       <div className="ph-card p-6">
-        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Transações</h2>
+        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Transacoes</h2>
         <div className="mt-3 overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
           <table className="w-full text-left text-xs">
             <thead className="bg-zinc-50 text-zinc-600 dark:bg-zinc-900/40 dark:text-zinc-300">
@@ -312,15 +267,15 @@ export default async function SysadminPaymentsPage(props: { searchParams?: Searc
                 <th className="px-3 py-2">Multa</th>
                 <th className="px-3 py-2">Origem</th>
                 <th className="px-3 py-2">Cliente</th>
-                <th className="px-3 py-2">Estabelecimento</th>
-                <th className="px-3 py-2">Transação</th>
+                <th className="px-3 py-2">Detalhe</th>
+                <th className="px-3 py-2">Transacao</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
               {payments.length === 0 ? (
                 <tr>
                   <td colSpan={11} className="px-3 py-4 text-center text-zinc-500">
-                    Nenhuma transação encontrada.
+                    Nenhuma transacao encontrada.
                   </td>
                 </tr>
               ) : (
@@ -337,7 +292,7 @@ export default async function SysadminPaymentsPage(props: { searchParams?: Searc
                       ? "Mensalidade"
                       : payment.tournamentRegistrationId
                         ? "Torneio"
-                        : "—";
+                        : "-";
                   const customerLabel =
                     payment.booking?.customer?.name ||
                     payment.booking?.customer?.email ||
@@ -345,11 +300,12 @@ export default async function SysadminPaymentsPage(props: { searchParams?: Searc
                     payment.monthlyPass?.customer?.email ||
                     payment.tournamentRegistration?.createdBy?.name ||
                     payment.tournamentRegistration?.createdBy?.email ||
-                    "—";
-                  const establishmentLabel = payment.booking?.court?.establishment?.name
-                    || payment.monthlyPass?.court?.establishment?.name
-                    || payment.tournamentRegistration?.tournament?.establishment?.name
-                    || "—";
+                    "-";
+                  const detailLabel =
+                    payment.booking?.court?.name ||
+                    payment.monthlyPass?.court?.name ||
+                    payment.tournamentRegistration?.tournament?.name ||
+                    "-";
 
                   return (
                     <tr key={payment.id} className="bg-white dark:bg-zinc-950">
@@ -363,18 +319,16 @@ export default async function SysadminPaymentsPage(props: { searchParams?: Searc
                       </td>
                       <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{formatMoney(payment.amount_cents)}</td>
                       <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">
-                        {refundAmount != null ? formatMoney(refundAmount) : "—"}
+                        {refundAmount != null ? formatMoney(refundAmount) : "-"}
                       </td>
                       <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">
-                        {refundFee != null && refundFee > 0 ? formatMoney(refundFee) : "—"}
+                        {refundFee != null && refundFee > 0 ? formatMoney(refundFee) : "-"}
                       </td>
                       <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{origin}</td>
                       <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{customerLabel}</td>
+                      <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{detailLabel}</td>
                       <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">
-                        {establishmentLabel}
-                      </td>
-                      <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">
-                        {payment.provider_payment_id ?? "—"}
+                        {payment.provider_payment_id ?? "-"}
                       </td>
                     </tr>
                   );
@@ -384,66 +338,6 @@ export default async function SysadminPaymentsPage(props: { searchParams?: Searc
           </table>
         </div>
       </div>
-
-      <details className="ph-card p-6">
-        <summary className="cursor-pointer text-sm font-semibold text-zinc-900 dark:text-zinc-50">Eventos (webhooks)</summary>
-        <div className="mt-3 overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-zinc-50 text-zinc-600 dark:bg-zinc-900/40 dark:text-zinc-300">
-              <tr>
-                <th className="px-3 py-2">Data</th>
-                <th className="px-3 py-2">Provider</th>
-                <th className="px-3 py-2">Evento</th>
-                <th className="px-3 py-2">Status</th>
-                <th className="px-3 py-2">Valor</th>
-                <th className="px-3 py-2">IDs</th>
-                <th className="px-3 py-2">Payload</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-              {events.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-3 py-4 text-center text-zinc-500">
-                    Nenhum evento encontrado.
-                  </td>
-                </tr>
-              ) : (
-                events.map((row) => (
-                  <tr key={row.id} className="bg-white dark:bg-zinc-950">
-                    <td className="px-3 py-2 text-zinc-900 dark:text-zinc-100">{formatDt(row.createdAt)}</td>
-                    <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{row.payment.provider}</td>
-                    <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{row.type}</td>
-                    <td className="px-3 py-2">
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusBadge(row.payment.status)}`}>
-                        {row.payment.status}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{formatMoney(row.payment.amount_cents)}</td>
-                    <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">
-                      <div className="space-y-1">
-                        <div>Pay: {row.payment.provider_payment_id ?? "—"}</div>
-                        <div>Evt: {row.provider_event_id ?? "—"}</div>
-                      </div>
-                    </td>
-                    <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">
-                      {row.payload ? (
-                        <details>
-                          <summary className="cursor-pointer text-xs text-zinc-600 dark:text-zinc-300">Ver</summary>
-                          <pre className="mt-2 max-h-60 overflow-auto rounded-xl bg-zinc-900/90 p-3 text-[10px] text-zinc-100">
-                            {JSON.stringify(row.payload, null, 2)}
-                          </pre>
-                        </details>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </details>
     </div>
   );
 }
