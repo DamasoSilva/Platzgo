@@ -1,14 +1,28 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 import { createTournamentAsAdmin } from "@/lib/actions/tournaments";
+
+function getFocusableElements(container: HTMLElement | null): HTMLElement[] {
+  if (!container) return [];
+  const elements = Array.from(
+    container.querySelectorAll<HTMLElement>(
+      "a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex='-1'])"
+    )
+  );
+  return elements.filter((el) => !el.hasAttribute("disabled") && el.getAttribute("aria-hidden") !== "true");
+}
 
 export function DashboardTournamentCreateClient() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const helpCloseRef = useRef<HTMLButtonElement | null>(null);
+  const helpModalRef = useRef<HTMLDivElement | null>(null);
+  const bodyOverflowRef = useRef<string | null>(null);
 
   const [name, setName] = useState("");
   const [sport, setSport] = useState("FUTSAL");
@@ -65,6 +79,53 @@ export function DashboardTournamentCreateClient() {
       }
     });
   }
+
+  useEffect(() => {
+    if (!helpOpen) return;
+    bodyOverflowRef.current = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setHelpOpen(false);
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusables = getFocusableElements(helpModalRef.current);
+      if (!focusables.length) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (event.shiftKey) {
+        if (!active || !helpModalRef.current?.contains(active) || active === first) {
+          event.preventDefault();
+          last.focus();
+        }
+      } else if (!active || !helpModalRef.current?.contains(active) || active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    const onTouchMove = (event: TouchEvent) => {
+      const target = event.target as Node | null;
+      if (helpModalRef.current && target && helpModalRef.current.contains(target)) {
+        return;
+      }
+      event.preventDefault();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("touchmove", onTouchMove, { passive: false });
+    const focusables = getFocusableElements(helpModalRef.current);
+    if (focusables.length) {
+      focusables[0]?.focus();
+    } else {
+      helpCloseRef.current?.focus();
+    }
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("touchmove", onTouchMove);
+      document.body.style.overflow = bodyOverflowRef.current ?? "";
+    };
+  }, [helpOpen]);
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 pb-12">
@@ -255,6 +316,22 @@ export function DashboardTournamentCreateClient() {
 
         <aside className="space-y-6">
           <section className="rounded-3xl border border-zinc-200 bg-white/80 p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/60">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Ajuda</h3>
+              <button
+                type="button"
+                className="ph-button-secondary-xs"
+                onClick={() => setHelpOpen(true)}
+              >
+                Ver detalhes
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-zinc-500">
+              Entenda os formatos e siga o passo a passo para abrir inscricoes com seguranca.
+            </p>
+          </section>
+
+          <section className="rounded-3xl border border-zinc-200 bg-white/80 p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/60">
             <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Pagamento (Asaas)</h3>
             <p className="mt-2 text-xs text-zinc-500">
               O payload do PIX sera gerado na inscricao do time.
@@ -276,6 +353,74 @@ export function DashboardTournamentCreateClient() {
           </section>
         </aside>
       </div>
+
+      {helpOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-6 py-10"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="tournament-help-title"
+          onClick={() => setHelpOpen(false)}
+        >
+          <div
+            className="w-full max-w-2xl rounded-3xl border border-zinc-200 bg-white p-6 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950"
+            onClick={(e) => e.stopPropagation()}
+            ref={helpModalRef}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 id="tournament-help-title" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+                  Ajuda do torneio
+                </h3>
+                <p className="mt-1 text-xs text-zinc-500">
+                  Veja os formatos e o fluxo sugerido para publicar o torneio.
+                </p>
+              </div>
+              <button
+                ref={helpCloseRef}
+                type="button"
+                className="ph-button-secondary-xs"
+                onClick={() => setHelpOpen(false)}
+              >
+                Fechar
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-4 text-sm text-zinc-600 dark:text-zinc-300">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Formatos</p>
+                <ul className="mt-2 space-y-2">
+                  <li>
+                    <span className="font-semibold">Grupos + mata-mata:</span> fase de grupos e os melhores avancam para eliminatorias.
+                  </li>
+                  <li>
+                    <span className="font-semibold">Pontos corridos:</span> todos contra todos, vence quem somar mais pontos.
+                  </li>
+                  <li>
+                    <span className="font-semibold">Eliminatoria simples:</span> perdeu sai; direto para a final.
+                  </li>
+                  <li>
+                    <span className="font-semibold">Eliminatoria dupla:</span> duas derrotas eliminam o time.
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Passo a passo</p>
+                <ol className="mt-2 list-decimal space-y-2 pl-4">
+                  <li>Defina nome, modalidade e datas.</li>
+                  <li>Configure limite de times, taxa e tamanho dos elencos.</li>
+                  <li>Escolha o formato e escreva as regras principais.</li>
+                  <li>Adicione categorias e niveis para filtrar inscritos.</li>
+                  <li>Salve como rascunho, revise e publique para abrir inscricoes.</li>
+                </ol>
+                <p className="mt-3 text-[11px] text-zinc-500">
+                  Depois de publicar, use o painel do torneio para gerar chaveamento e agenda.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -146,7 +146,7 @@ async function ensureAsaasCustomerForUser(
   return String(data.id);
 }
 
-async function validateAsaasWalletId(walletId: string): Promise<{ ok: true } | { ok: false; message: string }> {
+async function validateAsaasWalletId(walletId: string, userId: string): Promise<{ ok: true } | { ok: false; message: string }> {
   const config = await getPaymentConfig();
   if (!config.asaas.apiKey) return { ok: false, message: "Asaas nao configurado" };
 
@@ -156,27 +156,54 @@ async function validateAsaasWalletId(walletId: string): Promise<{ ok: true } | {
     return { ok: false, message: "Wallet ID do estabelecimento nao pode ser o mesmo da plataforma" };
   }
 
+  const testCpfCnpjRaw = await getSystemSetting(PAYMENT_SETTING_KEYS.asaasTestCpfCnpj);
+  const testCpfCnpj = (testCpfCnpjRaw ?? "").replace(/\D/g, "");
+  if (!testCpfCnpj) return { ok: false, message: "CPF/CNPJ de teste nao configurado" };
+  if (!(testCpfCnpj.length === 11 || testCpfCnpj.length === 14)) {
+    return { ok: false, message: "CPF/CNPJ de teste invalido" };
+  }
+
   const baseUrl = config.asaas.baseUrl ?? "https://sandbox.asaas.com/api/v3";
 
   try {
-    const res = await fetch(`${baseUrl}/wallets?limit=100&offset=0`, {
-      headers: { access_token: config.asaas.apiKey },
+    const customer = await ensureAsaasCustomerForUser(
+      userId,
+      {
+        apiKey: config.asaas.apiKey,
+        baseUrl: config.asaas.baseUrl,
+      },
+      testCpfCnpj
+    );
+
+    const dueDate = new Date().toISOString().slice(0, 10);
+    const payload = {
+      customer,
+      billingType: "PIX",
+      value: 5,
+      dueDate,
+      description: "Teste de wallet Asaas",
+      externalReference: `wallet-test:${walletId}`,
+      split: [{ walletId, percentualValue: 100 }],
+    };
+
+    const res = await fetch(`${baseUrl}/payments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        access_token: config.asaas.apiKey,
+      },
+      body: JSON.stringify(payload),
     });
 
     const data = await res.json().catch(() => null);
-    if (!res.ok) {
+    if (!res.ok || !data?.id) {
       const detail = data?.errors?.[0]?.description || data?.message || data?.error || null;
       return {
         ok: false,
         message: detail
           ? `Wallet Asaas invalido: ${detail} (HTTP ${res.status})`
-          : `Falha ao validar wallet Asaas (HTTP ${res.status})`,
+          : `Wallet Asaas invalido ou nao encontrado (HTTP ${res.status})`,
       };
-    }
-
-    const wallets = (data?.data ?? []).map((wallet: { id?: string }) => wallet.id).filter(Boolean) as string[];
-    if (!wallets.includes(walletId)) {
-      return { ok: false, message: "Wallet Asaas nao encontrado" };
     }
   } catch {
     return { ok: false, message: "Falha ao validar wallet Asaas" };
@@ -791,7 +818,7 @@ export async function testMyAsaasWallet(): Promise<{ ok: true } | { ok: false; m
 
   const walletId = establishment.asaas_wallet_id?.trim();
   if (!walletId) return { ok: false, message: "Wallet ID nao configurado" };
-  return await validateAsaasWalletId(walletId);
+  return await validateAsaasWalletId(walletId, session.user.id);
 }
 
 export async function updateMyEstablishmentPayments(input: {
@@ -822,7 +849,7 @@ export async function updateMyEstablishmentPayments(input: {
 
   if (enableOnline && paymentProviders?.includes("ASAAS")) {
     if (!walletId) throw new Error("Wallet ID nao configurado");
-    const validation = await validateAsaasWalletId(walletId);
+    const validation = await validateAsaasWalletId(walletId, session.user.id);
     if (!validation.ok) throw new Error(validation.message);
   }
 
