@@ -123,6 +123,10 @@ export function CustomerHeader(props: Props) {
     variant === "dark"
       ? "inline-flex h-10 items-center justify-center rounded-full border border-white/15 bg-white/5 px-4 text-sm text-white backdrop-blur transition-all duration-150 hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/10 hover:shadow-[0_0_16px_rgba(255,255,255,0.25)] dark:hover:bg-white/20"
       : "inline-flex h-10 items-center justify-center rounded-full border border-zinc-200 bg-white px-4 text-sm text-zinc-900 transition-all duration-150 hover:-translate-y-0.5 hover:border-zinc-300 hover:bg-zinc-50 hover:shadow-[0_0_16px_rgba(59,130,246,0.25)] dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800 dark:hover:shadow-[0_0_16px_rgba(255,255,255,0.18)]";
+  const menuItem =
+    variant === "dark"
+      ? "block px-4 py-3 text-sm text-white transition-all duration-150 hover:-translate-y-0.5 hover:bg-white/10 hover:shadow-[0_0_14px_rgba(255,255,255,0.2)]"
+      : "block px-4 py-3 text-sm text-zinc-900 transition-all duration-150 hover:-translate-y-0.5 hover:bg-zinc-50 hover:shadow-[0_0_14px_rgba(59,130,246,0.18)] dark:text-zinc-100 dark:hover:bg-zinc-900/70 dark:hover:shadow-[0_0_14px_rgba(255,255,255,0.16)]";
 
   const homeLabel = role === "CUSTOMER" ? "Agende Já" : "Início";
 
@@ -175,8 +179,8 @@ export function CustomerHeader(props: Props) {
                 type="button"
                 className={
                   variant === "dark"
-                    ? "flex h-10 items-center gap-3 rounded-full border border-white/15 bg-white/5 px-4 text-sm text-white backdrop-blur hover:bg-white/10 dark:hover:bg-white/20"
-                    : "flex h-10 items-center gap-3 rounded-full border border-zinc-200 bg-white px-4 text-sm text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                    ? "flex h-10 items-center gap-3 rounded-full border border-white/15 bg-white/5 px-4 text-sm text-white backdrop-blur transition-all duration-150 hover:-translate-y-0.5 hover:bg-white/10 hover:shadow-[0_0_14px_rgba(255,255,255,0.2)] dark:hover:bg-white/20"
+                    : "flex h-10 items-center gap-3 rounded-full border border-zinc-200 bg-white px-4 text-sm text-zinc-900 transition-all duration-150 hover:-translate-y-0.5 hover:bg-zinc-50 hover:shadow-[0_0_14px_rgba(59,130,246,0.18)] dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800 dark:hover:shadow-[0_0_14px_rgba(255,255,255,0.16)]"
                 }
                 onClick={() => setOpen((s) => !s)}
               >
@@ -210,49 +214,24 @@ export function CustomerHeader(props: Props) {
                 >
                   {role === "SYSADMIN" ? (
                     <>
-                      <Link href="/sysadmin" className="block px-4 py-3 text-sm hover:bg-white/10 dark:hover:bg-white/5" onClick={() => setOpen(false)}>
+                      <Link href="/sysadmin" className={menuItem} onClick={() => setOpen(false)}>
                         Painel do sysadmin
                       </Link>
-                      <Link href="/dashboard/admin" className="block px-4 py-3 text-sm hover:bg-white/10 dark:hover:bg-white/5" onClick={() => setOpen(false)}>
+                      <Link href="/dashboard/admin" className={menuItem} onClick={() => setOpen(false)}>
                         Painel do administrador
                       </Link>
-                      <Link href="/" className="block px-4 py-3 text-sm hover:bg-white/10 dark:hover:bg-white/5" onClick={() => setOpen(false)}>
+                      <Link href="/" className={menuItem} onClick={() => setOpen(false)}>
                         Ver como cliente
                       </Link>
                     </>
                   ) : null}
 
-                  <Link href="/perfil" className="block px-4 py-3 text-sm hover:bg-white/10 dark:hover:bg-white/5" onClick={() => setOpen(false)}>
+                  <Link href="/perfil" className={menuItem} onClick={() => setOpen(false)}>
                     Meu perfil
                   </Link>
-                  <Link
-                    href="/meus-agendamentos"
-                    className="block px-4 py-3 text-sm hover:bg-white/10 dark:hover:bg-white/5"
-                    onClick={() => setOpen(false)}
-                  >
-                    Meus agendamentos
-                  </Link>
-                  {role === "CUSTOMER" ? (
-                    <>
-                      <Link
-                        href="/torneios"
-                        className="block px-4 py-3 text-sm hover:bg-white/10 dark:hover:bg-white/5"
-                        onClick={() => setOpen(false)}
-                      >
-                        Torneios
-                      </Link>
-                      <Link
-                        href="/sorteio-times"
-                        className="block px-4 py-3 text-sm hover:bg-white/10 dark:hover:bg-white/5"
-                        onClick={() => setOpen(false)}
-                      >
-                        Sorteio de times
-                      </Link>
-                    </>
-                  ) : null}
                   <button
                     type="button"
-                    className="block w-full px-4 py-3 text-left text-sm hover:bg-white/10 dark:hover:bg-white/5"
+                    className={`${menuItem} w-full text-left`}
                     onClick={() => signOut({ callbackUrl: signOutCallbackUrl })}
                   >
                     Sair
