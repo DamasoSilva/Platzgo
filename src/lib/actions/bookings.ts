@@ -36,6 +36,21 @@ export type CreateBookingInput = {
   paymentProvider?: "asaas" | "mercadopago";
 };
 
+type BookingPaymentResult = Awaited<ReturnType<typeof startPaymentForBooking>>;
+
+export type CreateBookingResult =
+  | { ok: false; error: string }
+  | {
+      ok: true;
+      id: string;
+      status: BookingStatus;
+      start_time: string;
+      end_time: string;
+      total_price_cents: number;
+      ids: string[];
+      payment?: BookingPaymentResult;
+    };
+
 function coerceDate(value: Date | string, fieldName: string): Date {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) {
@@ -159,41 +174,42 @@ async function assertOperatingHours(params: {
   }
 }
 
-export async function createBooking(input: CreateBookingInput) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) throw new Error("Não autenticado");
-  if (session.user.role !== "CUSTOMER") {
-    throw new Error("Apenas clientes podem criar agendamentos.");
-  }
-  if (session.user.id !== input.userId) throw new Error("userId não confere com a sessão");
+export async function createBooking(input: CreateBookingInput): Promise<CreateBookingResult> {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) throw new Error("Não autenticado");
+    if (session.user.role !== "CUSTOMER") {
+      throw new Error("Apenas clientes podem criar agendamentos.");
+    }
+    if (session.user.id !== input.userId) throw new Error("userId não confere com a sessão");
 
-  const start = coerceDate(input.startTime, "startTime");
-  const end = coerceDate(input.endTime, "endTime");
-  const repeatWeeksRaw = typeof input.repeatWeeks === "number" ? input.repeatWeeks : 0;
-  const repeatWeeks = Number.isFinite(repeatWeeksRaw) ? Math.max(0, Math.min(3, Math.floor(repeatWeeksRaw))) : 0;
-  const now = new Date();
+    const start = coerceDate(input.startTime, "startTime");
+    const end = coerceDate(input.endTime, "endTime");
+    const repeatWeeksRaw = typeof input.repeatWeeks === "number" ? input.repeatWeeks : 0;
+    const repeatWeeks = Number.isFinite(repeatWeeksRaw) ? Math.max(0, Math.min(3, Math.floor(repeatWeeksRaw))) : 0;
+    const now = new Date();
 
-  if (!input.userId) throw new Error("userId é obrigatório");
-  if (!input.courtId) throw new Error("courtId é obrigatório");
-  if (end <= start) throw new Error("endTime deve ser maior que startTime");
-  if (repeatWeeksRaw > 3) throw new Error("Para mais de 3 semanas, utilize a mensalidade.");
-  if (start <= now) throw new Error("Não é possível agendar horários retroativos.");
+    if (!input.userId) throw new Error("userId é obrigatório");
+    if (!input.courtId) throw new Error("courtId é obrigatório");
+    if (end <= start) throw new Error("endTime deve ser maior que startTime");
+    if (repeatWeeksRaw > 3) throw new Error("Para mais de 3 semanas, utilize a mensalidade.");
+    if (start <= now) throw new Error("Não é possível agendar horários retroativos.");
 
-  const paymentConfig = await getPaymentConfig();
-  const paymentsEnabled = paymentConfig.enabled && paymentConfig.providersEnabled.length > 0;
-  let paymentsEnabledForBooking = paymentsEnabled && !input.payAtCourt;
-  let selectedProvider: "asaas" | "mercadopago" | null = null;
-  if (paymentsEnabledForBooking && repeatWeeks > 0) {
-    throw new Error("Pagamentos online não suportam recorrência semanal. Use agendamento único.");
-  }
+    const paymentConfig = await getPaymentConfig();
+    const paymentsEnabled = paymentConfig.enabled && paymentConfig.providersEnabled.length > 0;
+    let paymentsEnabledForBooking = paymentsEnabled && !input.payAtCourt;
+    let selectedProvider: "asaas" | "mercadopago" | null = null;
+    if (paymentsEnabledForBooking && repeatWeeks > 0) {
+      throw new Error("Pagamentos online não suportam recorrência semanal. Use agendamento único.");
+    }
 
-  const durationMinutes = minutesBetween(start, end);
-  if (durationMinutes <= 0) throw new Error("Duração inválida");
+    const durationMinutes = minutesBetween(start, end);
+    if (durationMinutes <= 0) throw new Error("Duração inválida");
 
-  const notificationSettings = await getNotificationSettings();
+    const notificationSettings = await getNotificationSettings();
 
-  // Importante: check + create no mesmo transaction para evitar race.
-  const result = await prisma.$transaction(async (tx) => {
+    // Importante: check + create no mesmo transaction para evitar race.
+    const result = await prisma.$transaction(async (tx) => {
     const recentCount = await tx.booking.count({
       where: {
         customerId: input.userId,
@@ -500,12 +516,23 @@ export async function createBooking(input: CreateBookingInput) {
       : null;
   });
 
-  if (result && paymentsEnabledForBooking && result.total_price_cents > 0) {
-    const payment = await startPaymentForBooking({ bookingId: result.id, provider: selectedProvider ?? undefined });
-    return { ...result, payment };
-  }
+    if (!result) {
+      return { ok: false, error: "Erro ao criar agendamento" };
+    }
 
-  return result;
+    if (paymentsEnabledForBooking && result.total_price_cents > 0) {
+      const payment = await startPaymentForBooking({ bookingId: result.id, provider: selectedProvider ?? undefined });
+      return { ok: true, ...result, payment };
+    }
+
+    return { ok: true, ...result };
+  } catch (e) {
+    console.error("createBooking failed:", e);
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Erro ao criar agendamento",
+    };
+  }
 }
 
 export type CreateAdminBookingInput = {

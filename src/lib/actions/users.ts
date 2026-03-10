@@ -25,6 +25,7 @@ type RegisterCustomerInput = {
   email: string;
   password: string;
   whatsapp_number: string;
+  cpf_cnpj: string;
   address_text?: string;
   latitude: number;
   longitude: number;
@@ -54,6 +55,10 @@ type SafeRegisterResult = { ok: true } & RegisterResult | { ok: false; error: st
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
+}
+
+function onlyDigits(value: string): string {
+  return value.replace(/\D/g, "");
 }
 
 function normalizeInstagramUrl(raw: string | null | undefined): string | null {
@@ -117,6 +122,9 @@ export async function registerCustomer(input: RegisterCustomerInput) {
   }
   if (!input.name?.trim()) throw new Error("Nome completo é obrigatório");
   if (!input.whatsapp_number?.trim()) throw new Error("Telefone/WhatsApp é obrigatório");
+  const cpfCnpj = onlyDigits(input.cpf_cnpj ?? "");
+  if (!cpfCnpj) throw new Error("CPF/CNPJ é obrigatório");
+  if (!(cpfCnpj.length === 11 || cpfCnpj.length === 14)) throw new Error("CPF/CNPJ inválido");
   if (!Number.isFinite(input.latitude) || !Number.isFinite(input.longitude)) {
     throw new Error("Localização inválida");
   }
@@ -136,6 +144,7 @@ export async function registerCustomer(input: RegisterCustomerInput) {
       password_hash,
       role: Role.CUSTOMER,
       whatsapp_number: input.whatsapp_number.trim(),
+      cpf_cnpj: cpfCnpj,
       address_text: input.address_text?.trim() || null,
       latitude: input.latitude,
       longitude: input.longitude,

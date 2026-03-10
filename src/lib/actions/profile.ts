@@ -8,11 +8,16 @@ import { prisma } from "@/lib/prisma";
 type UpdateMyProfileInput = {
   name?: string;
   whatsapp_number?: string;
+  cpf_cnpj?: string;
   address_text?: string;
   latitude?: number;
   longitude?: number;
   image?: string | null;
 };
+
+function onlyDigits(value: string): string {
+  return value.replace(/\D/g, "");
+}
 
 export async function updateMyProfile(input: UpdateMyProfileInput) {
   const session = await getServerSession(authOptions);
@@ -22,6 +27,7 @@ export async function updateMyProfile(input: UpdateMyProfileInput) {
   const name = typeof input.name === "string" ? input.name.trim() : undefined;
   const whatsapp_number =
     typeof input.whatsapp_number === "string" ? input.whatsapp_number.trim() : undefined;
+  const cpfCnpjRaw = typeof input.cpf_cnpj === "string" ? input.cpf_cnpj.trim() : undefined;
   const address_text = typeof input.address_text === "string" ? input.address_text.trim() : undefined;
 
   const latitude = input.latitude;
@@ -29,6 +35,17 @@ export async function updateMyProfile(input: UpdateMyProfileInput) {
 
   if (name !== undefined && !name) throw new Error("Nome é obrigatório");
   if (whatsapp_number !== undefined && !whatsapp_number) throw new Error("Telefone/WhatsApp é obrigatório");
+
+  const cpf_cnpj =
+    cpfCnpjRaw === undefined
+      ? undefined
+      : cpfCnpjRaw === ""
+        ? null
+        : onlyDigits(cpfCnpjRaw);
+
+  if (cpf_cnpj && !(cpf_cnpj.length === 11 || cpf_cnpj.length === 14)) {
+    throw new Error("CPF/CNPJ inválido");
+  }
 
   if (
     (latitude !== undefined || longitude !== undefined) &&
@@ -42,6 +59,7 @@ export async function updateMyProfile(input: UpdateMyProfileInput) {
     data: {
       name,
       whatsapp_number,
+      cpf_cnpj: cpf_cnpj === undefined ? undefined : cpf_cnpj,
       address_text: address_text === undefined ? undefined : address_text || null,
       latitude: latitude === undefined ? undefined : latitude,
       longitude: longitude === undefined ? undefined : longitude,

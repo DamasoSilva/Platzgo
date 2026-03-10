@@ -164,6 +164,7 @@ model User {
   inactivatedAt DateTime?
   inactivatedById String?
   whatsapp_number String?
+  cpf_cnpj        String?
   asaas_customer_id String?
   address_text    String?
   latitude        Float?

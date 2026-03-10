@@ -29,18 +29,37 @@ function clampPercent(value: unknown): number {
 async function ensureAsaasCustomer(userId: string, config: { apiKey?: string; baseUrl?: string }) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, name: true, email: true, whatsapp_number: true, asaas_customer_id: true },
+    select: { id: true, name: true, email: true, whatsapp_number: true, cpf_cnpj: true, asaas_customer_id: true },
   });
 
   if (!user) throw new Error("Usuário não encontrado");
   if (!config.apiKey) throw new Error("Asaas não configurado");
   const baseUrl = config.baseUrl ?? "https://sandbox.asaas.com/api/v3";
+  const cpfCnpj = onlyDigits(user.cpf_cnpj);
+
+  if (!cpfCnpj) {
+    throw new Error("CPF/CNPJ é obrigatório para pagamentos online. Atualize seu perfil.");
+  }
+  if (!(cpfCnpj.length === 11 || cpfCnpj.length === 14)) {
+    throw new Error("CPF/CNPJ inválido. Atualize seu perfil.");
+  }
 
   if (user.asaas_customer_id) {
     const checkRes = await fetch(`${baseUrl}/customers/${user.asaas_customer_id}`, {
       headers: { access_token: config.apiKey },
     }).catch(() => null);
-    if (checkRes?.ok) return user.asaas_customer_id;
+    if (checkRes?.ok) {
+      await fetch(`${baseUrl}/customers/${user.asaas_customer_id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          access_token: config.apiKey,
+        },
+        body: JSON.stringify({ cpfCnpj }),
+      }).catch(() => null);
+
+      return user.asaas_customer_id;
+    }
 
     await prisma.user.update({
       where: { id: user.id },
@@ -53,6 +72,7 @@ async function ensureAsaasCustomer(userId: string, config: { apiKey?: string; ba
     name: user.name ?? user.email,
     email: user.email,
     phone: onlyDigits(user.whatsapp_number) || undefined,
+    cpfCnpj,
   };
 
   const res = await fetch(`${baseUrl}/customers`, {

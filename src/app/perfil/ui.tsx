@@ -48,6 +48,7 @@ type Props = {
     name: string;
     email: string;
     whatsapp_number: string;
+    cpf_cnpj: string;
     address_text: string;
     latitude?: number;
     longitude?: number;
@@ -61,6 +62,7 @@ export function ProfileClient(props: Props) {
 
   const [name, setName] = useState(props.initial.name);
   const [whatsapp, setWhatsapp] = useState(props.initial.whatsapp_number);
+  const [cpfCnpj, setCpfCnpj] = useState(props.initial.cpf_cnpj);
   const [address, setAddress] = useState(props.initial.address_text);
   const [lat, setLat] = useState<number | null>(typeof props.initial.latitude === "number" ? props.initial.latitude : null);
   const [lng, setLng] = useState<number | null>(typeof props.initial.longitude === "number" ? props.initial.longitude : null);
@@ -99,6 +101,7 @@ export function ProfileClient(props: Props) {
         await updateMyProfile({
           name,
           whatsapp_number: whatsapp,
+          cpf_cnpj: cpfCnpj,
           address_text: address,
           latitude: locationReady ? lat! : undefined,
           longitude: locationReady ? lng! : undefined,
@@ -183,6 +186,19 @@ export function ProfileClient(props: Props) {
                 <div>
                   <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Telefone/WhatsApp</label>
                   <input className="ph-input mt-2" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">CPF/CNPJ</label>
+                  <input
+                    className="ph-input mt-2"
+                    value={cpfCnpj}
+                    onChange={(e) => setCpfCnpj(e.target.value)}
+                    placeholder="Somente numeros"
+                  />
+                  <p className="mt-1 text-[11px] text-zinc-500 dark:text-zinc-400">
+                    Obrigatorio para pagamentos online.
+                  </p>
                 </div>
 
                 <div className="sm:col-span-2">

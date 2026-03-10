@@ -10,6 +10,7 @@ import { createBooking } from "@/lib/actions/bookings";
 import { getCourtBookingsForDay } from "@/lib/actions/courts";
 import { createAvailabilityAlert } from "@/lib/actions/availabilityAlerts";
 import { requestMonthlyPass } from "@/lib/actions/monthlyPasses";
+import { updateMyProfile } from "@/lib/actions/profile";
 import { computeTotalPriceCents } from "@/lib/utils/pricing";
 import { formatBRLFromCents } from "@/lib/utils/currency";
 import { dateWithTime, formatHHMM } from "@/lib/utils/time";
@@ -76,8 +77,18 @@ function asLocalDayDate(ymd: string): Date {
   return new Date(`${ymd}T00:00:00`);
 }
 
+function normalizeCpfCnpj(value: string): string {
+  return value.replace(/\D/g, "");
+}
+
+function isValidCpfCnpj(value: string): boolean {
+  const digits = normalizeCpfCnpj(value);
+  return digits.length === 11 || digits.length === 14;
+}
+
 export function CourtDetailsClient(props: {
   userId: string | null;
+  customerCpfCnpj?: string | null;
   viewer?: { name?: string | null; image?: string | null; role?: import("@/generated/prisma/enums").Role | null };
   courtId: string;
   day: string;
@@ -87,6 +98,7 @@ export function CourtDetailsClient(props: {
   const router = useRouter();
 
   const [isPending, startTransition] = useTransition();
+  const [isCpfPending, startCpfTransition] = useTransition();
   const [day, setDay] = useState<string>(props.day);
   const [data, setData] = useState<DayData>(props.initial);
   const [durationMinutes, setDurationMinutes] = useState<number>(60);
@@ -103,6 +115,10 @@ export function CourtDetailsClient(props: {
   const [pixPayload, setPixPayload] = useState<string | null>(null);
   const [pixQrBase64, setPixQrBase64] = useState<string | null>(null);
   const [pixCopyStatus, setPixCopyStatus] = useState<string | null>(null);
+  const [cpfCnpj, setCpfCnpj] = useState(props.customerCpfCnpj ?? "");
+  const [cpfPromptOpen, setCpfPromptOpen] = useState(false);
+  const [cpfPromptError, setCpfPromptError] = useState<string | null>(null);
+  const [cpfPromptNext, setCpfPromptNext] = useState(false);
 
   const monthKey = useMemo(() => day.slice(0, 7), [day]);
   const todayYmd = useMemo(() => {
@@ -174,6 +190,8 @@ export function CourtDetailsClient(props: {
     return addMinutes(selectedStart, durationMinutes);
   }, [selectedStart, durationMinutes]);
 
+  const cpfDigits = useMemo(() => normalizeCpfCnpj(cpfCnpj), [cpfCnpj]);
+  const cpfValid = cpfDigits.length === 11 || cpfDigits.length === 14;
 
   const totalPriceCents = useMemo(() => {
     if (!selectedStart || !selectedEnd) return null;
@@ -184,17 +202,62 @@ export function CourtDetailsClient(props: {
     });
   }, [data.court.discount_percentage_over_90min, data.court.price_per_hour, durationMinutes, selectedEnd, selectedStart]);
 
+  const paymentProvider =
+    (data.paymentDefaultProvider && data.paymentProviders?.includes(data.paymentDefaultProvider)
+      ? data.paymentDefaultProvider
+      : data.paymentProviders?.[0]) ?? null;
+
+  const requiresCpfCnpj = useMemo(() => {
+    if (!props.userId) return false;
+    if (!selectedStart || !selectedEnd) return false;
+    if (!data.paymentsEnabled || payAtCourt) return false;
+    if (paymentProvider !== "asaas") return false;
+    if (monthlyIsActive) return false;
+    return (totalPriceCents ?? 0) > 0;
+  }, [data.paymentsEnabled, monthlyIsActive, payAtCourt, paymentProvider, props.userId, selectedEnd, selectedStart, totalPriceCents]);
+
+  function openCpfPrompt(continueAfterSave: boolean, message?: string | null) {
+    setCpfPromptError(message ?? null);
+    setCpfPromptNext(continueAfterSave);
+    setCpfPromptOpen(true);
+  }
+
+  function saveCpfCnpj() {
+    const digits = normalizeCpfCnpj(cpfCnpj);
+    if (!digits) {
+      setCpfPromptError("Informe o CPF/CNPJ.");
+      return;
+    }
+    if (!isValidCpfCnpj(digits)) {
+      setCpfPromptError("CPF/CNPJ inválido.");
+      return;
+    }
+
+    setCpfPromptError(null);
+    startCpfTransition(async () => {
+      try {
+        await updateMyProfile({ cpf_cnpj: digits });
+        setCpfCnpj(digits);
+        setCpfPromptOpen(false);
+        const shouldContinue = cpfPromptNext;
+        setCpfPromptNext(false);
+        if (shouldContinue) {
+          setTimeout(() => {
+            void confirmBooking();
+          }, 0);
+        }
+      } catch (e) {
+        setCpfPromptError(e instanceof Error ? e.message : "Erro ao salvar CPF/CNPJ");
+      }
+    });
+  }
+
   useEffect(() => {
     if (paymentUrl && !paymentOpened) {
       window.open(paymentUrl, "_blank", "noopener,noreferrer");
       setPaymentOpened(true);
     }
   }, [paymentOpened, paymentUrl]);
-
-  const paymentProvider =
-    (data.paymentDefaultProvider && data.paymentProviders?.includes(data.paymentDefaultProvider)
-      ? data.paymentDefaultProvider
-      : data.paymentProviders?.[0]) ?? null;
 
   function refreshDay(nextDay: string, opts?: { keepMessage?: boolean }) {
     if (!opts?.keepMessage) setMessage(null);
@@ -230,6 +293,11 @@ export function CourtDetailsClient(props: {
       setMessage({ type: "info", text: "Faça login para agendar." });
       return;
     }
+    if (requiresCpfCnpj && !cpfValid) {
+      const msg = cpfDigits ? "CPF/CNPJ inválido." : "Informe o CPF/CNPJ para pagamento online.";
+      openCpfPrompt(true, msg);
+      return;
+    }
 
     setMessage(null);
     setPaymentUrl(null);
@@ -248,9 +316,13 @@ export function CourtDetailsClient(props: {
           payAtCourt,
         });
 
-        const checkoutUrl = res && "payment" in res ? res.payment?.checkoutUrl ?? null : null;
-        const pixPayloadFromRes = res && "payment" in res ? res.payment?.pixPayload ?? null : null;
-        const pixQrBase64FromRes = res && "payment" in res ? res.payment?.pixQrBase64 ?? null : null;
+        if (!res.ok) {
+          setMessage({ type: "error", text: res.error || "Erro ao criar agendamento" });
+          return;
+        }
+        const checkoutUrl = res.payment?.checkoutUrl ?? null;
+        const pixPayloadFromRes = res.payment?.pixPayload ?? null;
+        const pixQrBase64FromRes = res.payment?.pixQrBase64 ?? null;
         if (checkoutUrl) {
           setPaymentUrl(checkoutUrl);
           setPaymentOpened(false);
@@ -258,8 +330,8 @@ export function CourtDetailsClient(props: {
         if (pixPayloadFromRes) setPixPayload(pixPayloadFromRes);
         if (pixQrBase64FromRes) setPixQrBase64(pixQrBase64FromRes);
 
-        const createdCount = Array.isArray(res?.ids) ? res.ids.length : 1;
-        const createdIds = Array.isArray(res?.ids) ? res.ids : [];
+        const createdCount = Array.isArray(res.ids) ? res.ids.length : 1;
+        const createdIds = Array.isArray(res.ids) ? res.ids : [];
         const primaryId = createdIds[0] ?? null;
         setMessage({
           type: "success",
@@ -456,6 +528,52 @@ export function CourtDetailsClient(props: {
             >
               OK
             </button>
+          </div>
+        </div>
+      ) : null}
+
+      {cpfPromptOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-md rounded-3xl border border-amber-200 bg-white p-6 text-amber-900 shadow-xl dark:border-amber-900/40 dark:bg-zinc-950 dark:text-amber-100">
+            <div className="text-lg font-semibold">CPF/CNPJ necessario</div>
+            <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">
+              Para pagamento online, informe o CPF/CNPJ do titular.
+            </p>
+            {cpfPromptError ? (
+              <div className="mt-3 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-100">
+                {cpfPromptError}
+              </div>
+            ) : null}
+            <div className="mt-4">
+              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">CPF/CNPJ</label>
+              <input
+                value={cpfCnpj}
+                onChange={(e) => setCpfCnpj(e.target.value)}
+                className="mt-2 w-full rounded-xl border-none bg-zinc-100 px-4 py-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                inputMode="numeric"
+                placeholder="Somente numeros"
+              />
+            </div>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={saveCpfCnpj}
+                disabled={isCpfPending}
+                className="rounded-full bg-amber-600 px-4 py-2 text-xs font-bold text-white hover:bg-amber-500 disabled:opacity-60"
+              >
+                {isCpfPending ? "Salvando..." : "Salvar e continuar"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCpfPromptOpen(false);
+                  setCpfPromptNext(false);
+                }}
+                className="rounded-full border border-zinc-200 px-4 py-2 text-xs font-semibold text-zinc-700 dark:border-zinc-700 dark:text-zinc-200"
+              >
+                Cancelar
+              </button>
+            </div>
           </div>
         </div>
       ) : null}
@@ -792,6 +910,19 @@ export function CourtDetailsClient(props: {
                     />
                     <span>Pagamento direto à quadra (sem pagamento online).</span>
                   </label>
+                ) : null}
+
+                {requiresCpfCnpj && !cpfValid ? (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+                    <div className="font-semibold">CPF/CNPJ necessario para pagar online.</div>
+                    <button
+                      type="button"
+                      onClick={() => openCpfPrompt(false)}
+                      className="mt-2 inline-flex rounded-full bg-amber-600 px-3 py-1 text-[11px] font-bold text-white"
+                    >
+                      Informar CPF/CNPJ
+                    </button>
+                  </div>
                 ) : null}
 
                 {data.paymentsEnabled && !payAtCourt && paymentProvider ? (

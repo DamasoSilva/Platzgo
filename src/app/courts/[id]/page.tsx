@@ -46,7 +46,7 @@ export default async function CourtPage(props: {
   const viewer = userId
     ? await prisma.user.findUnique({
         where: { id: userId },
-        select: { name: true, image: true },
+        select: { name: true, image: true, cpf_cnpj: true },
       })
     : null;
 
@@ -71,6 +71,7 @@ export default async function CourtPage(props: {
   return (
     <CourtDetailsClient
       userId={userId}
+      customerCpfCnpj={viewer?.cpf_cnpj ?? null}
       viewer={{
         name: session?.user?.name ?? viewer?.name ?? null,
         image: session?.user?.image ?? viewer?.image ?? null,

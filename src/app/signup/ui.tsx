@@ -40,6 +40,15 @@ function isValidEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
 
+function normalizeCpfCnpj(value: string): string {
+  return value.replace(/\D/g, "");
+}
+
+function isValidCpfCnpj(value: string): boolean {
+  const digits = normalizeCpfCnpj(value);
+  return digits.length === 11 || digits.length === 14;
+}
+
 function UploadPickerButton(props: {
   label: string;
   accept: string;
@@ -91,6 +100,7 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [whatsappDigits, setWhatsappDigits] = useState("");
+  const [cpfCnpj, setCpfCnpj] = useState("");
   const [customerLoc, setCustomerLoc] = useState<{ address: string; lat: number; lng: number } | null>(null);
 
   // OWNER
@@ -180,11 +190,15 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
           if (!isValidBrazilNationalDigits(whatsappDigits)) {
             throw new Error("Telefone/WhatsApp inválido. Informe DDD + número (fixo ou celular)." );
           }
+          const cpfDigits = normalizeCpfCnpj(cpfCnpj);
+          if (!cpfDigits) throw new Error("CPF/CNPJ é obrigatório");
+          if (!isValidCpfCnpj(cpfCnpj)) throw new Error("CPF/CNPJ inválido");
           const res = await registerCustomerSafe({
             name,
             email,
             password,
             whatsapp_number: toBrazilE164FromNationalDigits(whatsappDigits),
+            cpf_cnpj: cpfDigits,
             address_text: customerLoc.address,
             latitude: customerLoc.lat,
             longitude: customerLoc.lng,
@@ -378,6 +392,19 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
                     required
                     helpText="Aceita fixo (8 dígitos) ou celular (9 dígitos), sempre com DDD."
                   />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">CPF/CNPJ</label>
+                  <input
+                    value={cpfCnpj}
+                    onChange={(e) => setCpfCnpj(e.target.value)}
+                    className="ph-input mt-2"
+                    inputMode="numeric"
+                    placeholder="Somente numeros"
+                    required
+                  />
+                  <p className="ph-help mt-2">Obrigatório para pagamentos online.</p>
                 </div>
 
                 <div>
