@@ -79,6 +79,12 @@ function formatFormatLabel(value: string) {
 export function TournamentsListClient(props: Props) {
   const publicTournaments = props.publicTournaments;
   const internalTournaments = props.internalTournaments;
+  const isLoggedIn = props.isLoggedIn;
+  const canCreateInternal = props.role === "CUSTOMER";
+  const showInternalCreate = canCreateInternal || !isLoggedIn;
+  const internalCreateHref = canCreateInternal
+    ? "/torneios/novo"
+    : `/signin?callbackUrl=${encodeURIComponent("/torneios/novo")}`;
 
   const [query, setQuery] = useState("");
   const [sport, setSport] = useState("ALL");
@@ -120,7 +126,8 @@ export function TournamentsListClient(props: Props) {
     });
   }, [publicTournaments, query, sport, status, category, fee]);
 
-  const showInternalCta = props.isLoggedIn && props.role === "CUSTOMER";
+  const showInternalCta = props.role === "CUSTOMER";
+  const showInternalLoginCta = !props.isLoggedIn;
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -131,9 +138,11 @@ export function TournamentsListClient(props: Props) {
             Encontre campeonatos abertos e organize seus torneios internos com convites.
           </p>
         </div>
-        <Link href="/torneios/novo" className="ph-button-secondary">
-          Criar torneio interno
-        </Link>
+        {showInternalCreate ? (
+          <Link href={internalCreateHref} className="ph-button-secondary">
+            {canCreateInternal ? "Criar torneio interno" : "Entrar para criar"}
+          </Link>
+        ) : null}
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
@@ -291,9 +300,18 @@ export function TournamentsListClient(props: Props) {
                   Ver detalhes
                 </Link>
                 {tournament.status === "OPEN" ? (
-                  <Link href={`/torneios/${tournament.id}/inscricao`} className="ph-button-sm">
-                    Inscrever time
-                  </Link>
+                  isLoggedIn ? (
+                    <Link href={`/torneios/${tournament.id}/inscricao`} className="ph-button-sm">
+                      Inscrever time
+                    </Link>
+                  ) : (
+                    <Link
+                      href={`/signin?callbackUrl=${encodeURIComponent(`/torneios/${tournament.id}/inscricao`)}`}
+                      className="ph-button-sm"
+                    >
+                      Entrar para se inscrever
+                    </Link>
+                  )
                 ) : null}
               </div>
             </div>
@@ -308,11 +326,11 @@ export function TournamentsListClient(props: Props) {
             <Link href="/torneios/novo" className="ph-button-secondary-sm">
               Criar interno
             </Link>
-          ) : (
+          ) : showInternalLoginCta ? (
             <Link href="/signin?callbackUrl=%2Ftorneios%2Fnovo" className="ph-button-secondary-sm">
               Entrar para criar
             </Link>
-          )}
+          ) : null}
         </div>
 
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">

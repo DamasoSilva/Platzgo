@@ -157,15 +157,13 @@ export function CustomerHeader(props: Props) {
             <Link href="/torneios" className={pill}>
               Torneios
             </Link>
+            <Link href="/sorteio-times" className={pill}>
+              Sorteio de times
+            </Link>
             {isLoggedIn && role === "CUSTOMER" ? (
-              <>
-                <Link href="/meus-agendamentos" className={pill}>
-                  Meus agendamentos
-                </Link>
-                <Link href="/sorteio-times" className={pill}>
-                  Sorteio de times
-                </Link>
-              </>
+              <Link href="/meus-agendamentos" className={pill}>
+                Meus agendamentos
+              </Link>
             ) : null}
           </div>
 
@@ -302,15 +300,13 @@ export function CustomerHeader(props: Props) {
             <Link href="/torneios" className={pill} onClick={() => setMenuOpen(false)}>
               Torneios
             </Link>
+            <Link href="/sorteio-times" className={pill} onClick={() => setMenuOpen(false)}>
+              Sorteio de times
+            </Link>
             {isLoggedIn && role === "CUSTOMER" ? (
-              <>
-                <Link href="/meus-agendamentos" className={pill} onClick={() => setMenuOpen(false)}>
-                  Meus agendamentos
-                </Link>
-                <Link href="/sorteio-times" className={pill} onClick={() => setMenuOpen(false)}>
-                  Sorteio de times
-                </Link>
-              </>
+              <Link href="/meus-agendamentos" className={pill} onClick={() => setMenuOpen(false)}>
+                Meus agendamentos
+              </Link>
             ) : null}
 
             {role === "SYSADMIN" ? (

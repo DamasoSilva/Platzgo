@@ -191,103 +191,32 @@ export async function clearPaymentSecretsForSysadmin() {
 }
 
 export async function testAsaasSplitWallet() {
-  const session = await requireRole("SYSADMIN");
+  await requireRole("SYSADMIN");
 
-  const [asaasApiKey, asaasBaseUrl, walletIdRaw, testCpfCnpjRaw] = await Promise.all([
+  const [asaasApiKey, asaasBaseUrl, walletIdRaw] = await Promise.all([
     getSystemSecret(PAYMENT_SETTING_KEYS.asaasApiKey),
     getSystemSetting(PAYMENT_SETTING_KEYS.asaasBaseUrl),
     getSystemSetting(PAYMENT_SETTING_KEYS.asaasSplitWalletId),
-    getSystemSetting(PAYMENT_SETTING_KEYS.asaasTestCpfCnpj),
   ]);
 
   const walletId = (walletIdRaw ?? "").trim();
   if (!walletId) throw new Error("Wallet ID nao configurado");
   if (!asaasApiKey) throw new Error("Asaas nao configurado");
 
-  const testCpfCnpj = (testCpfCnpjRaw ?? "").replace(/\D/g, "");
-  if (!testCpfCnpj) throw new Error("CPF/CNPJ de teste nao configurado");
-  if (!(testCpfCnpj.length === 11 || testCpfCnpj.length === 14)) {
-    throw new Error("CPF/CNPJ de teste invalido");
-  }
-
   const baseUrl = (asaasBaseUrl ?? "https://sandbox.asaas.com/api/v3").trim() || "https://sandbox.asaas.com/api/v3";
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { id: true, name: true, email: true, whatsapp_number: true, asaas_customer_id: true },
-  });
-
-  if (!user) throw new Error("Usuario nao encontrado");
-
-  const onlyDigits = (v: string | null | undefined) => (v ?? "").replace(/\D/g, "");
-
-  let customerId = user.asaas_customer_id ?? null;
-  if (customerId) {
-    await fetch(`${baseUrl}/customers/${customerId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        access_token: asaasApiKey,
-      },
-      body: JSON.stringify({ cpfCnpj: testCpfCnpj }),
-    }).catch(() => null);
-  }
-
-  if (!customerId) {
-    const payload = {
-      name: user.name ?? user.email,
-      email: user.email,
-      phone: onlyDigits(user.whatsapp_number) || undefined,
-      cpfCnpj: testCpfCnpj,
-    };
-
-    const createRes = await fetch(`${baseUrl}/customers`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        access_token: asaasApiKey,
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const createData = await createRes.json().catch(() => null);
-    if (!createRes.ok || !createData?.id) {
-      throw new Error("Falha ao criar cliente no Asaas");
-    }
-
-    customerId = String(createData.id);
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { asaas_customer_id: customerId },
-      select: { id: true },
-    });
-  }
-
-  const dueDate = new Date().toISOString().slice(0, 10);
-  const payload = {
-    customer: customerId,
-    billingType: "PIX",
-    value: 5,
-    dueDate,
-    description: "Teste de wallet Asaas",
-    externalReference: `wallet-test:${walletId}`,
-    split: [{ walletId, percentualValue: 100 }],
-  };
-
-  const res = await fetch(`${baseUrl}/payments`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      access_token: asaasApiKey,
-    },
-    body: JSON.stringify(payload),
+  const res = await fetch(`${baseUrl}/wallets?limit=100&offset=0`, {
+    headers: { access_token: asaasApiKey },
   });
 
   const data = await res.json().catch(() => null);
-  if (!res.ok || !data?.id) {
+  if (!res.ok) {
     const detail = data?.errors?.[0]?.description || data?.message || data?.error || null;
-    throw new Error(
-      detail ? `Wallet Asaas invalido: ${detail} (HTTP ${res.status})` : `Wallet Asaas invalido ou nao encontrado (HTTP ${res.status})`
-    );
+    throw new Error(detail ? `Wallet Asaas invalido: ${detail} (HTTP ${res.status})` : `Falha ao validar wallet Asaas (HTTP ${res.status})`);
+  }
+
+  const wallets = (data?.data ?? []).map((w: { id?: string }) => w.id).filter(Boolean) as string[];
+  if (!wallets.includes(walletId)) {
+    throw new Error("Wallet Asaas nao encontrado");
   }
 
   return { ok: true };

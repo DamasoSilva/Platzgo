@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const LEVELS = [
   { key: "level1", label: "Nível 1 - Alto rendimento" },
@@ -10,10 +11,45 @@ const LEVELS = [
 
 type DrawMode = "random" | "skill";
 
+type TeamDrawDraft = {
+  mode: DrawMode;
+  teamCount: number;
+  playersPerTeam: number;
+  randomNames: string;
+  level1Names: string;
+  level2Names: string;
+  level3Names: string;
+};
+
 type TeamResult = {
   teams: string[][];
   bench: string[];
 };
+
+const DRAFT_KEY = "ph:teamDrawDraft";
+const AUTO_RUN_KEY = "ph:teamDrawAutoRun";
+
+function readDraft(): TeamDrawDraft | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as TeamDrawDraft;
+    if (!parsed || typeof parsed !== "object") return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeDraft(draft: TeamDrawDraft): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+  } catch {
+    // ignore
+  }
+}
 
 function parseNames(raw: string): string[] {
   return (raw ?? "")
@@ -180,7 +216,9 @@ function balancedDraw(
   return { teams, bench };
 }
 
-export function TeamDrawClient() {
+export function TeamDrawClient(props: { isLoggedIn: boolean }) {
+  const router = useRouter();
+  const isLoggedIn = props.isLoggedIn;
   const [mode, setMode] = useState<DrawMode>("random");
   const [teamCount, setTeamCount] = useState(2);
   const [playersPerTeam, setPlayersPerTeam] = useState(2);
@@ -200,6 +238,9 @@ export function TeamDrawClient() {
     level2: string[];
     level3: string[];
   } | null>(null);
+  const [draftLoaded, setDraftLoaded] = useState(false);
+  const [autoRunQueued, setAutoRunQueued] = useState(false);
+  const onGenerateRef = useRef<() => void>(() => undefined);
 
   const totalPlayers = useMemo(() => {
     if (mode === "random") return removeAllDuplicates(uniquePreserveOrder(parseNames(randomNames))).length;
@@ -222,6 +263,46 @@ export function TeamDrawClient() {
     setPendingRemoveDuplicates(null);
     setDuplicatePromptOpen(false);
   }, [mode, randomNames, level1Names, level2Names, level3Names]);
+
+  useEffect(() => {
+    const draft = readDraft();
+    if (draft) {
+      setMode(draft.mode ?? "random");
+      setTeamCount(Number.isFinite(draft.teamCount) ? draft.teamCount : 2);
+      setPlayersPerTeam(Number.isFinite(draft.playersPerTeam) ? draft.playersPerTeam : 2);
+      setRandomNames(draft.randomNames ?? "");
+      setLevel1Names(draft.level1Names ?? "");
+      setLevel2Names(draft.level2Names ?? "");
+      setLevel3Names(draft.level3Names ?? "");
+    }
+
+    if (typeof window !== "undefined") {
+      setAutoRunQueued(window.localStorage.getItem(AUTO_RUN_KEY) === "1");
+    }
+
+    setDraftLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (!draftLoaded || !isLoggedIn || !autoRunQueued) return;
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(AUTO_RUN_KEY);
+    }
+    setAutoRunQueued(false);
+    onGenerateRef.current?.();
+  }, [draftLoaded, isLoggedIn, autoRunQueued]);
+
+  useEffect(() => {
+    writeDraft({
+      mode,
+      teamCount,
+      playersPerTeam,
+      randomNames,
+      level1Names,
+      level2Names,
+      level3Names,
+    });
+  }, [mode, teamCount, playersPerTeam, randomNames, level1Names, level2Names, level3Names]);
 
   const fullTeamsPossible = useMemo(() => {
     if (playersPerTeam <= 0) return 0;
@@ -334,6 +415,29 @@ export function TeamDrawClient() {
     }
 
     runGenerate(pendingRemoveDuplicates ?? true);
+  }
+
+  onGenerateRef.current = onGenerate;
+
+  function handleGenerate() {
+    if (!isLoggedIn) {
+      writeDraft({
+        mode,
+        teamCount,
+        playersPerTeam,
+        randomNames,
+        level1Names,
+        level2Names,
+        level3Names,
+      });
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(AUTO_RUN_KEY, "1");
+      }
+      router.push(`/signin?callbackUrl=${encodeURIComponent("/sorteio-times")}`);
+      return;
+    }
+
+    onGenerate();
   }
 
   const capacity = teamCount * playersPerTeam;
@@ -475,7 +579,7 @@ export function TeamDrawClient() {
           ) : null}
 
           <div className="mt-4 flex gap-2">
-            <button type="button" className="ph-button" onClick={onGenerate}>
+            <button type="button" className="ph-button" onClick={handleGenerate}>
               Gerar sorteio
             </button>
             <button
@@ -491,6 +595,11 @@ export function TeamDrawClient() {
               Limpar resultado
             </button>
           </div>
+          {!isLoggedIn ? (
+            <p className="mt-2 text-[11px] text-zinc-500 dark:text-zinc-400">
+              Para gerar o sorteio, faca login. Seus dados serao mantidos.
+            </p>
+          ) : null}
         </div>
       </div>
 

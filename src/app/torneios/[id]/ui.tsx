@@ -70,6 +70,7 @@ function formatFormatLabel(value: string) {
 
 export function TournamentDetailClient(props: Props) {
   const { tournament } = props;
+  const isLoggedIn = props.isLoggedIn;
   const [tab, setTab] = useState<TabKey>("overview");
 
   const schedule = useMemo(() => tournament.matches, [tournament.matches]);
@@ -170,9 +171,18 @@ export function TournamentDetailClient(props: Props) {
 
           <div className="mt-6 space-y-3">
             {tournament.status === "OPEN" ? (
-              <Link href={`/torneios/${tournament.id}/inscricao`} className="ph-button w-full">
-                Inscrever time
-              </Link>
+              isLoggedIn ? (
+                <Link href={`/torneios/${tournament.id}/inscricao`} className="ph-button w-full">
+                  Inscrever time
+                </Link>
+              ) : (
+                <Link
+                  href={`/signin?callbackUrl=${encodeURIComponent(`/torneios/${tournament.id}/inscricao`)}`}
+                  className="ph-button w-full"
+                >
+                  Entrar para se inscrever
+                </Link>
+              )
             ) : null}
             <Link href="/torneios" className="ph-button-secondary w-full">
               Voltar aos torneios

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useEffect, useId, useMemo, useState, useTransition } from "react";
+import { signIn } from "next-auth/react";
 
 import { PlacesLocationPicker } from "@/components/PlacesLocationPicker";
 import { BrazilPhoneInput, isValidBrazilNationalDigits, toBrazilE164FromNationalDigits } from "@/components/BrazilPhoneInput";
@@ -270,7 +271,25 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
                   try {
                     await verifyEmailCode({ email: verificationEmail, code: verificationCode });
                     const callbackUrl = role === "OWNER" ? "/dashboard/admin" : props.callbackUrl;
-                    router.push(`/signin?callbackUrl=${encodeURIComponent(callbackUrl)}&role=${role}&success=signup`);
+                    const roleIntent = role === "OWNER" ? "ADMIN" : "CUSTOMER";
+                    if (!password) {
+                      router.push(`/signin?callbackUrl=${encodeURIComponent(callbackUrl)}&role=${role}&success=signup`);
+                      return;
+                    }
+
+                    const result = await signIn("credentials", {
+                      redirect: false,
+                      email: verificationEmail,
+                      password,
+                      roleIntent,
+                    });
+
+                    if (result?.error) {
+                      router.push(`/signin?callbackUrl=${encodeURIComponent(callbackUrl)}&role=${role}&success=signup`);
+                      return;
+                    }
+
+                    router.push(callbackUrl);
                   } catch (e) {
                     setError(e instanceof Error ? e.message : "Código inválido");
                   }
