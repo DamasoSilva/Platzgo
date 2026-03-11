@@ -11,9 +11,9 @@ import { toWaMeLink } from "@/lib/utils/whatsapp";
 import { ThemedBackground } from "@/components/ThemedBackground";
 import { slugify } from "@/lib/utils/slug";
 
-import { DayPickerClient } from "@/app/establishments/[id]/DayPickerClient";
 import { EngagementClient } from "@/app/establishments/[id]/EngagementClient";
 import { formatSportLabel } from "@/lib/utils/sport";
+import { SearchPrefillClient } from "@/components/SearchPrefillClient";
 
 async function resolveEstablishmentIdBySlug(rawSlug: string): Promise<string | null> {
   const normalized = slugify(rawSlug);
@@ -91,8 +91,12 @@ export default async function EstablishmentSlugPage(props: {
 
   const params = await Promise.resolve(props.params);
   const searchParams = props.searchParams ? await Promise.resolve(props.searchParams) : undefined;
-  const day = coerceDay(searchParams?.day);
-  const time = coerceTime(searchParams?.time);
+  const rawDay = searchParams?.day;
+  const rawTime = searchParams?.time;
+  const hasDayParam = typeof rawDay === "string" && /^\d{4}-\d{2}-\d{2}$/.test(rawDay);
+  const hasTimeParam = typeof rawTime === "string" && /^\d{2}:\d{2}$/.test(rawTime);
+  const day = coerceDay(rawDay);
+  const time = coerceTime(rawTime);
 
   const normalizedSlug = slugify(params.slug);
   const estId = await resolveEstablishmentIdBySlug(params.slug);
@@ -201,9 +205,7 @@ export default async function EstablishmentSlugPage(props: {
             ) : null}
           </div>
 
-          <div className="mt-6">
-            <DayPickerClient establishmentId={est.id} initialDay={day} initialTime={time} basePath={basePath} />
-          </div>
+          <SearchPrefillClient hasDayParam={hasDayParam} hasTimeParam={hasTimeParam} basePath={basePath} />
 
           {coverUrl ? (
             <div className="mt-6 h-72 overflow-hidden rounded-3xl border border-zinc-200 bg-black/20 dark:border-zinc-800 dark:bg-black/30">

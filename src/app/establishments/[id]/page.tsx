@@ -10,9 +10,9 @@ import { formatBRLFromCents } from "@/lib/utils/currency";
 import { toWaMeLink } from "@/lib/utils/whatsapp";
 import { ThemedBackground } from "@/components/ThemedBackground";
 
-import { DayPickerClient } from "./DayPickerClient";
 import { EngagementClient } from "./EngagementClient";
 import { formatSportLabel } from "@/lib/utils/sport";
+import { SearchPrefillClient } from "@/components/SearchPrefillClient";
 
 export async function generateMetadata(props: {
   params: { id: string } | Promise<{ id: string }>;
@@ -56,8 +56,12 @@ export default async function EstablishmentPage(props: {
 
   const params = await Promise.resolve(props.params);
   const searchParams = props.searchParams ? await Promise.resolve(props.searchParams) : undefined;
-  const day = coerceDay(searchParams?.day);
-  const time = coerceTime(searchParams?.time);
+  const rawDay = searchParams?.day;
+  const rawTime = searchParams?.time;
+  const hasDayParam = typeof rawDay === "string" && /^\d{4}-\d{2}-\d{2}$/.test(rawDay);
+  const hasTimeParam = typeof rawTime === "string" && /^\d{2}:\d{2}$/.test(rawTime);
+  const day = coerceDay(rawDay);
+  const time = coerceTime(rawTime);
 
   const callbackUrl = `/establishments/${params.id}?day=${encodeURIComponent(day)}${
     time ? `&time=${encodeURIComponent(time)}` : ""
@@ -160,14 +164,11 @@ export default async function EstablishmentPage(props: {
             ) : null}
           </div>
 
-          <div className="mt-6">
-            <DayPickerClient
-              establishmentId={est.id}
-              initialDay={day}
-              initialTime={time}
-              basePath={`/establishments/${est.id}`}
-            />
-          </div>
+          <SearchPrefillClient
+            hasDayParam={hasDayParam}
+            hasTimeParam={hasTimeParam}
+            basePath={`/establishments/${est.id}`}
+          />
 
           {coverUrl ? (
             <div className="mt-6 h-72 overflow-hidden rounded-3xl border border-zinc-200 bg-black/20 dark:border-zinc-800 dark:bg-black/30">
