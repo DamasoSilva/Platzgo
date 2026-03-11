@@ -20,6 +20,7 @@ import {
   TournamentStatus,
   TournamentVisibility,
 } from "@/generated/prisma/enums";
+import { isValidCpfCnpj, normalizeCpfCnpj } from "@/lib/utils/cpfCnpj";
 
 function toDate(value: string, fieldLabel: string): Date {
   const date = new Date(value);
@@ -69,12 +70,12 @@ async function ensureAsaasCustomer(userId: string, config: { apiKey?: string; ba
   if (!user) throw new Error("Usuario nao encontrado");
   if (!config.apiKey) throw new Error("Asaas nao configurado");
   const baseUrl = config.baseUrl ?? "https://sandbox.asaas.com/api/v3";
-  const cpfCnpj = onlyDigits(user.cpf_cnpj);
+  const cpfCnpj = normalizeCpfCnpj(user.cpf_cnpj ?? "");
 
   if (!cpfCnpj) {
     throw new Error("CPF/CNPJ e obrigatorio para pagamentos online. Atualize seu perfil.");
   }
-  if (!(cpfCnpj.length === 11 || cpfCnpj.length === 14)) {
+  if (!isValidCpfCnpj(cpfCnpj)) {
     throw new Error("CPF/CNPJ invalido. Atualize seu perfil.");
   }
 

@@ -196,8 +196,10 @@ export function ProfileClient(props: Props) {
                   <input
                     className="ph-input mt-2"
                     value={cpfCnpj}
-                    onChange={(e) => setCpfCnpj(e.target.value)}
+                    onChange={(e) => setCpfCnpj(e.target.value.replace(/\D/g, "").slice(0, 14))}
                     placeholder="Somente numeros"
+                    inputMode="numeric"
+                    maxLength={14}
                   />
                   <p className="mt-1 text-[11px] text-zinc-500 dark:text-zinc-400">
                     Obrigatorio para pagamentos online.

@@ -12,6 +12,7 @@ import { getNotificationSettings } from "@/lib/notificationSettings";
 import { extractAsaasErrorMessage, getPaymentConfig, PAYMENT_SETTING_KEYS } from "@/lib/payments";
 import { slugify } from "@/lib/utils/slug";
 import { getSystemSetting } from "@/lib/systemSettings";
+import { isValidCpfCnpj, normalizeCpfCnpj } from "@/lib/utils/cpfCnpj";
 
 function isVideoUrl(url: string): boolean {
   return /\.(mp4|webm)(\?|#|$)/i.test(url);
@@ -173,9 +174,9 @@ async function validateAsaasWalletId(walletId: string, userId: string): Promise<
   }
 
   const testCpfCnpjRaw = await getSystemSetting(PAYMENT_SETTING_KEYS.asaasTestCpfCnpj);
-  const testCpfCnpj = (testCpfCnpjRaw ?? "").replace(/\D/g, "");
+  const testCpfCnpj = normalizeCpfCnpj(testCpfCnpjRaw ?? "");
   if (!testCpfCnpj) return { ok: false, message: "CPF/CNPJ de teste nao configurado" };
-  if (!(testCpfCnpj.length === 11 || testCpfCnpj.length === 14)) {
+  if (!isValidCpfCnpj(testCpfCnpj)) {
     return { ok: false, message: "CPF/CNPJ de teste invalido" };
   }
 

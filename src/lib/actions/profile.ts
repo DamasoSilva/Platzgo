@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isValidCpfCnpj, normalizeCpfCnpj } from "@/lib/utils/cpfCnpj";
 
 type UpdateMyProfileInput = {
   name?: string;
@@ -15,9 +16,6 @@ type UpdateMyProfileInput = {
   image?: string | null;
 };
 
-function onlyDigits(value: string): string {
-  return value.replace(/\D/g, "");
-}
 
 export async function updateMyProfile(input: UpdateMyProfileInput) {
   const session = await getServerSession(authOptions);
@@ -41,9 +39,9 @@ export async function updateMyProfile(input: UpdateMyProfileInput) {
       ? undefined
       : cpfCnpjRaw === ""
         ? null
-        : onlyDigits(cpfCnpjRaw);
+        : normalizeCpfCnpj(cpfCnpjRaw);
 
-  if (cpf_cnpj && !(cpf_cnpj.length === 11 || cpf_cnpj.length === 14)) {
+  if (cpf_cnpj && !isValidCpfCnpj(cpf_cnpj)) {
     throw new Error("CPF/CNPJ inválido");
   }
 

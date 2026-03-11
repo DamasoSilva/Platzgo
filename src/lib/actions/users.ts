@@ -19,6 +19,7 @@ import {
 import { getNotificationSettings } from "@/lib/notificationSettings";
 import { getEffectiveSmtpConfig } from "@/lib/systemSettings";
 import { EmailVerificationPurpose, EstablishmentApprovalStatus, NotificationType } from "@/generated/prisma/enums";
+import { isValidCpfCnpj, normalizeCpfCnpj } from "@/lib/utils/cpfCnpj";
 
 type RegisterCustomerInput = {
   name: string;
@@ -57,9 +58,6 @@ function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
-function onlyDigits(value: string): string {
-  return value.replace(/\D/g, "");
-}
 
 function normalizeInstagramUrl(raw: string | null | undefined): string | null {
   const value = (raw ?? "").trim();
@@ -122,9 +120,9 @@ export async function registerCustomer(input: RegisterCustomerInput) {
   }
   if (!input.name?.trim()) throw new Error("Nome completo é obrigatório");
   if (!input.whatsapp_number?.trim()) throw new Error("Telefone/WhatsApp é obrigatório");
-  const cpfCnpj = onlyDigits(input.cpf_cnpj ?? "");
+  const cpfCnpj = normalizeCpfCnpj(input.cpf_cnpj ?? "");
   if (!cpfCnpj) throw new Error("CPF/CNPJ é obrigatório");
-  if (!(cpfCnpj.length === 11 || cpfCnpj.length === 14)) throw new Error("CPF/CNPJ inválido");
+  if (!isValidCpfCnpj(cpfCnpj)) throw new Error("CPF/CNPJ inválido");
   if (!Number.isFinite(input.latitude) || !Number.isFinite(input.longitude)) {
     throw new Error("Localização inválida");
   }

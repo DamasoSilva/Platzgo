@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/authz";
 import { MonthlyPassStatus, NotificationType } from "@/generated/prisma/enums";
 import { enqueueEmail } from "@/lib/emailQueue";
+import { buildBlockingBookingWhere } from "@/lib/utils/bookingAvailability";
 import {
   getAppUrl,
   monthlyPassCancelledEmailToCustomer,
@@ -106,11 +107,12 @@ async function assertMonthlyPassAvailability(params: {
 
   if (!court) throw new Error("Quadra não encontrada");
 
+  const blockingWhere = buildBlockingBookingWhere(new Date());
   const [bookings, blocks, activePasses, holidays] = await Promise.all([
     prisma.booking.findMany({
       where: {
         courtId,
-        status: { in: ["PENDING", "CONFIRMED"] },
+        AND: [blockingWhere],
         start_time: { lt: nextMonthStart },
         end_time: { gt: monthStart },
       },
@@ -211,175 +213,180 @@ export async function requestMonthlyPass(input: {
   weekday: number;
   startTime: string;
   endTime: string;
-}) {
-  const session = await requireRole("CUSTOMER");
-  if (!input.courtId) throw new Error("courtId é obrigatório");
-  const month = assertMonth(input.month);
-  const weekday = Number.isFinite(input.weekday) ? Math.max(0, Math.min(6, Math.floor(input.weekday))) : NaN;
-  if (!Number.isInteger(weekday)) throw new Error("Dia da semana inválido");
-  const startTime = assertTimeHHMM(input.startTime, "Início");
-  const endTime = assertTimeHHMM(input.endTime, "Término");
-  if (!compareTimes(startTime, endTime)) throw new Error("Horário inválido: término deve ser após início.");
+}): Promise<{ ok: true; id: string; status: MonthlyPassStatus } | { ok: false; error: string }> {
+  try {
+    const session = await requireRole("CUSTOMER");
+    if (!input.courtId) throw new Error("courtId é obrigatório");
+    const month = assertMonth(input.month);
+    const weekday = Number.isFinite(input.weekday) ? Math.max(0, Math.min(6, Math.floor(input.weekday))) : NaN;
+    if (!Number.isInteger(weekday)) throw new Error("Dia da semana inválido");
+    const startTime = assertTimeHHMM(input.startTime, "Início");
+    const endTime = assertTimeHHMM(input.endTime, "Término");
+    if (!compareTimes(startTime, endTime)) throw new Error("Horário inválido: término deve ser após início.");
 
-  const now = new Date();
-  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1, 0, 0, 0, 0);
-  const nextMonth = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, "0")}`;
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1, 0, 0, 0, 0);
+    const nextMonth = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, "0")}`;
 
-  if (month !== currentMonth && month !== nextMonth) {
-    throw new Error("Mensalidade disponível apenas para o mês atual ou próximo mês.");
-  }
+    if (month !== currentMonth && month !== nextMonth) {
+      throw new Error("Mensalidade disponível apenas para o mês atual ou próximo mês.");
+    }
 
-  if (month === currentMonth) {
-    const dates = listWeekdayDates(month, weekday);
-    const firstDate = dates[0];
-    if (firstDate) {
-      const firstStart = toDateTime(firstDate, startTime);
-      if (now >= firstStart) {
-        throw new Error("Solicitação deve ocorrer antes do primeiro dia da mensalidade.");
+    if (month === currentMonth) {
+      if (now.getDate() >= 15) {
+        throw new Error("Estamos no meio do mês. Use a repetição semanal para este mês.");
+      }
+      const dates = listWeekdayDates(month, weekday);
+      const nextDate = dates.find((d) => toDateTime(d, startTime) > now);
+      if (!nextDate) {
+        throw new Error("Não há mais horários disponíveis para este mês.");
       }
     }
-  }
 
-  const court = await prisma.court.findUnique({
-    where: { id: input.courtId },
-    select: {
-      id: true,
-      name: true,
-      is_active: true,
-      monthly_price_cents: true,
-      monthly_terms: true,
-      establishment: { select: { ownerId: true } },
-    },
-  });
-
-  if (!court) throw new Error("Quadra não encontrada");
-  if (!court.is_active) throw new Error("Quadra inativa");
-
-  const price = court.monthly_price_cents;
-  if (typeof price !== "number" || !Number.isFinite(price) || price <= 0) {
-    throw new Error("Esta quadra não possui mensalidade configurada.");
-  }
-
-  const terms = (court.monthly_terms ?? "").trim();
-  if (terms && !input.acceptTerms) throw new Error("Você precisa aceitar os termos da mensalidade.");
-
-  const existing = await prisma.monthlyPass.findUnique({
-    where: {
-      courtId_customerId_month: {
-        courtId: input.courtId,
-        customerId: session.user.id,
-        month,
+    const court = await prisma.court.findUnique({
+      where: { id: input.courtId },
+      select: {
+        id: true,
+        name: true,
+        is_active: true,
+        monthly_price_cents: true,
+        monthly_terms: true,
+        establishment: { select: { ownerId: true } },
       },
-    },
-    select: { id: true, status: true, weekday: true, start_time: true, end_time: true },
-  });
+    });
 
-  if (existing?.status === MonthlyPassStatus.ACTIVE) {
-    throw new Error("Você já possui mensalidade ativa para este mês.");
-  }
+    if (!court) throw new Error("Quadra não encontrada");
+    if (!court.is_active) throw new Error("Quadra inativa");
 
-  if (existing?.status === MonthlyPassStatus.PENDING) {
-    return { id: existing.id, status: existing.status };
-  }
+    const price = court.monthly_price_cents;
+    if (typeof price !== "number" || !Number.isFinite(price) || price <= 0) {
+      throw new Error("Esta quadra não possui mensalidade configurada.");
+    }
 
-  if (month === nextMonth) {
-    const penultimateWeekStart = addDays(nextMonthDate, -14);
-    const lastWeekStart = addDays(nextMonthDate, -7);
+    const terms = (court.monthly_terms ?? "").trim();
+    if (terms && !input.acceptTerms) throw new Error("Você precisa aceitar os termos da mensalidade.");
 
-    const renewalEligible = await prisma.monthlyPass.findFirst({
+    const existing = await prisma.monthlyPass.findUnique({
       where: {
-        courtId: input.courtId,
-        customerId: session.user.id,
-        month: currentMonth,
-        status: MonthlyPassStatus.ACTIVE,
-        weekday,
-        start_time: startTime,
-        end_time: endTime,
+        courtId_customerId_month: {
+          courtId: input.courtId,
+          customerId: session.user.id,
+          month,
+        },
+      },
+      select: { id: true, status: true, weekday: true, start_time: true, end_time: true },
+    });
+
+    if (existing?.status === MonthlyPassStatus.ACTIVE) {
+      throw new Error("Você já possui mensalidade ativa para este mês.");
+    }
+
+    if (existing?.status === MonthlyPassStatus.PENDING) {
+      return { ok: true, id: existing.id, status: existing.status };
+    }
+
+    if (month === nextMonth) {
+      const penultimateWeekStart = addDays(nextMonthDate, -14);
+      const lastWeekStart = addDays(nextMonthDate, -7);
+
+      const renewalEligible = await prisma.monthlyPass.findFirst({
+        where: {
+          courtId: input.courtId,
+          customerId: session.user.id,
+          month: currentMonth,
+          status: MonthlyPassStatus.ACTIVE,
+          weekday,
+          start_time: startTime,
+          end_time: endTime,
+        },
+        select: { id: true },
+      });
+
+      if (now < penultimateWeekStart) {
+        throw new Error("Solicitações para o próximo mês abrem na penúltima semana do mês anterior.");
+      }
+
+      if (now < lastWeekStart && !renewalEligible) {
+        throw new Error("Renovação prioritária para mensalistas. Novas solicitações liberadas na última semana.");
+      }
+    }
+
+    await assertMonthlyPassAvailability({
+      courtId: input.courtId,
+      month,
+      weekday,
+      startTime,
+      endTime,
+    });
+
+    const pass = existing
+      ? await prisma.monthlyPass.update({
+          where: { id: existing.id },
+          data: {
+            status: MonthlyPassStatus.PENDING,
+            weekday,
+            start_time: startTime,
+            end_time: endTime,
+          },
+          select: { id: true, status: true },
+        })
+      : await prisma.monthlyPass.create({
+          data: {
+            courtId: input.courtId,
+            customerId: session.user.id,
+            month,
+            status: MonthlyPassStatus.PENDING,
+            price_cents: price,
+            terms_snapshot: terms || null,
+            weekday,
+            start_time: startTime,
+            end_time: endTime,
+          },
+          select: { id: true, status: true },
+        });
+
+    await prisma.notification.create({
+      data: {
+        userId: court.establishment.ownerId,
+        type: NotificationType.MONTHLY_PASS_PENDING,
+        title: "Mensalidade pendente",
+        body: `Nova solicitação de mensalidade para ${court.name} (${month}).`,
       },
       select: { id: true },
     });
 
-    if (now < penultimateWeekStart) {
-      throw new Error("Solicitações para o próximo mês abrem na penúltima semana.");
-    }
-
-    if (now < lastWeekStart && !renewalEligible) {
-      throw new Error("Renovação prioritária para mensalistas. Novas solicitações liberadas na última semana.");
-    }
-  }
-
-  await assertMonthlyPassAvailability({
-    courtId: input.courtId,
-    month,
-    weekday,
-    startTime,
-    endTime,
-  });
-
-  const pass = existing
-    ? await prisma.monthlyPass.update({
-        where: { id: existing.id },
-        data: {
-          status: MonthlyPassStatus.PENDING,
-          weekday,
-          start_time: startTime,
-          end_time: endTime,
-        },
-        select: { id: true, status: true },
-      })
-    : await prisma.monthlyPass.create({
-        data: {
-          courtId: input.courtId,
-          customerId: session.user.id,
-          month,
-          status: MonthlyPassStatus.PENDING,
-          price_cents: price,
-          terms_snapshot: terms || null,
-          weekday,
-          start_time: startTime,
-          end_time: endTime,
-        },
-        select: { id: true, status: true },
+    // Email assíncrono para o dono (se tiver email)
+    const owner = await prisma.user.findUnique({
+      where: { id: court.establishment.ownerId },
+      select: { name: true, email: true },
+    });
+    if (owner?.email) {
+      const appUrl = getAppUrl();
+      const dashboardUrl = `${appUrl}/dashboard`;
+      const { subject, text, html } = monthlyPassPendingEmailToOwner({
+        ownerName: owner.name,
+        establishmentName: null,
+        courtName: court.name,
+        month,
+        dashboardUrl,
       });
+      await enqueueEmail({
+        to: owner.email,
+        subject,
+        text,
+        html,
+        dedupeKey: `monthly-pass:pending:${pass.id}:${owner.email}`,
+      });
+    }
 
-  await prisma.notification.create({
-    data: {
-      userId: court.establishment.ownerId,
-      type: NotificationType.MONTHLY_PASS_PENDING,
-      title: "Mensalidade pendente",
-      body: `Nova solicitação de mensalidade para ${court.name} (${month}).`,
-    },
-    select: { id: true },
-  });
-
-  // Email assíncrono para o dono (se tiver email)
-  const owner = await prisma.user.findUnique({
-    where: { id: court.establishment.ownerId },
-    select: { name: true, email: true },
-  });
-  if (owner?.email) {
-    const appUrl = getAppUrl();
-    const dashboardUrl = `${appUrl}/dashboard`;
-    const { subject, text, html } = monthlyPassPendingEmailToOwner({
-      ownerName: owner.name,
-      establishmentName: null,
-      courtName: court.name,
-      month,
-      dashboardUrl,
-    });
-    await enqueueEmail({
-      to: owner.email,
-      subject,
-      text,
-      html,
-      dedupeKey: `monthly-pass:pending:${pass.id}:${owner.email}`,
-    });
+    revalidatePath(`/courts/${input.courtId}`);
+    revalidatePath("/meus-agendamentos");
+    return { ok: true, id: pass.id, status: pass.status };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Erro ao solicitar mensalidade";
+    return { ok: false, error: message };
   }
-
-  revalidatePath(`/courts/${input.courtId}`);
-  revalidatePath("/meus-agendamentos");
-  return pass;
 }
 
 export async function confirmMonthlyPassAsOwner(input: { passId: string }) {

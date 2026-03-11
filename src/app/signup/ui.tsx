@@ -8,6 +8,7 @@ import { signIn } from "next-auth/react";
 import { PlacesLocationPicker } from "@/components/PlacesLocationPicker";
 import { BrazilPhoneInput, isValidBrazilNationalDigits, toBrazilE164FromNationalDigits } from "@/components/BrazilPhoneInput";
 import { registerCustomerSafe, registerOwnerSafe, resendEmailVerificationCode, verifyEmailCode } from "@/lib/actions/users";
+import { isValidCpfCnpj, normalizeCpfCnpj } from "@/lib/utils/cpfCnpj";
 
 type SignUpRole = "CUSTOMER" | "OWNER";
 
@@ -40,14 +41,6 @@ function isValidEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
 
-function normalizeCpfCnpj(value: string): string {
-  return value.replace(/\D/g, "");
-}
-
-function isValidCpfCnpj(value: string): boolean {
-  const digits = normalizeCpfCnpj(value);
-  return digits.length === 11 || digits.length === 14;
-}
 
 function UploadPickerButton(props: {
   label: string;
@@ -192,7 +185,7 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
           }
           const cpfDigits = normalizeCpfCnpj(cpfCnpj);
           if (!cpfDigits) throw new Error("CPF/CNPJ é obrigatório");
-          if (!isValidCpfCnpj(cpfCnpj)) throw new Error("CPF/CNPJ inválido");
+          if (!isValidCpfCnpj(cpfDigits)) throw new Error("CPF/CNPJ inválido");
           const res = await registerCustomerSafe({
             name,
             email,
@@ -398,9 +391,10 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
                   <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">CPF/CNPJ</label>
                   <input
                     value={cpfCnpj}
-                    onChange={(e) => setCpfCnpj(e.target.value)}
+                    onChange={(e) => setCpfCnpj(normalizeCpfCnpj(e.target.value).slice(0, 14))}
                     className="ph-input mt-2"
                     inputMode="numeric"
+                    maxLength={14}
                     placeholder="Somente numeros"
                     required
                   />

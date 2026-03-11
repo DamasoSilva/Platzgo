@@ -346,6 +346,8 @@ export default async function SysadminSettingsPage(props: {
                     className="ph-input mt-2"
                     defaultValue={payments.asaasTestCpfCnpj}
                     placeholder="Somente numeros"
+                    inputMode="numeric"
+                    maxLength={14}
                   />
                 </div>
                 <div>

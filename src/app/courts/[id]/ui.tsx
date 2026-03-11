@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 import { CustomerHeader } from "@/components/CustomerHeader";
 import { ThemedBackground } from "@/components/ThemedBackground";
@@ -16,6 +16,7 @@ import { formatBRLFromCents } from "@/lib/utils/currency";
 import { dateWithTime, formatHHMM } from "@/lib/utils/time";
 import { toWaMeLink } from "@/lib/utils/whatsapp";
 import { formatSportLabel } from "@/lib/utils/sport";
+import { isValidCpfCnpj, normalizeCpfCnpj } from "@/lib/utils/cpfCnpj";
 
 type DayData = Awaited<ReturnType<typeof getCourtBookingsForDay>> & {
   court: {
@@ -77,13 +78,44 @@ function asLocalDayDate(ymd: string): Date {
   return new Date(`${ymd}T00:00:00`);
 }
 
-function normalizeCpfCnpj(value: string): string {
-  return value.replace(/\D/g, "");
+
+const COURT_FILTERS_KEY = "ph:lastCourtFilters";
+
+function isYmd(value: string | null | undefined): value is string {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
-function isValidCpfCnpj(value: string): boolean {
-  const digits = normalizeCpfCnpj(value);
-  return digits.length === 11 || digits.length === 14;
+function isHm(value: string | null | undefined): value is string {
+  return typeof value === "string" && /^\d{2}:\d{2}$/.test(value);
+}
+
+function readCourtFilters(): { day?: string; time?: string } | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(COURT_FILTERS_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { day?: string; time?: string } | null;
+    if (!parsed || typeof parsed !== "object") return null;
+    const day = isYmd(parsed.day) ? parsed.day : null;
+    const time = isHm(parsed.time) ? parsed.time : null;
+    if (!day && !time) return null;
+    return { day: day ?? undefined, time: time ?? undefined };
+  } catch {
+    return null;
+  }
+}
+
+function writeCourtFilters(filters: { day?: string | null; time?: string | null }): void {
+  if (typeof window === "undefined") return;
+  try {
+    const payload = {
+      day: isYmd(filters.day ?? null) ? filters.day : null,
+      time: isHm(filters.time ?? null) ? filters.time : null,
+    };
+    window.localStorage.setItem(COURT_FILTERS_KEY, JSON.stringify(payload));
+  } catch {
+    // ignore
+  }
 }
 
 function parsePixExpiresAt(value: string | null | undefined): Date | null {
@@ -144,16 +176,21 @@ export function CourtDetailsClient(props: {
   const [cpfPromptOpen, setCpfPromptOpen] = useState(false);
   const [cpfPromptError, setCpfPromptError] = useState<string | null>(null);
   const [cpfPromptNext, setCpfPromptNext] = useState(false);
+  const repeatRef = useRef<HTMLDetailsElement | null>(null);
 
   const monthKey = useMemo(() => day.slice(0, 7), [day]);
   const initialTime = useMemo(() => {
     if (!props.initialTime) return null;
     return /^\d{2}:\d{2}$/.test(props.initialTime) ? props.initialTime : null;
   }, [props.initialTime]);
+  const [prefillTime, setPrefillTime] = useState<string | null>(initialTime);
+  useEffect(() => {
+    if (initialTime) setPrefillTime(initialTime);
+  }, [initialTime]);
   const loginTime = useMemo(() => {
     if (selectedStart) return formatHHMM(selectedStart);
-    return initialTime;
-  }, [initialTime, selectedStart]);
+    return prefillTime;
+  }, [prefillTime, selectedStart]);
   const todayYmd = useMemo(() => {
     const d = new Date();
     const yyyy = d.getFullYear();
@@ -161,6 +198,41 @@ export function CourtDetailsClient(props: {
     const dd = String(d.getDate()).padStart(2, "0");
     return `${yyyy}-${mm}-${dd}`;
   }, []);
+  const now = useMemo(() => new Date(), []);
+  const currentMonthKey = useMemo(
+    () => `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`,
+    [now]
+  );
+  const nextMonthDate = useMemo(() => new Date(now.getFullYear(), now.getMonth() + 1, 1, 0, 0, 0, 0), [now]);
+  const nextMonthKey = useMemo(
+    () => `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, "0")}`,
+    [nextMonthDate]
+  );
+  const penultimateWeekStart = useMemo(() => {
+    const d = new Date(nextMonthDate);
+    d.setDate(d.getDate() - 14);
+    return d;
+  }, [nextMonthDate]);
+  const isMidMonth = now.getDate() >= 15;
+  const monthlyBlockedMidMonth = monthKey === currentMonthKey && isMidMonth;
+  const monthlyNextMonthLocked = monthKey === nextMonthKey && now < penultimateWeekStart;
+  const monthlyOtherMonthLocked = monthKey !== currentMonthKey && monthKey !== nextMonthKey;
+  const monthlyBlockedReason = useMemo(() => {
+    if (monthlyBlockedMidMonth) {
+      return "Estamos no meio do mês. Use a repetição semanal para este mês.";
+    }
+    if (monthlyNextMonthLocked) {
+      return "Mensalidade para o próximo mês abre na penúltima semana do mês anterior.";
+    }
+    if (monthlyOtherMonthLocked) {
+      return "Mensalidade disponível apenas para o mês atual ou próximo mês.";
+    }
+    return null;
+  }, [monthlyBlockedMidMonth, monthlyNextMonthLocked, monthlyOtherMonthLocked]);
+  const penultimateWeekLabel = useMemo(
+    () => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(penultimateWeekStart),
+    [penultimateWeekStart]
+  );
 
   const bookings = useMemo<BookingRange[]>(() => {
     return data.bookings.map((b) => ({
@@ -224,14 +296,14 @@ export function CourtDetailsClient(props: {
   }, [selectedStart, durationMinutes]);
 
   useEffect(() => {
-    if (!initialTime) return;
+    if (!prefillTime) return;
     if (selectedStart) return;
-    const match = slotOptions.find((slot) => formatHHMM(slot.start) === initialTime);
+    const match = slotOptions.find((slot) => formatHHMM(slot.start) === prefillTime);
     if (match) setSelectedStart(match.start);
-  }, [initialTime, selectedStart, slotOptions]);
+  }, [prefillTime, selectedStart, slotOptions]);
 
   const cpfDigits = useMemo(() => normalizeCpfCnpj(cpfCnpj), [cpfCnpj]);
-  const cpfValid = cpfDigits.length === 11 || cpfDigits.length === 14;
+  const cpfValid = useMemo(() => isValidCpfCnpj(cpfDigits), [cpfDigits]);
 
   const totalPriceCents = useMemo(() => {
     if (!selectedStart || !selectedEnd) return null;
@@ -248,7 +320,7 @@ export function CourtDetailsClient(props: {
   const monthlyIsPending = monthlyStatus === "PENDING";
   const monthlyIsActive = monthlyStatus === "ACTIVE";
   const canRequestMonthly = hasMonthly && !monthlyIsPending && !monthlyIsActive;
-  const monthlyPriorityNote = "Renovação priorizada na penúltima semana; novos mensalistas liberados na última semana.";
+  const canRequestMonthlyFinal = canRequestMonthly && !monthlyBlockedReason;
 
   const paymentProvider =
     (data.paymentDefaultProvider && data.paymentProviders?.includes(data.paymentDefaultProvider)
@@ -298,6 +370,13 @@ export function CourtDetailsClient(props: {
         setCpfPromptError(e instanceof Error ? e.message : "Erro ao salvar CPF/CNPJ");
       }
     });
+  }
+
+  function focusRepeat() {
+    const node = repeatRef.current;
+    if (!node) return;
+    node.open = true;
+    node.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   useEffect(() => {
@@ -396,6 +475,34 @@ export function CourtDetailsClient(props: {
       }
     });
   }
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    const dayParam = isYmd(url.searchParams.get("day")) ? url.searchParams.get("day") : null;
+    const timeParam = isHm(url.searchParams.get("time")) ? url.searchParams.get("time") : null;
+
+    if (dayParam || timeParam) {
+      writeCourtFilters({ day: dayParam ?? day, time: timeParam ?? prefillTime });
+      if (url.search) router.replace(`/courts/${props.courtId}`);
+      if (timeParam) setPrefillTime(timeParam);
+      if (dayParam && dayParam !== day) {
+        refreshDay(dayParam, { keepMessage: true });
+      }
+      return;
+    }
+
+    const saved = readCourtFilters();
+    if (saved?.day && saved.day !== day) {
+      refreshDay(saved.day, { keepMessage: true });
+    }
+    if (saved?.time) setPrefillTime(saved.time);
+  }, []);
+
+  useEffect(() => {
+    const timeToStore = selectedStart ? formatHHMM(selectedStart) : prefillTime;
+    writeCourtFilters({ day, time: timeToStore });
+  }, [day, prefillTime, selectedStart]);
 
   async function confirmBooking() {
     if (isOwnerPreview) {
@@ -557,6 +664,14 @@ export function CourtDetailsClient(props: {
       return;
     }
 
+    if (monthlyBlockedReason) {
+      setMessage({ type: "info", text: monthlyBlockedReason });
+      if (monthlyBlockedMidMonth) {
+        focusRepeat();
+      }
+      return;
+    }
+
     if (monthlyTerms && !monthlyAccepted) {
       setMessage({ type: "info", text: "Aceite os termos para solicitar a mensalidade." });
       return;
@@ -573,6 +688,10 @@ export function CourtDetailsClient(props: {
           startTime: formatHHMM(selectedStart),
           endTime: formatHHMM(selectedEnd),
         });
+        if (!res.ok) {
+          setMessage({ type: "error", text: res.error });
+          return;
+        }
         setMessage({ type: "success", text: res.status === "PENDING" ? "Solicitação de mensalidade enviada. Aguarde aprovação do estabelecimento." : "Mensalidade ativa." });
       } catch (e) {
         setMessage({ type: "error", text: e instanceof Error ? e.message : "Erro ao solicitar mensalidade" });
@@ -677,9 +796,10 @@ export function CourtDetailsClient(props: {
               <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">CPF/CNPJ</label>
               <input
                 value={cpfCnpj}
-                onChange={(e) => setCpfCnpj(e.target.value)}
+                onChange={(e) => setCpfCnpj(normalizeCpfCnpj(e.target.value).slice(0, 14))}
                 className="mt-2 w-full rounded-xl border-none bg-zinc-100 px-4 py-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
                 inputMode="numeric"
+                maxLength={14}
                 placeholder="Somente numeros"
               />
             </div>
@@ -871,11 +991,38 @@ export function CourtDetailsClient(props: {
                           <span>Li e aceito os termos da mensalidade.</span>
                         </label>
                       ) : null}
+
+                      {monthlyBlockedReason ? (
+                        <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-100">
+                          <p className="font-semibold">Mensalidade indisponível</p>
+                          <p className="mt-1">{monthlyBlockedReason}</p>
+                          {monthKey === nextMonthKey ? (
+                            <p className="mt-1">Liberado a partir de {penultimateWeekLabel}.</p>
+                          ) : null}
+                          {monthlyBlockedMidMonth ? (
+                            <button
+                              type="button"
+                              onClick={focusRepeat}
+                              className="mt-2 inline-flex rounded-full border border-amber-300 px-3 py-1 text-[11px] font-semibold text-amber-900"
+                            >
+                              Usar repetição semanal
+                            </button>
+                          ) : null}
+                        </div>
+                      ) : monthKey === nextMonthKey ? (
+                        <p className="mt-3 text-xs text-zinc-600 dark:text-zinc-400">
+                          Mensalidade do próximo mês abre na penúltima semana do mês anterior (a partir de {penultimateWeekLabel}).
+                        </p>
+                      ) : null}
+
+                      <p className="mt-3 text-xs text-zinc-600 dark:text-zinc-400">
+                        Duração selecionada: {durationMinutes} min.
+                      </p>
                     </div>
                     {!isOwnerPreview ? (
                       <button
                         type="button"
-                        disabled={isPending || !canRequestMonthly || (monthlyTerms ? !monthlyAccepted : false)}
+                        disabled={isPending || !canRequestMonthlyFinal || (monthlyTerms ? !monthlyAccepted : false)}
                         onClick={onRequestMonthlyPass}
                         className="shrink-0 rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold text-white hover:bg-zinc-800 disabled:opacity-60 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
                       >
@@ -963,211 +1110,220 @@ export function CourtDetailsClient(props: {
                 </div>
               ) : null}
 
-              <div className={"mt-5 space-y-4 " + (isOwnerPreview ? "opacity-60 pointer-events-none" : "")}
-              >
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Data</label>
-                    <input
-                      type="date"
-                      value={day}
-                      onChange={(e) => {
-                        const next = e.target.value;
-                        setDay(next);
-                        refreshDay(next);
-                      }}
-                      min={todayYmd}
-                      className="mt-2 w-full rounded-xl border-none bg-zinc-100 px-4 py-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Duração</label>
-                    <select
-                      value={durationMinutes}
-                      onChange={(e) => {
-                        setDurationMinutes(Number(e.target.value));
-                        setSelectedStart(null);
-                      }}
-                      className="mt-2 w-full rounded-xl border-none bg-zinc-100 px-4 py-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
-                    >
-                      <option value={60}>60 min</option>
-                      <option value={90}>90 min</option>
-                      <option value={120}>120 min</option>
-                    </select>
-                  </div>
-                </div>
-
-                <details className="rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
-                  <summary className="cursor-pointer text-sm font-semibold text-zinc-900 dark:text-zinc-50">Repetição semanal</summary>
-                  <div className="mt-3">
-                    <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Repetir por semanas</label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={3}
-                      value={repeatWeeks}
-                      onChange={(e) => setRepeatWeeks(Math.max(0, Math.min(3, Math.floor(Number(e.target.value) || 0))))}
-                      className="mt-2 w-full rounded-xl border-none bg-zinc-100 px-4 py-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
-                    />
-                    <p className="mt-2 text-[11px] text-zinc-500 dark:text-zinc-400">
-                      0 = sem recorrência semanal (máx. 3 semanas; acima disso use mensalidade)
-                    </p>
-                  </div>
-                </details>
-
-                <div>
-                  <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Grade de Horários Disponíveis</p>
-                  {data.dayInfo.is_closed ? (
-                    <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-                      {data.dayInfo.notice ?? "Fechado neste dia."}
-                    </div>
-                  ) : data.dayInfo.notice ? (
-                    <div className="mt-3 rounded-2xl border border-zinc-200 bg-white p-3 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
-                      {data.dayInfo.notice}
-                    </div>
-                  ) : null}
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {slotOptions.map(({ start, blocked }) => {
-                      const active = selectedStart?.getTime() === start.getTime();
-                      const disabled = blocked;
-                      return (
-                        <button
-                          key={start.toISOString()}
-                          onClick={() => setSelectedStart(start)}
-                          disabled={disabled}
-                          type="button"
-                          className={
-                            disabled
-                              ? "rounded-full bg-zinc-100 px-4 py-2 text-sm text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500 cursor-not-allowed"
-                              : active
-                                ? "rounded-full bg-[#CCFF00] px-4 py-2 text-sm font-bold text-black"
-                                : "rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-900 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
-                          }
-                        >
-                          {formatHHMM(start)}
-                        </button>
-                      );
-                    })}
-                    {slotOptions.length === 0 ? (
-                      <p className="text-sm text-zinc-600 dark:text-zinc-400">Sem horários disponíveis para essa duração.</p>
-                    ) : null}
-                  </div>
-                  <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
-                    Janela: {formatHHMM(openClose.open)} - {formatHHMM(openClose.close)}
-                  </p>
-                </div>
-
-                <div className="rounded-3xl bg-zinc-100 dark:bg-zinc-800 p-4">
-                  <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Resumo</p>
-                  <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">
-                    {selectedStart && selectedEnd
-                      ? `${formatHHMM(selectedStart)} → ${formatHHMM(selectedEnd)} (${durationMinutes} min)`
-                      : "Selecione um horário"}
-                  </p>
-                  <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
-                    {monthlyIsActive && selectedStart && selectedEnd
-                      ? `Total: ${formatBRLFromCents(0)} (mensalidade)`
-                      : totalPriceCents != null
-                        ? `Total: ${formatBRLFromCents(totalPriceCents)}`
-                        : `Preço/h: ${formatBRLFromCents(data.court.price_per_hour)}`}
-                  </p>
-                  {repeatWeeks > 0 ? (
-                    <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
-                      Recorrência: semanal por {repeatWeeks} semanas (total {repeatWeeks + 1} agendamentos)
-                    </p>
-                  ) : null}
-                  <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-                    Cancelamento: até {data.court.establishment.cancel_min_hours}h antes. Multa: {data.court.establishment.cancel_fee_fixed_cents > 0
-                      ? formatBRLFromCents(data.court.establishment.cancel_fee_fixed_cents)
-                      : `${data.court.establishment.cancel_fee_percent}%`}.
-                  </p>
-                </div>
-
-                {!data.paymentsEnabled && data.paymentsEnabledReason ? (
-                  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-                    {data.paymentsEnabledReason}
-                  </div>
-                ) : null}
-
-                {data.paymentsEnabled ? (
-                  <label className="flex items-start gap-2 text-xs text-zinc-700 dark:text-zinc-300">
-                    <input
-                      type="checkbox"
-                      checked={payAtCourt}
-                      onChange={(e) => setPayAtCourt(e.target.checked)}
-                      className="mt-0.5 h-4 w-4"
-                    />
-                    <span>Pagamento direto à quadra (sem pagamento online).</span>
-                  </label>
-                ) : null}
-
-                {requiresCpfCnpj && !cpfValid ? (
-                  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-                    <div className="font-semibold">CPF/CNPJ necessario para pagar online.</div>
-                    <button
-                      type="button"
-                      onClick={() => openCpfPrompt(false)}
-                      className="mt-2 inline-flex rounded-full bg-amber-600 px-3 py-1 text-[11px] font-bold text-white"
-                    >
-                      Informar CPF/CNPJ
-                    </button>
-                  </div>
-                ) : null}
-
-                <details className="rounded-3xl border border-zinc-200 bg-white p-4 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
-                  <summary className="cursor-pointer text-sm font-semibold text-zinc-900 dark:text-zinc-50">Alerta de disponibilidade</summary>
-                  <div className="mt-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                        Se não encontrou horário, receba aviso quando ficar disponível.
-                      </p>
-                      {selectedStart ? (
-                        <button
-                          type="button"
-                          onClick={() => setAlertTime(formatHHMM(selectedStart))}
-                          className="ph-button-secondary-xs"
-                        >
-                          Usar horário selecionado
-                        </button>
-                      ) : null}
-                    </div>
-                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div className={"mt-5 " + (isOwnerPreview ? "opacity-60 pointer-events-none" : "")}>
+                <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+                  <div className="space-y-4">
+                    <div className="grid gap-3 sm:grid-cols-2">
                       <div>
-                        <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Horário</label>
+                        <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Data</label>
                         <input
-                          type="time"
-                          step={1800}
-                          value={alertTime}
-                          onChange={(e) => setAlertTime(e.target.value)}
-                          className="ph-input mt-2"
+                          type="date"
+                          value={day}
+                          onChange={(e) => {
+                            const next = e.target.value;
+                            setDay(next);
+                            refreshDay(next);
+                          }}
+                          min={todayYmd}
+                          className="mt-2 w-full rounded-xl border-none bg-zinc-100 px-4 py-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
                         />
                       </div>
+
                       <div>
                         <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Duração</label>
-                        <div className="mt-2 rounded-xl bg-zinc-100 px-4 py-3 text-sm text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100">
-                          {durationMinutes} min
-                        </div>
+                        <select
+                          value={durationMinutes}
+                          onChange={(e) => {
+                            setDurationMinutes(Number(e.target.value));
+                            setSelectedStart(null);
+                          }}
+                          className="mt-2 w-full rounded-xl border-none bg-zinc-100 px-4 py-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                        >
+                          <option value={60}>60 min</option>
+                          <option value={90}>90 min</option>
+                          <option value={120}>120 min</option>
+                        </select>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      disabled={isPending || isOwnerPreview}
-                      onClick={confirmAlert}
-                      className="ph-button-secondary mt-4 w-full"
+
+                    <details
+                      ref={repeatRef}
+                      id="repeat-weeks"
+                      className="rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200"
                     >
-                      Criar alerta
+                      <summary className="cursor-pointer text-sm font-semibold text-zinc-900 dark:text-zinc-50">Repetição semanal</summary>
+                      <div className="mt-3">
+                        <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Repetir por semanas</label>
+                        <input
+                          type="number"
+                          min={0}
+                          max={3}
+                          value={repeatWeeks}
+                          onChange={(e) => setRepeatWeeks(Math.max(0, Math.min(3, Math.floor(Number(e.target.value) || 0))))}
+                          className="mt-2 w-full rounded-xl border-none bg-zinc-100 px-4 py-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                        />
+                        <p className="mt-2 text-[11px] text-zinc-500 dark:text-zinc-400">
+                          0 = sem recorrência semanal (máx. 3 semanas; acima disso use mensalidade)
+                        </p>
+                      </div>
+                    </details>
+
+                    <details className="rounded-3xl border border-zinc-200 bg-white p-4 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
+                      <summary className="cursor-pointer text-sm font-semibold text-zinc-900 dark:text-zinc-50">Alerta de disponibilidade</summary>
+                      <div className="mt-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                            Se não encontrou horário, receba aviso quando ficar disponível.
+                          </p>
+                          {selectedStart ? (
+                            <button
+                              type="button"
+                              onClick={() => setAlertTime(formatHHMM(selectedStart))}
+                              className="ph-button-secondary-xs"
+                            >
+                              Usar horário selecionado
+                            </button>
+                          ) : null}
+                        </div>
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Horário</label>
+                            <input
+                              type="time"
+                              step={1800}
+                              value={alertTime}
+                              onChange={(e) => setAlertTime(e.target.value)}
+                              className="ph-input mt-2"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Duração</label>
+                            <div className="mt-2 rounded-xl bg-zinc-100 px-4 py-3 text-sm text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100">
+                              {durationMinutes} min
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={isPending || isOwnerPreview}
+                          onClick={confirmAlert}
+                          className="ph-button-secondary mt-4 w-full"
+                        >
+                          Criar alerta
+                        </button>
+                      </div>
+                    </details>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Grade de Horários Disponíveis</p>
+                      {data.dayInfo.is_closed ? (
+                        <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                          {data.dayInfo.notice ?? "Fechado neste dia."}
+                        </div>
+                      ) : data.dayInfo.notice ? (
+                        <div className="mt-3 rounded-2xl border border-zinc-200 bg-white p-3 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
+                          {data.dayInfo.notice}
+                        </div>
+                      ) : null}
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {slotOptions.map(({ start, blocked }) => {
+                          const active = selectedStart?.getTime() === start.getTime();
+                          const disabled = blocked;
+                          return (
+                            <button
+                              key={start.toISOString()}
+                              onClick={() => setSelectedStart(start)}
+                              disabled={disabled}
+                              type="button"
+                              className={
+                                disabled
+                                  ? "rounded-full bg-zinc-100 px-4 py-2 text-sm text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500 cursor-not-allowed"
+                                  : active
+                                    ? "rounded-full bg-[#CCFF00] px-4 py-2 text-sm font-bold text-black"
+                                    : "rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-900 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                              }
+                            >
+                              {formatHHMM(start)}
+                            </button>
+                          );
+                        })}
+                        {slotOptions.length === 0 ? (
+                          <p className="text-sm text-zinc-600 dark:text-zinc-400">Sem horários disponíveis para essa duração.</p>
+                        ) : null}
+                      </div>
+                      <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
+                        Janela: {formatHHMM(openClose.open)} - {formatHHMM(openClose.close)}
+                      </p>
+                    </div>
+
+                    <div className="rounded-3xl bg-zinc-100 dark:bg-zinc-800 p-4">
+                      <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Resumo</p>
+                      <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">
+                        {selectedStart && selectedEnd
+                          ? `${formatHHMM(selectedStart)} → ${formatHHMM(selectedEnd)} (${durationMinutes} min)`
+                          : "Selecione um horário"}
+                      </p>
+                      <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
+                        {monthlyIsActive && selectedStart && selectedEnd
+                          ? `Total: ${formatBRLFromCents(0)} (mensalidade)`
+                          : totalPriceCents != null
+                            ? `Total: ${formatBRLFromCents(totalPriceCents)}`
+                            : `Preço/h: ${formatBRLFromCents(data.court.price_per_hour)}`}
+                      </p>
+                      {repeatWeeks > 0 ? (
+                        <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
+                          Recorrência: semanal por {repeatWeeks} semanas (total {repeatWeeks + 1} agendamentos)
+                        </p>
+                      ) : null}
+                      <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                        Cancelamento: até {data.court.establishment.cancel_min_hours}h antes. Multa: {data.court.establishment.cancel_fee_fixed_cents > 0
+                          ? formatBRLFromCents(data.court.establishment.cancel_fee_fixed_cents)
+                          : `${data.court.establishment.cancel_fee_percent}%`}.
+                      </p>
+                    </div>
+
+                    {!data.paymentsEnabled && data.paymentsEnabledReason ? (
+                      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+                        {data.paymentsEnabledReason}
+                      </div>
+                    ) : null}
+
+                    {data.paymentsEnabled ? (
+                      <label className="flex items-start gap-2 text-xs text-zinc-700 dark:text-zinc-300">
+                        <input
+                          type="checkbox"
+                          checked={payAtCourt}
+                          onChange={(e) => setPayAtCourt(e.target.checked)}
+                          className="mt-0.5 h-4 w-4"
+                        />
+                        <span>Pagamento direto à quadra (sem pagamento online).</span>
+                      </label>
+                    ) : null}
+
+                    {requiresCpfCnpj && !cpfValid ? (
+                      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+                        <div className="font-semibold">CPF/CNPJ necessario para pagar online.</div>
+                        <button
+                          type="button"
+                          onClick={() => openCpfPrompt(false)}
+                          className="mt-2 inline-flex rounded-full bg-amber-600 px-3 py-1 text-[11px] font-bold text-white"
+                        >
+                          Informar CPF/CNPJ
+                        </button>
+                      </div>
+                    ) : null}
+
+                    <button
+                      onClick={confirmBooking}
+                      disabled={isPending || isOwnerPreview}
+                      className="bg-[#CCFF00] text-black font-bold py-3 px-6 rounded-full hover:scale-105 transition-all disabled:opacity-60 w-full"
+                    >
+                      {isPending ? "Processando..." : "Confirmar Agendamento"}
                     </button>
                   </div>
-                </details>
-
-                <button
-                  onClick={confirmBooking}
-                  disabled={isPending || isOwnerPreview}
-                  className="bg-[#CCFF00] text-black font-bold py-3 px-6 rounded-full hover:scale-105 transition-all disabled:opacity-60 w-full"
-                >
-                  {isPending ? "Processando..." : "Confirmar Agendamento"}
-                </button>
+                </div>
               </div>
             </div>
           </div>

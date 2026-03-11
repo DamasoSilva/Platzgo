@@ -7,6 +7,7 @@ import { extractAsaasErrorMessage, getPaymentConfig } from "@/lib/payments";
 import { PaymentProvider, PaymentStatus, BookingStatus, NotificationType, PayoutStatus } from "@/generated/prisma/enums";
 import { getAppUrl } from "@/lib/emailTemplates";
 import { buildBlockingBookingWhere } from "@/lib/utils/bookingAvailability";
+import { isValidCpfCnpj, normalizeCpfCnpj } from "@/lib/utils/cpfCnpj";
 
 function toCents(value: number): number {
   if (!Number.isFinite(value)) return 0;
@@ -70,12 +71,12 @@ async function ensureAsaasCustomer(userId: string, config: { apiKey?: string; ba
   if (!user) throw new Error("Usuário não encontrado");
   if (!config.apiKey) throw new Error("Asaas não configurado");
   const baseUrl = config.baseUrl ?? "https://sandbox.asaas.com/api/v3";
-  const cpfCnpj = onlyDigits(user.cpf_cnpj);
+  const cpfCnpj = normalizeCpfCnpj(user.cpf_cnpj ?? "");
 
   if (!cpfCnpj) {
     throw new Error("CPF/CNPJ é obrigatório para pagamentos online. Atualize seu perfil.");
   }
-  if (!(cpfCnpj.length === 11 || cpfCnpj.length === 14)) {
+  if (!isValidCpfCnpj(cpfCnpj)) {
     throw new Error("CPF/CNPJ inválido. Atualize seu perfil.");
   }
 
