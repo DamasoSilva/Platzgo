@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth";
 import { getCourtBookingsForDay } from "@/lib/actions/courts";
 import { prisma } from "@/lib/prisma";
 import { CourtDetailsClient } from "./ui";
+import { SearchPrefillClient } from "@/components/SearchPrefillClient";
 
 export async function generateMetadata(props: {
   params: { id: string } | Promise<{ id: string }>;
@@ -57,9 +58,12 @@ export default async function CourtPage(props: {
 
   const params = await Promise.resolve(props.params);
   const searchParams = props.searchParams ? await Promise.resolve(props.searchParams) : undefined;
-
-  const day = coerceDay(searchParams?.day);
-  const time = coerceTime(searchParams?.time);
+  const rawDay = searchParams?.day;
+  const rawTime = searchParams?.time;
+  const hasDayParam = typeof rawDay === "string" && /^\d{4}-\d{2}-\d{2}$/.test(rawDay);
+  const hasTimeParam = typeof rawTime === "string" && /^\d{2}:\d{2}$/.test(rawTime);
+  const day = coerceDay(rawDay);
+  const time = coerceTime(rawTime);
 
   let data: Awaited<ReturnType<typeof getCourtBookingsForDay>>;
   try {
@@ -75,18 +79,25 @@ export default async function CourtPage(props: {
   }
 
   return (
-    <CourtDetailsClient
-      userId={userId}
-      customerCpfCnpj={viewer?.cpf_cnpj ?? null}
-      viewer={{
-        name: session?.user?.name ?? viewer?.name ?? null,
-        image: session?.user?.image ?? viewer?.image ?? null,
-        role: session?.user?.role ?? null,
-      }}
-      courtId={params.id}
-      day={day}
-      initialTime={time}
-      initial={data}
-    />
+    <>
+      <SearchPrefillClient
+        hasDayParam={hasDayParam}
+        hasTimeParam={hasTimeParam}
+        basePath={`/courts/${params.id}`}
+      />
+      <CourtDetailsClient
+        userId={userId}
+        customerCpfCnpj={viewer?.cpf_cnpj ?? null}
+        viewer={{
+          name: session?.user?.name ?? viewer?.name ?? null,
+          image: session?.user?.image ?? viewer?.image ?? null,
+          role: session?.user?.role ?? null,
+        }}
+        courtId={params.id}
+        day={day}
+        initialTime={time}
+        initial={data}
+      />
+    </>
   );
 }
