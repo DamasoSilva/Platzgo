@@ -248,27 +248,25 @@ export async function refreshPixForBooking(input: { bookingId: string }) {
 
   const pixPayload = String(pixData.payload);
   const pixQrBase64 = typeof pixData.encodedImage === "string" ? pixData.encodedImage : null;
-  const pixExpiresAt =
-    parseAsaasExpiration(pixData.expirationDate) ||
-    parseAsaasExpiration(pixData.expirationDateTime) ||
-    parseAsaasExpiration(pixData.expiresAt);
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+  const pixExpiresAt = expiresAt.toISOString();
   const prevMeta = (payment.metadata as { pix_expires_at?: string } | null) ?? {};
-  const prevPixExpiresAt = typeof prevMeta.pix_expires_at === "string" ? prevMeta.pix_expires_at : null;
 
   await prisma.payment.update({
     where: { id: payment.id },
     data: {
+      expires_at: expiresAt,
       metadata: {
         ...prevMeta,
         pix_payload: pixPayload,
         pix_qr_base64: pixQrBase64 ?? undefined,
-        pix_expires_at: pixExpiresAt ?? prevPixExpiresAt ?? undefined,
+        pix_expires_at: pixExpiresAt,
       },
     },
     select: { id: true },
   });
 
-  return { pixPayload, pixQrBase64, pixExpiresAt: pixExpiresAt ?? prevPixExpiresAt ?? null };
+  return { pixPayload, pixQrBase64, pixExpiresAt };
 }
 
 async function createMercadoPagoPreference(params: {
@@ -485,8 +483,7 @@ export async function startPaymentForBooking(input: { bookingId: string; provide
   if (existing) {
     const meta =
       (existing.metadata as { pix_payload?: string; pix_qr_base64?: string; pix_expires_at?: string } | null) ?? null;
-    const pixExpiresAt =
-      meta?.pix_expires_at ?? (existing.expires_at ? existing.expires_at.toISOString() : null);
+    const pixExpiresAt = existing.expires_at ? existing.expires_at.toISOString() : meta?.pix_expires_at ?? null;
     return {
       paymentId: existing.id,
       provider: existing.provider,
@@ -567,7 +564,7 @@ export async function startPaymentForBooking(input: { bookingId: string; provide
             title: description,
           });
 
-    const pixExpiresAt = result.pixExpiresAt ?? expiresAt.toISOString();
+    const pixExpiresAt = expiresAt.toISOString();
 
     await prisma.payment.update({
       where: { id: payment.id },

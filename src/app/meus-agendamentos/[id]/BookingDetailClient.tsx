@@ -148,13 +148,18 @@ function statusLabel(s: BookingStatus): string {
   }
 }
 
-export function BookingDetailClient(props: { booking: BookingDetail; showConfirmation?: boolean }) {
+export function BookingDetailClient(props: {
+  booking: BookingDetail;
+  showConfirmation?: boolean;
+  openPayment?: boolean;
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [showReschedule, setShowReschedule] = useState(false);
   const [pixCopyStatus, setPixCopyStatus] = useState<string | null>(null);
   const [payment, setPayment] = useState(props.booking.payment ?? null);
+  const [pixModalOpen, setPixModalOpen] = useState(Boolean(props.openPayment));
   const [countdownSeconds, setCountdownSeconds] = useState<number | null>(null);
   const [confirmationOpen, setConfirmationOpen] = useState(
     Boolean(props.showConfirmation) && props.booking.status === BookingStatus.CONFIRMED
@@ -193,11 +198,21 @@ export function BookingDetailClient(props: { booking: BookingDetail; showConfirm
   const [selectedStart, setSelectedStart] = useState<Date | null>(null);
 
   const isCancelled = props.booking.status === BookingStatus.CANCELLED;
+  const isFinished = useMemo(
+    () => props.booking.status === BookingStatus.CONFIRMED && endDate.getTime() < Date.now(),
+    [endDate, props.booking.status]
+  );
   const alreadyRescheduled = Boolean(props.booking.rescheduledTo?.id);
   const isPast = startDate.getTime() <= Date.now();
 
   const canCancel = !isCancelled && !isPast;
   const canReschedule = !isCancelled && !isPast && !alreadyRescheduled;
+  const hasPendingPayment = Boolean(payment);
+  const statusTag = isFinished
+    ? "Finalizado"
+    : hasPendingPayment
+      ? "Aguardando pagamento"
+      : statusLabel(props.booking.status);
 
   const bookings = useMemo(() => {
     return availability.bookings.map((b) => ({
@@ -300,6 +315,12 @@ export function BookingDetailClient(props: { booking: BookingDetail; showConfirm
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [payment?.expiresAt]);
+
+  useEffect(() => {
+    if (props.openPayment && payment) {
+      setPixModalOpen(true);
+    }
+  }, [payment, props.openPayment]);
 
   useEffect(() => {
     if (props.showConfirmation && props.booking.status === BookingStatus.CONFIRMED) {
@@ -427,6 +448,84 @@ export function BookingDetailClient(props: { booking: BookingDetail; showConfirm
           </div>
         </div>
       ) : null}
+      {pixModalOpen && payment ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-md rounded-3xl border border-emerald-200 bg-white p-6 text-emerald-900 shadow-xl dark:border-emerald-900/40 dark:bg-zinc-950 dark:text-emerald-100">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold">Pagamento pendente</p>
+                {countdownSeconds !== null ? (
+                  <p className="text-xs text-emerald-800 dark:text-emerald-200">
+                    {countdownSeconds > 0 ? `Expira em ${formatCountdown(countdownSeconds)}` : "Expirado"}
+                  </p>
+                ) : null}
+              </div>
+              <button
+                type="button"
+                onClick={() => setPixModalOpen(false)}
+                className="rounded-full border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-900 dark:border-emerald-900/50 dark:text-emerald-100"
+              >
+                Fechar
+              </button>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 dark:border-emerald-900/40 dark:bg-emerald-950/30">
+              <p className="text-xs font-semibold text-emerald-800 dark:text-emerald-100">Valor do pagamento</p>
+              <p className="mt-1 text-2xl font-semibold text-emerald-900 dark:text-emerald-50">{priceLabel}</p>
+            </div>
+
+            {payment.pixQrBase64 ? (
+              <div className="mt-4 flex justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`data:image/png;base64,${payment.pixQrBase64}`}
+                  alt="QR Code PIX"
+                  className="h-48 w-48 rounded-2xl border border-emerald-200 bg-white p-2"
+                />
+              </div>
+            ) : null}
+
+            {payment.pixPayload ? (
+              <div className="mt-4 rounded-2xl border border-emerald-200 bg-white p-3 text-xs text-emerald-900 dark:border-emerald-900/40 dark:bg-zinc-950 dark:text-emerald-100">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-semibold">PIX copia e cola</span>
+                  <button
+                    type="button"
+                    className="rounded-full bg-emerald-700 px-3 py-1 text-[11px] font-bold text-white"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(payment.pixPayload ?? "");
+                        setPixCopyStatus("Chave PIX copiada.");
+                      } catch {
+                        setPixCopyStatus("Nao foi possivel copiar.");
+                      }
+                    }}
+                  >
+                    Copiar
+                  </button>
+                </div>
+                <div className="mt-2 break-words rounded-xl bg-emerald-50 px-3 py-2 text-[11px] text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100">
+                  {payment.pixPayload}
+                </div>
+                {pixCopyStatus ? <div className="mt-2 text-[11px]">{pixCopyStatus}</div> : null}
+              </div>
+            ) : null}
+
+            {!payment.pixPayload && payment.checkoutUrl ? (
+              <div className="mt-4">
+                <a
+                  href={payment.checkoutUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center rounded-full bg-[#CCFF00] px-4 py-2 text-xs font-bold text-black"
+                >
+                  Ir para pagamento
+                </a>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <h1 className="truncate text-lg font-semibold text-zinc-900 dark:text-zinc-50">
@@ -440,14 +539,16 @@ export function BookingDetailClient(props: { booking: BookingDetail; showConfirm
             <span
               className={
                 "inline-flex rounded-full px-3 py-1 text-xs font-semibold " +
-                (props.booking.status === BookingStatus.CONFIRMED
-                  ? "bg-emerald-100 text-emerald-900"
-                  : props.booking.status === BookingStatus.CANCELLED
-                    ? "bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100"
-                    : "bg-amber-100 text-amber-900")
+                (isFinished
+                  ? "bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100"
+                  : props.booking.status === BookingStatus.CONFIRMED
+                    ? "bg-emerald-100 text-emerald-900"
+                    : props.booking.status === BookingStatus.CANCELLED
+                      ? "bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100"
+                      : "bg-amber-100 text-amber-900")
               }
             >
-              {statusLabel(props.booking.status)}
+              {statusTag}
             </span>
 
             {props.booking.total_price_cents === 0 ? (
@@ -486,6 +587,12 @@ export function BookingDetailClient(props: { booking: BookingDetail; showConfirm
         </div>
       </div>
 
+      {isFinished ? (
+        <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-100">
+          Agendamento finalizado. Obrigado por utilizar a quadra corretamente.
+        </div>
+      ) : null}
+
       <div className="mt-5 rounded-2xl border border-zinc-200 bg-white/70 p-4 text-sm text-zinc-700 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/50 dark:text-zinc-300">
         <p className="font-semibold text-zinc-900 dark:text-zinc-50">Reagendamento</p>
         <p className="mt-1">
@@ -501,11 +608,20 @@ export function BookingDetailClient(props: { booking: BookingDetail; showConfirm
         <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-100">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="font-semibold">Pagamento pendente</p>
-            {countdownSeconds !== null ? (
-              <span className="text-xs text-emerald-800 dark:text-emerald-200">
-                {countdownSeconds > 0 ? `Expira em ${formatCountdown(countdownSeconds)}` : "Expirado"}
-              </span>
-            ) : null}
+            <div className="flex flex-wrap items-center gap-2">
+              {countdownSeconds !== null ? (
+                <span className="text-xs text-emerald-800 dark:text-emerald-200">
+                  {countdownSeconds > 0 ? `Expira em ${formatCountdown(countdownSeconds)}` : "Expirado"}
+                </span>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setPixModalOpen(true)}
+                className="rounded-full border border-emerald-200 px-3 py-1 text-[11px] font-semibold text-emerald-900 dark:border-emerald-900/50 dark:text-emerald-100"
+              >
+                Abrir pagamento
+              </button>
+            </div>
           </div>
 
           {payment.pixPayload ? (
@@ -561,6 +677,7 @@ export function BookingDetailClient(props: { booking: BookingDetail; showConfirm
                               ...prev,
                               pixPayload: res.pixPayload,
                               pixQrBase64: res.pixQrBase64,
+                              expiresAt: res.pixExpiresAt,
                             }
                           : prev
                       );

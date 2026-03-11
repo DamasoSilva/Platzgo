@@ -21,11 +21,12 @@ export default async function BookingDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams?: { confirmed?: string } | Promise<{ confirmed?: string }>;
+  searchParams?: { confirmed?: string; pay?: string } | Promise<{ confirmed?: string; pay?: string }>;
 }) {
   const { id } = await params;
   const sp = searchParams ? await Promise.resolve(searchParams) : undefined;
   const showConfirmation = sp?.confirmed === "1";
+  const openPayment = sp?.pay === "1";
 
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id;
@@ -180,6 +181,7 @@ export default async function BookingDetailPage({
               : null,
           }}
           showConfirmation={showConfirmation}
+          openPayment={openPayment}
         />
       </div>
       </div>

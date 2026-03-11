@@ -150,6 +150,10 @@ export function CourtDetailsClient(props: {
     if (!props.initialTime) return null;
     return /^\d{2}:\d{2}$/.test(props.initialTime) ? props.initialTime : null;
   }, [props.initialTime]);
+  const loginTime = useMemo(() => {
+    if (selectedStart) return formatHHMM(selectedStart);
+    return initialTime;
+  }, [initialTime, selectedStart]);
   const todayYmd = useMemo(() => {
     const d = new Date();
     const yyyy = d.getFullYear();
@@ -782,18 +786,6 @@ export function CourtDetailsClient(props: {
               </div>
             ) : null}
 
-            {paymentUrl ? (
-              <div className="mt-4">
-                <a
-                  href={paymentUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center rounded-full bg-[#CCFF00] px-4 py-2 text-xs font-bold text-black"
-                >
-                  Abrir pagina de pagamento
-                </a>
-              </div>
-            ) : null}
           </div>
         </div>
       ) : null}
@@ -943,7 +935,9 @@ export function CourtDetailsClient(props: {
                       <Link
                         href={{
                           pathname: "/signin",
-                          query: { callbackUrl: `/courts/${props.courtId}?day=${day}` },
+                          query: {
+                            callbackUrl: `/courts/${props.courtId}?day=${day}${loginTime ? `&time=${loginTime}` : ""}`,
+                          },
                         }}
                         className="text-sm text-zinc-900 dark:text-zinc-100 underline"
                       >

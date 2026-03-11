@@ -5,12 +5,32 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatBRLFromCents } from "@/lib/utils/currency";
-import { BookingStatus } from "@/generated/prisma/enums";
+import { BookingStatus, PaymentStatus } from "@/generated/prisma/enums";
 import { CustomerHeader } from "@/components/CustomerHeader";
 import { deleteAllMyReadNotifications, deleteMyNotification, markAllMyNotificationsAsRead } from "@/lib/actions/notifications";
 import { ThemedBackground } from "@/components/ThemedBackground";
 import { ReviewFormClient } from "@/app/meus-agendamentos/ReviewFormClient";
 import { formatSportLabel } from "@/lib/utils/sport";
+
+type SearchParams = {
+  start?: string;
+  end?: string;
+  status?: string;
+};
+
+function parseDateInput(value?: string, endOfDay?: boolean) {
+  if (!value) return null;
+  const [year, month, day] = value.split("-").map((part) => Number(part));
+  if (!year || !month || !day) return null;
+  const date = new Date(year, month - 1, day);
+  if (Number.isNaN(date.getTime())) return null;
+  if (endOfDay) {
+    date.setHours(23, 59, 59, 999);
+  } else {
+    date.setHours(0, 0, 0, 0);
+  }
+  return date;
+}
 
 function formatDateTimeBR(d: Date): string {
   return new Intl.DateTimeFormat("pt-BR", {
@@ -35,7 +55,7 @@ function statusLabel(s: BookingStatus): string {
   }
 }
 
-export default async function MyBookingsPage() {
+export default async function MyBookingsPage(props: { searchParams?: SearchParams | Promise<SearchParams> }) {
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id;
 
@@ -43,8 +63,41 @@ export default async function MyBookingsPage() {
     redirect(`/signin?callbackUrl=${encodeURIComponent("/meus-agendamentos")}`);
   }
 
+  const sp = props.searchParams ? await Promise.resolve(props.searchParams) : undefined;
+  const statusParam = (sp?.status ?? "all").toLowerCase().trim();
+  const startParam = (sp?.start ?? "").trim();
+  const endParam = (sp?.end ?? "").trim();
+
+  const startDate = parseDateInput(startParam, false);
+  const endDate = parseDateInput(endParam, true);
+  const now = new Date();
+
+  const where: any = { customerId: userId };
+  if (startDate || endDate) {
+    where.start_time = {
+      ...(startDate ? { gte: startDate } : {}),
+      ...(endDate ? { lte: endDate } : {}),
+    };
+  }
+
+  if (statusParam === "awaiting_payment") {
+    where.status = BookingStatus.PENDING;
+    where.payments = { some: { status: { in: [PaymentStatus.PENDING, PaymentStatus.AUTHORIZED] } } };
+  } else if (statusParam === "pending") {
+    where.status = BookingStatus.PENDING;
+    where.NOT = { payments: { some: { status: { in: [PaymentStatus.PENDING, PaymentStatus.AUTHORIZED] } } } };
+  } else if (statusParam === "confirmed") {
+    where.status = BookingStatus.CONFIRMED;
+    where.end_time = { gte: now };
+  } else if (statusParam === "finished") {
+    where.status = BookingStatus.CONFIRMED;
+    where.end_time = { lt: now };
+  } else if (statusParam === "cancelled") {
+    where.status = BookingStatus.CANCELLED;
+  }
+
   const bookings = await prisma.booking.findMany({
-    where: { customerId: userId },
+    where,
     orderBy: { start_time: "desc" },
     select: {
       id: true,
@@ -56,6 +109,12 @@ export default async function MyBookingsPage() {
       cancel_fee_cents: true,
       rescheduledFromId: true,
       rescheduledTo: { select: { id: true } },
+      payments: {
+        where: { status: { in: [PaymentStatus.PENDING, PaymentStatus.AUTHORIZED] } },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { id: true },
+      },
       court: {
         select: {
           id: true,
@@ -115,6 +174,34 @@ export default async function MyBookingsPage() {
             <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Histórico dos seus agendamentos.</p>
           </div>
         </div>
+
+        <form className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto_auto]" method="get">
+          <div>
+            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Data inicio</label>
+            <input name="start" type="date" defaultValue={startParam} className="ph-input mt-2" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Data fim</label>
+            <input name="end" type="date" defaultValue={endParam} className="ph-input mt-2" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Status</label>
+            <select name="status" defaultValue={statusParam} className="ph-input mt-2">
+              <option value="all">Todos</option>
+              <option value="awaiting_payment">Aguardando pagamento</option>
+              <option value="pending">Pendente</option>
+              <option value="confirmed">Confirmado</option>
+              <option value="finished">Finalizado</option>
+              <option value="cancelled">Cancelado</option>
+            </select>
+          </div>
+          <button type="submit" className="ph-button h-11 self-end">
+            Filtrar
+          </button>
+          <Link className="ph-button-secondary h-11 self-end" href="/meus-agendamentos">
+            Limpar
+          </Link>
+        </form>
 
         {notifications.length ? (
           <div className="mt-6 rounded-3xl ph-surface p-6">
@@ -209,92 +296,109 @@ export default async function MyBookingsPage() {
         ) : null}
 
         <div className="mt-6 space-y-4">
-          {bookings.map((b) => (
-            <div key={b.id} className="rounded-3xl ph-surface p-6">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                    {b.court.establishment.name} • {b.court.name}
-                  </p>
-                  <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
-                    {formatSportLabel(b.court.sport_type)} • {formatDateTimeBR(b.start_time)} → {formatDateTimeBR(b.end_time)}
-                  </p>
+          {bookings.map((b) => {
+            const pendingPayment = b.payments[0] ?? null;
+            const awaitingPayment = b.status === BookingStatus.PENDING && Boolean(pendingPayment);
+            const isFinished = b.status === BookingStatus.CONFIRMED && b.end_time < now;
+            const statusText = isFinished
+              ? "Finalizado"
+              : awaitingPayment
+                ? "Aguardando pagamento"
+                : statusLabel(b.status);
+            const statusClass =
+              isFinished
+                ? "bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100"
+                : b.status === BookingStatus.CONFIRMED
+                  ? "bg-emerald-100 text-emerald-900"
+                  : b.status === BookingStatus.CANCELLED
+                    ? "bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100"
+                    : "bg-amber-100 text-amber-900";
 
-                  {b.total_price_cents === 0 ? (
-                    <span className="mt-2 inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100">
-                      Mensalidade
+            return (
+              <div key={b.id} className="rounded-3xl ph-surface p-6">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                      {b.court.establishment.name} • {b.court.name}
+                    </p>
+                    <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                      {formatSportLabel(b.court.sport_type)} • {formatDateTimeBR(b.start_time)} → {formatDateTimeBR(b.end_time)}
+                    </p>
+
+                    {b.total_price_cents === 0 ? (
+                      <span className="mt-2 inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100">
+                        Mensalidade
+                      </span>
+                    ) : null}
+
+                    {b.status === BookingStatus.CANCELLED ? (
+                      <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
+                        Motivo: {b.cancel_reason ? b.cancel_reason : "Cancelado"}
+                      </p>
+                    ) : null}
+
+                    {b.status === BookingStatus.CANCELLED && b.cancel_fee_cents > 0 ? (
+                      <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                        Multa aplicada: {formatBRLFromCents(b.cancel_fee_cents)}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                      {b.total_price_cents === 0 ? `${formatBRLFromCents(0)} (mensalidade)` : formatBRLFromCents(b.total_price_cents)}
+                    </p>
+                    <p className={`mt-1 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusClass}`}>{statusText}</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Link
+                    href={`/meus-agendamentos/${b.id}`}
+                    className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-bold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900"
+                  >
+                    Detalhes
+                  </Link>
+                  <Link
+                    href={{ pathname: `/courts/${b.court.id}`, query: { day: b.start_time.toISOString().slice(0, 10) } }}
+                    className="rounded-full bg-[#CCFF00] px-4 py-2 text-xs font-bold text-black hover:scale-105 transition-all"
+                  >
+                    Ver quadra
+                  </Link>
+
+                  {pendingPayment ? (
+                    <Link
+                      href={`/meus-agendamentos/${b.id}?pay=1`}
+                      className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-900 hover:bg-emerald-100 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-100"
+                    >
+                      Pagar agora
+                    </Link>
+                  ) : null}
+
+                  {b.rescheduledFromId ? (
+                    <span className="inline-flex items-center rounded-full bg-sky-100 px-3 py-2 text-xs font-semibold text-sky-900 dark:bg-sky-950/30 dark:text-sky-100">
+                      Reagendado
                     </span>
                   ) : null}
 
-                  {b.status === BookingStatus.CANCELLED ? (
-                    <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
-                      Motivo: {b.cancel_reason ? b.cancel_reason : "Cancelado"}
-                    </p>
-                  ) : null}
-
-                  {b.status === BookingStatus.CANCELLED && b.cancel_fee_cents > 0 ? (
-                    <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
-                      Multa aplicada: {formatBRLFromCents(b.cancel_fee_cents)}
-                    </p>
+                  {b.rescheduledTo?.id ? (
+                    <span className="inline-flex items-center rounded-full bg-violet-100 px-3 py-2 text-xs font-semibold text-violet-900 dark:bg-violet-950/30 dark:text-violet-100">
+                      Já reagendado
+                    </span>
                   ) : null}
                 </div>
 
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                    {b.total_price_cents === 0 ? `${formatBRLFromCents(0)} (mensalidade)` : formatBRLFromCents(b.total_price_cents)}
-                  </p>
-                  <p
-                    className={
-                      "mt-1 inline-flex rounded-full px-3 py-1 text-xs font-semibold " +
-                      (b.status === BookingStatus.CONFIRMED
-                        ? "bg-emerald-100 text-emerald-900"
-                        : b.status === BookingStatus.CANCELLED
-                          ? "bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100"
-                          : "bg-amber-100 text-amber-900")
-                    }
-                  >
-                    {statusLabel(b.status)}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Link
-                  href={`/meus-agendamentos/${b.id}`}
-                  className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-bold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900"
-                >
-                  Detalhes
-                </Link>
-                <Link
-                  href={{ pathname: `/courts/${b.court.id}`, query: { day: b.start_time.toISOString().slice(0, 10) } }}
-                  className="rounded-full bg-[#CCFF00] px-4 py-2 text-xs font-bold text-black hover:scale-105 transition-all"
-                >
-                  Ver quadra
-                </Link>
-
-                {b.rescheduledFromId ? (
-                  <span className="inline-flex items-center rounded-full bg-sky-100 px-3 py-2 text-xs font-semibold text-sky-900 dark:bg-sky-950/30 dark:text-sky-100">
-                    Reagendado
-                  </span>
-                ) : null}
-
-                {b.rescheduledTo?.id ? (
-                  <span className="inline-flex items-center rounded-full bg-violet-100 px-3 py-2 text-xs font-semibold text-violet-900 dark:bg-violet-950/30 dark:text-violet-100">
-                    Já reagendado
-                  </span>
+                {isFinished ? (
+                  <div className="mt-4">
+                    <ReviewFormClient
+                      establishmentId={b.court.establishment.id}
+                      establishmentName={b.court.establishment.name}
+                    />
+                  </div>
                 ) : null}
               </div>
-
-              {b.status === BookingStatus.CONFIRMED && b.end_time < new Date() ? (
-                <div className="mt-4">
-                  <ReviewFormClient
-                    establishmentId={b.court.establishment.id}
-                    establishmentName={b.court.establishment.name}
-                  />
-                </div>
-              ) : null}
-            </div>
-          ))}
+            );
+          })}
 
           {bookings.length === 0 ? (
             <div className="rounded-3xl ph-surface p-6">

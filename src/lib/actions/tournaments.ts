@@ -178,9 +178,10 @@ async function createAsaasPixCharge(params: {
   let pixPayload: string | null = null;
   let pixQrBase64: string | null = null;
   let expiresAt: Date | null = null;
+  const localExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
   try {
     const pixRes = await fetch(
-      `${config.asaas.baseUrl ?? "https://sandbox.asaas.com/api/v3"}/payments/${data.id}/pixQrCode`,
+      `${config.asaas.baseUrl ?? "https:/api.asaas.com/api/v3"}/payments/${data.id}/pixQrCode`,
       {
         method: "GET",
         headers: {
@@ -193,10 +194,7 @@ async function createAsaasPixCharge(params: {
     if (pixRes.ok && pixData?.payload) {
       pixPayload = String(pixData.payload);
       pixQrBase64 = typeof pixData.encodedImage === "string" ? pixData.encodedImage : null;
-      if (pixData.expirationDate) {
-        const parsed = new Date(pixData.expirationDate);
-        expiresAt = Number.isNaN(parsed.getTime()) ? null : parsed;
-      }
+      expiresAt = localExpiresAt;
     }
   } catch {
     // ignore
