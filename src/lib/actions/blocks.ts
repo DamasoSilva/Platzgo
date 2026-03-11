@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/authz";
-import { BookingStatus } from "@/generated/prisma/enums";
 import { logAudit } from "@/lib/audit";
+import { buildBlockingBookingWhere } from "@/lib/utils/bookingAvailability";
 
 export type CreateCourtBlockInput = {
   courtId: string;
@@ -114,12 +114,13 @@ export async function createCourtBlock(input: CreateCourtBlockInput) {
         throw new Error("Horário já está bloqueado (há um bloqueio que se sobrepõe a este intervalo). ");
       }
 
+      const blockingWhere = buildBlockingBookingWhere(new Date());
       const overlapBooking = await tx.booking.findFirst({
         where: {
           courtId: input.courtId,
-          status: { not: BookingStatus.CANCELLED },
           start_time: { lt: occEnd },
           end_time: { gt: occStart },
+          AND: [blockingWhere],
         },
         select: { id: true, status: true },
       });
@@ -210,12 +211,13 @@ export async function createCourtBlockSeries(input: CreateCourtBlockSeriesInput)
         throw new Error("Horário já está bloqueado (há um bloqueio que se sobrepõe a este intervalo). ");
       }
 
+      const blockingWhere = buildBlockingBookingWhere(new Date());
       const overlapBooking = await tx.booking.findFirst({
         where: {
           courtId: input.courtId,
-          status: { not: BookingStatus.CANCELLED },
           start_time: { lt: occEnd },
           end_time: { gt: occStart },
+          AND: [blockingWhere],
         },
         select: { id: true },
       });

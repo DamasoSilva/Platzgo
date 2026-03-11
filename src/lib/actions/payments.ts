@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth";
 import { extractAsaasErrorMessage, getPaymentConfig } from "@/lib/payments";
 import { PaymentProvider, PaymentStatus, BookingStatus, NotificationType, PayoutStatus } from "@/generated/prisma/enums";
 import { getAppUrl } from "@/lib/emailTemplates";
+import { buildBlockingBookingWhere } from "@/lib/utils/bookingAvailability";
 
 function toCents(value: number): number {
   if (!Number.isFinite(value)) return 0;
@@ -34,6 +35,30 @@ function parseAsaasExpiration(value: unknown): string | null {
   const parsed = new Date(normalized);
   if (Number.isNaN(parsed.getTime())) return null;
   return parsed.toISOString();
+}
+
+function expandRangeWithBuffer(start: Date, end: Date, bufferMinutes: number) {
+  const bufferMs = Math.max(0, Math.floor(bufferMinutes)) * 60000;
+  return {
+    start: new Date(start.getTime() - bufferMs),
+    end: new Date(end.getTime() + bufferMs),
+  };
+}
+
+async function cancelBookingAndPayment(params: { bookingId: string; paymentId?: string; reason: string }) {
+  await prisma.booking.update({
+    where: { id: params.bookingId },
+    data: { status: BookingStatus.CANCELLED, cancel_reason: params.reason },
+    select: { id: true },
+  });
+
+  if (params.paymentId) {
+    await prisma.payment.update({
+      where: { id: params.paymentId },
+      data: { status: PaymentStatus.CANCELLED },
+      select: { id: true },
+    });
+  }
 }
 
 async function ensureAsaasCustomer(userId: string, config: { apiKey?: string; baseUrl?: string }) {
@@ -217,12 +242,67 @@ export async function refreshPixForBooking(input: { bookingId: string }) {
       provider: true,
       provider_payment_id: true,
       metadata: true,
-      booking: { select: { customerId: true } },
+      booking: {
+        select: {
+          id: true,
+          status: true,
+          customerId: true,
+          start_time: true,
+          end_time: true,
+          courtId: true,
+          court: { select: { establishment: { select: { booking_buffer_minutes: true } } } },
+        },
+      },
     },
   });
 
   if (!payment || !payment.booking?.customerId) throw new Error("Pagamento nao encontrado");
   if (payment.booking.customerId !== session.user.id) throw new Error("Sem permissao");
+  if (payment.booking.status === BookingStatus.CANCELLED) throw new Error("Agendamento cancelado");
+  if (payment.booking.status !== BookingStatus.PENDING) throw new Error("Agendamento nao esta pendente");
+
+  const now = new Date();
+  if (payment.booking.start_time <= now) {
+    await cancelBookingAndPayment({
+      bookingId: payment.booking.id,
+      paymentId: payment.id,
+      reason: "Pagamento pendente expirado.",
+    });
+    throw new Error("Agendamento expirado. Nao e possivel atualizar o PIX.");
+  }
+
+  const bufferMinutes = payment.booking.court?.establishment.booking_buffer_minutes ?? 0;
+  const bufferedRange = expandRangeWithBuffer(payment.booking.start_time, payment.booking.end_time, bufferMinutes);
+  const blockingWhere = buildBlockingBookingWhere(now);
+
+  const overlap = await prisma.booking.findFirst({
+    where: {
+      courtId: payment.booking.courtId,
+      id: { not: payment.booking.id },
+      start_time: { lt: bufferedRange.end },
+      end_time: { gt: bufferedRange.start },
+      AND: [blockingWhere],
+    },
+    select: { id: true },
+  });
+
+  const blocked = await prisma.courtBlock.findFirst({
+    where: {
+      courtId: payment.booking.courtId,
+      start_time: { lt: bufferedRange.end },
+      end_time: { gt: bufferedRange.start },
+    },
+    select: { id: true },
+  });
+
+  if (overlap || blocked) {
+    await cancelBookingAndPayment({
+      bookingId: payment.booking.id,
+      paymentId: payment.id,
+      reason: "Horario nao disponivel para pagamento.",
+    });
+    throw new Error("Horario nao disponivel. Agendamento cancelado.");
+  }
   if (payment.provider !== PaymentProvider.ASAAS || !payment.provider_payment_id) {
     throw new Error("Pagamento nao suportado");
   }

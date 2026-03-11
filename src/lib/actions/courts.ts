@@ -4,9 +4,9 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { BookingStatus } from "@/generated/prisma/enums";
 import { endOfDay, startOfDay } from "@/lib/utils/time";
 import { getPaymentConfig } from "@/lib/payments";
+import { buildBlockingBookingWhere } from "@/lib/utils/bookingAvailability";
 
 function toDayKey(date: Date): string {
   const y = date.getFullYear();
@@ -44,6 +44,9 @@ export async function getCourtBookingsForDay(params: { courtId: string; day: Dat
   const session = await getServerSession(authOptions);
   const customerId = session?.user?.role === "CUSTOMER" ? session.user.id : null;
   const monthKey = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}`;
+
+  const now = new Date();
+  const blockingWhere = buildBlockingBookingWhere(now);
 
   const [court, bookings, blocks, monthlyPass, paymentConfig] = await Promise.all([
     prisma.court.findUnique({
@@ -96,8 +99,8 @@ export async function getCourtBookingsForDay(params: { courtId: string; day: Dat
     prisma.booking.findMany({
       where: {
         courtId: params.courtId,
-        status: { in: [BookingStatus.PENDING, BookingStatus.CONFIRMED] },
         AND: [
+          blockingWhere,
           { start_time: { lt: endOfDay(day) } },
           { end_time: { gt: startOfDay(day) } },
         ],

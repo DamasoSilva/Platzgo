@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { CustomerHeader } from "@/components/CustomerHeader";
 import { getCourtBookingsForDay } from "@/lib/actions/courts";
 import { ThemedBackground } from "@/components/ThemedBackground";
+import { BookingStatus, PaymentStatus } from "@/generated/prisma/enums";
 
 import { BookingDetailClient } from "./BookingDetailClient";
 
@@ -109,7 +110,7 @@ export default async function BookingDetailPage({
     },
   });
 
-  const payment = await prisma.payment.findFirst({
+  let payment = await prisma.payment.findFirst({
     where: {
       bookingId: booking.id,
       status: { in: ["PENDING", "AUTHORIZED"] },
@@ -124,6 +125,24 @@ export default async function BookingDetailPage({
       metadata: true,
     },
   });
+
+  let bookingStatus = booking.status;
+  let cancelReason = booking.cancel_reason;
+  if (bookingStatus === BookingStatus.PENDING && booking.start_time <= new Date() && payment) {
+    await prisma.booking.update({
+      where: { id: booking.id },
+      data: { status: BookingStatus.CANCELLED, cancel_reason: "Pagamento pendente expirado." },
+      select: { id: true },
+    });
+    await prisma.payment.update({
+      where: { id: payment.id },
+      data: { status: PaymentStatus.CANCELLED },
+      select: { id: true },
+    });
+    bookingStatus = BookingStatus.CANCELLED;
+    cancelReason = "Pagamento pendente expirado.";
+    payment = null;
+  }
 
   const paymentMeta = (payment?.metadata as { pix_payload?: string; pix_qr_base64?: string } | null) ?? null;
 
@@ -145,11 +164,11 @@ export default async function BookingDetailPage({
         <BookingDetailClient
           booking={{
             id: booking.id,
-            status: booking.status,
+            status: bookingStatus,
             start_time: booking.start_time.toISOString(),
             end_time: booking.end_time.toISOString(),
             total_price_cents: booking.total_price_cents,
-            cancel_reason: booking.cancel_reason,
+            cancel_reason: cancelReason,
             cancel_fee_cents: booking.cancel_fee_cents,
             notifications: bookingNotifications.map((n) => ({
               id: n.id,

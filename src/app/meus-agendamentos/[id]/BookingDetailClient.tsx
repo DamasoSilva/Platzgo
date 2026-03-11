@@ -204,15 +204,19 @@ export function BookingDetailClient(props: {
   );
   const alreadyRescheduled = Boolean(props.booking.rescheduledTo?.id);
   const isPast = startDate.getTime() <= Date.now();
+  const paymentExpiresAt = payment?.expiresAt ? new Date(payment.expiresAt) : null;
+  const hasActivePayment = Boolean(payment) && (!paymentExpiresAt || paymentExpiresAt.getTime() > Date.now());
+  const canRefreshPix = Boolean(paymentExpiresAt && paymentExpiresAt.getTime() <= Date.now()) && !isPast && !isCancelled;
 
   const canCancel = !isCancelled && !isPast;
   const canReschedule = !isCancelled && !isPast && !alreadyRescheduled;
-  const hasPendingPayment = Boolean(payment);
   const statusTag = isFinished
     ? "Finalizado"
-    : hasPendingPayment
+    : hasActivePayment
       ? "Aguardando pagamento"
-      : statusLabel(props.booking.status);
+      : props.booking.status === BookingStatus.PENDING
+        ? "Pagamento pendente"
+        : statusLabel(props.booking.status);
 
   const bookings = useMemo(() => {
     return availability.bookings.map((b) => ({
@@ -660,7 +664,7 @@ export function BookingDetailClient(props: {
             </div>
           ) : null}
 
-          {payment.expiresAt && new Date(payment.expiresAt).getTime() <= Date.now() ? (
+          {canRefreshPix ? (
             <div className="mt-3">
               <button
                 type="button"

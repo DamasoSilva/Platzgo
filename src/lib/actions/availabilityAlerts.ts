@@ -4,8 +4,8 @@ import { getServerSession } from "next-auth";
 
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
-import { BookingStatus } from "@/generated/prisma/enums";
 import { dateWithTime, parseHHMM } from "@/lib/utils/time";
+import { buildBlockingBookingWhere } from "@/lib/utils/bookingAvailability";
 
 function addMinutes(d: Date, minutes: number): Date {
   return new Date(d.getTime() + minutes * 60000);
@@ -160,12 +160,13 @@ export async function createAvailabilityAlert(input: {
     select: { id: true },
   });
 
+  const blockingWhere = buildBlockingBookingWhere(new Date());
   const overlap = await prisma.booking.findFirst({
     where: {
       courtId: input.courtId,
-      status: { in: [BookingStatus.PENDING, BookingStatus.CONFIRMED] },
       start_time: { lt: bufferedRange.end },
       end_time: { gt: bufferedRange.start },
+      AND: [blockingWhere],
     },
     select: { id: true },
   });

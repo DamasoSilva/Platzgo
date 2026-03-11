@@ -144,33 +144,32 @@ function assignRoundRobin(players: string[], teams: string[][], targetSizes: num
   }
 }
 
-function buildSnakeOrder(teamCount: number): number[] {
-  if (teamCount <= 1) return [0];
-  const forward = Array.from({ length: teamCount }, (_, i) => i);
-  const backward = Array.from({ length: teamCount - 2 }, (_, i) => teamCount - 2 - i);
-  return [...forward, ...backward];
+
+function pickBalancedTeamIndex(teams: string[][], targetSizes: number[], levelCounts: number[]): number {
+  let bestIdx = -1;
+  let bestScore = Number.POSITIVE_INFINITY;
+  for (let i = 0; i < teams.length; i += 1) {
+    const limit = targetSizes[i] ?? 0;
+    if (teams[i].length >= limit) continue;
+    const score = levelCounts[i] * 1000 + teams[i].length * 10 + Math.random();
+    if (score < bestScore) {
+      bestScore = score;
+      bestIdx = i;
+    }
+  }
+  return bestIdx;
 }
 
-function assignSnake(players: string[], teams: string[][], targetSizes: number[]): void {
-  const totalTeams = teams.length;
-  if (totalTeams === 0) return;
-  const order = buildSnakeOrder(totalTeams);
-  let pointer = 0;
-
-  for (const player of players) {
-    let placed = false;
-    for (let tries = 0; tries < totalTeams; tries += 1) {
-      const idx = order[pointer] ?? 0;
-      pointer = (pointer + 1) % order.length;
-      if (teams[idx].length < (targetSizes[idx] ?? 0)) {
-        teams[idx].push(player);
-        placed = true;
-        break;
-      }
-    }
-    if (!placed) {
-      const last = totalTeams - 1;
-      teams[last].push(player);
+function assignBalancedLevel(players: string[], teams: string[][], targetSizes: number[]): void {
+  const levelCounts = teams.map(() => 0);
+  const shuffled = shuffle(players);
+  for (const player of shuffled) {
+    const idx = pickBalancedTeamIndex(teams, targetSizes, levelCounts);
+    if (idx >= 0) {
+      teams[idx].push(player);
+      levelCounts[idx] += 1;
+    } else if (teams.length) {
+      teams[teams.length - 1].push(player);
     }
   }
 }
@@ -183,12 +182,6 @@ function randomDraw(players: string[], teamCount: number, playersPerTeam: number
   assignRoundRobin(shuffle(players), teams, targetSizes);
 
   return { teams, bench };
-}
-
-function snakeIndex(i: number, teamCount: number): number {
-  const block = Math.floor(i / teamCount);
-  const idx = i % teamCount;
-  return block % 2 === 0 ? idx : teamCount - 1 - idx;
 }
 
 function balancedDraw(
@@ -205,8 +198,7 @@ function balancedDraw(
   );
 
   const distribute = (players: string[]) => {
-    const shuffled = shuffle(players);
-    assignSnake(shuffled, teams, targetSizes);
+    assignBalancedLevel(players, teams, targetSizes);
   };
 
   distribute(levelPlayers.level1);

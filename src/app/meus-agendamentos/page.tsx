@@ -11,6 +11,8 @@ import { deleteAllMyReadNotifications, deleteMyNotification, markAllMyNotificati
 import { ThemedBackground } from "@/components/ThemedBackground";
 import { ReviewFormClient } from "@/app/meus-agendamentos/ReviewFormClient";
 import { formatSportLabel } from "@/lib/utils/sport";
+import { MyBookingsFiltersClient } from "@/app/meus-agendamentos/MyBookingsFiltersClient";
+import { buildActivePaymentWhere } from "@/lib/utils/bookingAvailability";
 
 type SearchParams = {
   start?: string;
@@ -68,9 +70,33 @@ export default async function MyBookingsPage(props: { searchParams?: SearchParam
   const startParam = (sp?.start ?? "").trim();
   const endParam = (sp?.end ?? "").trim();
 
+  const now = new Date();
   const startDate = parseDateInput(startParam, false);
   const endDate = parseDateInput(endParam, true);
-  const now = new Date();
+  const activePaymentWhere = buildActivePaymentWhere(now);
+
+  await prisma.booking.updateMany({
+    where: {
+      customerId: userId,
+      status: BookingStatus.PENDING,
+      start_time: { lt: now },
+      payments: { some: { status: { in: [PaymentStatus.PENDING, PaymentStatus.AUTHORIZED] } } },
+    },
+    data: { status: BookingStatus.CANCELLED, cancel_reason: "Pagamento pendente expirado." },
+  });
+
+  await prisma.payment.updateMany({
+    where: {
+      status: { in: [PaymentStatus.PENDING, PaymentStatus.AUTHORIZED] },
+      booking: {
+        customerId: userId,
+        status: BookingStatus.CANCELLED,
+        start_time: { lt: now },
+        cancel_reason: "Pagamento pendente expirado.",
+      },
+    },
+    data: { status: PaymentStatus.CANCELLED },
+  });
 
   const where: any = { customerId: userId };
   if (startDate || endDate) {
@@ -82,10 +108,10 @@ export default async function MyBookingsPage(props: { searchParams?: SearchParam
 
   if (statusParam === "awaiting_payment") {
     where.status = BookingStatus.PENDING;
-    where.payments = { some: { status: { in: [PaymentStatus.PENDING, PaymentStatus.AUTHORIZED] } } };
+    where.payments = { some: activePaymentWhere };
   } else if (statusParam === "pending") {
     where.status = BookingStatus.PENDING;
-    where.NOT = { payments: { some: { status: { in: [PaymentStatus.PENDING, PaymentStatus.AUTHORIZED] } } } };
+    where.NOT = { payments: { some: activePaymentWhere } };
   } else if (statusParam === "confirmed") {
     where.status = BookingStatus.CONFIRMED;
     where.end_time = { gte: now };
@@ -110,7 +136,7 @@ export default async function MyBookingsPage(props: { searchParams?: SearchParam
       rescheduledFromId: true,
       rescheduledTo: { select: { id: true } },
       payments: {
-        where: { status: { in: [PaymentStatus.PENDING, PaymentStatus.AUTHORIZED] } },
+        where: activePaymentWhere,
         orderBy: { createdAt: "desc" },
         take: 1,
         select: { id: true },
@@ -175,33 +201,7 @@ export default async function MyBookingsPage(props: { searchParams?: SearchParam
           </div>
         </div>
 
-        <form className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto_auto]" method="get">
-          <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Data inicio</label>
-            <input name="start" type="date" defaultValue={startParam} className="ph-input mt-2" />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Data fim</label>
-            <input name="end" type="date" defaultValue={endParam} className="ph-input mt-2" />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Status</label>
-            <select name="status" defaultValue={statusParam} className="ph-input mt-2">
-              <option value="all">Todos</option>
-              <option value="awaiting_payment">Aguardando pagamento</option>
-              <option value="pending">Pendente</option>
-              <option value="confirmed">Confirmado</option>
-              <option value="finished">Finalizado</option>
-              <option value="cancelled">Cancelado</option>
-            </select>
-          </div>
-          <button type="submit" className="ph-button h-11 self-end">
-            Filtrar
-          </button>
-          <Link className="ph-button-secondary h-11 self-end" href="/meus-agendamentos">
-            Limpar
-          </Link>
-        </form>
+        <MyBookingsFiltersClient start={startParam} end={endParam} status={statusParam} />
 
         {notifications.length ? (
           <div className="mt-6 rounded-3xl ph-surface p-6">
@@ -304,7 +304,9 @@ export default async function MyBookingsPage(props: { searchParams?: SearchParam
               ? "Finalizado"
               : awaitingPayment
                 ? "Aguardando pagamento"
-                : statusLabel(b.status);
+                : b.status === BookingStatus.PENDING
+                  ? "Pagamento pendente"
+                  : statusLabel(b.status);
             const statusClass =
               isFinished
                 ? "bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100"

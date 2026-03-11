@@ -16,6 +16,7 @@ import { formatBRLFromCents } from "@/lib/utils/currency";
 import { logAudit } from "@/lib/audit";
 import { extractAsaasErrorMessage, getPaymentConfig } from "@/lib/payments";
 import { releaseAsaasPayoutForPayment, startPaymentForBooking } from "@/lib/actions/payments";
+import { buildBlockingBookingWhere } from "@/lib/utils/bookingAvailability";
 import {
   bookingCancelledEmailToCustomer,
   bookingCancelledEmailToOwner,
@@ -367,6 +368,7 @@ export async function createBooking(input: CreateBookingInput): Promise<CreateBo
         : BookingStatus.CONFIRMED;
 
     const createdIds: string[] = [];
+    const blockingWhere = buildBlockingBookingWhere(now);
     let firstBooking: {
       id: string;
       status: BookingStatus;
@@ -386,9 +388,9 @@ export async function createBooking(input: CreateBookingInput): Promise<CreateBo
       const overlapCustomer = await tx.booking.findFirst({
         where: {
           customerId: input.userId,
-          status: { not: BookingStatus.CANCELLED },
           start_time: { lt: occEnd },
           end_time: { gt: occStart },
+          AND: [blockingWhere],
         },
         select: { id: true },
       });
@@ -417,10 +419,10 @@ export async function createBooking(input: CreateBookingInput): Promise<CreateBo
       const overlap = await tx.booking.findFirst({
         where: {
           courtId: input.courtId,
-          status: { not: BookingStatus.CANCELLED },
           // Overlap com buffer
           start_time: { lt: bufferedRange.end },
           end_time: { gt: bufferedRange.start },
+          AND: [blockingWhere],
         },
         select: { id: true },
       });
@@ -680,6 +682,7 @@ export async function createAdminBooking(input: CreateAdminBookingInput) {
       discountPercent > 0 ? Math.round((baseTotal * (100 - discountPercent)) / 100) : baseTotal;
 
     const createdIds: string[] = [];
+    const blockingWhere = buildBlockingBookingWhere(new Date());
 
     for (let i = 0; i <= repeatWeeks; i += 1) {
       const occStart = new Date(start);
@@ -719,9 +722,9 @@ export async function createAdminBooking(input: CreateAdminBookingInput) {
       const overlap = await tx.booking.findFirst({
         where: {
           courtId: input.courtId,
-          status: { not: BookingStatus.CANCELLED },
           start_time: { lt: bufferedRange.end },
           end_time: { gt: bufferedRange.start },
+          AND: [blockingWhere],
         },
         select: { id: true },
       });
@@ -1366,11 +1369,35 @@ export async function getMyBookingStatus(input: { bookingId: string }) {
 
   const booking = await prisma.booking.findUnique({
     where: { id: input.bookingId },
-    select: { id: true, status: true, customerId: true },
+    select: { id: true, status: true, customerId: true, start_time: true },
   });
 
   if (!booking || booking.customerId !== session.user.id) {
     throw new Error("Agendamento não encontrado");
+  }
+
+  if (booking.status === BookingStatus.PENDING && booking.start_time <= new Date()) {
+    const pendingPayment = await prisma.payment.findFirst({
+      where: {
+        bookingId: booking.id,
+        status: { in: [PaymentStatus.PENDING, PaymentStatus.AUTHORIZED] },
+      },
+      select: { id: true },
+    });
+
+    if (pendingPayment) {
+      await prisma.booking.update({
+        where: { id: booking.id },
+        data: { status: BookingStatus.CANCELLED, cancel_reason: "Pagamento pendente expirado." },
+        select: { id: true },
+      });
+      await prisma.payment.update({
+        where: { id: pendingPayment.id },
+        data: { status: PaymentStatus.CANCELLED },
+        select: { id: true },
+      });
+      return { status: BookingStatus.CANCELLED };
+    }
   }
 
   return { status: booking.status };
@@ -1448,13 +1475,14 @@ export async function rescheduleBookingAsCustomer(input: {
       throw new Error("Este agendamento já foi reagendado. Permitimos apenas 1 reagendamento por agendamento.");
     }
 
+    const blockingWhere = buildBlockingBookingWhere(new Date());
     const overlapCustomer = await tx.booking.findFirst({
       where: {
         customerId: session.user.id,
-        status: { not: BookingStatus.CANCELLED },
         id: { not: original.id },
         start_time: { lt: end },
         end_time: { gt: start },
+        AND: [blockingWhere],
       },
       select: { id: true },
     });
@@ -1511,9 +1539,9 @@ export async function rescheduleBookingAsCustomer(input: {
     const overlapWithBuffer = await tx.booking.findFirst({
       where: {
         courtId: original.courtId,
-        status: { not: BookingStatus.CANCELLED },
         start_time: { lt: bufferedRange.end },
         end_time: { gt: bufferedRange.start },
+        AND: [blockingWhere],
       },
       select: { id: true },
     });

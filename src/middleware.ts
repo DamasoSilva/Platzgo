@@ -12,6 +12,20 @@ function shouldSkip(pathname: string) {
   );
 }
 
+function isTrackingParam(key: string) {
+  const normalized = key.toLowerCase();
+  return (
+    normalized.startsWith("utm_") ||
+    normalized === "gclid" ||
+    normalized === "fbclid" ||
+    normalized === "igshid" ||
+    normalized === "gbraid" ||
+    normalized === "wbraid" ||
+    normalized === "mc_cid" ||
+    normalized === "mc_eid"
+  );
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   if (shouldSkip(pathname)) {
@@ -20,8 +34,21 @@ export async function middleware(req: NextRequest) {
 
   if ((req.method === "GET" || req.method === "HEAD") && req.nextUrl.search) {
     const url = req.nextUrl.clone();
-    url.search = "";
-    return NextResponse.redirect(url);
+    const params = url.searchParams;
+    const keys = Array.from(params.keys());
+    let stripped = false;
+
+    for (const key of keys) {
+      if (isTrackingParam(key)) {
+        params.delete(key);
+        stripped = true;
+      }
+    }
+
+    if (stripped) {
+      url.search = params.toString();
+      return NextResponse.redirect(url);
+    }
   }
 
   if (process.env.MAINTENANCE_MODE === "1" && pathname !== "/maintenance") {
