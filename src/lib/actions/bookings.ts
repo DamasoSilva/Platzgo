@@ -1403,6 +1403,37 @@ export async function getMyBookingStatus(input: { bookingId: string }) {
   return { status: booking.status };
 }
 
+export async function cancelExpiredPendingBookings() {
+  const now = new Date();
+
+  const bookingsResult = await prisma.booking.updateMany({
+    where: {
+      status: BookingStatus.PENDING,
+      start_time: { lt: now },
+      payments: { some: { status: { in: [PaymentStatus.PENDING, PaymentStatus.AUTHORIZED] } } },
+    },
+    data: { status: BookingStatus.CANCELLED, cancel_reason: "Pagamento pendente expirado." },
+  });
+
+  const paymentsResult = await prisma.payment.updateMany({
+    where: {
+      status: { in: [PaymentStatus.PENDING, PaymentStatus.AUTHORIZED] },
+      booking: {
+        status: BookingStatus.CANCELLED,
+        start_time: { lt: now },
+        cancel_reason: "Pagamento pendente expirado.",
+      },
+    },
+    data: { status: PaymentStatus.CANCELLED },
+  });
+
+  return {
+    cancelledBookings: bookingsResult.count,
+    cancelledPayments: paymentsResult.count,
+    ranAt: now.toISOString(),
+  };
+}
+
 export async function rescheduleBookingAsCustomer(input: {
   bookingId: string;
   startTime: Date | string;
