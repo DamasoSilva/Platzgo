@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { notFound, redirect } from "next/navigation";
 
@@ -14,6 +13,7 @@ import { slugify } from "@/lib/utils/slug";
 import { EngagementClient } from "@/app/establishments/[id]/EngagementClient";
 import { formatSportLabel } from "@/lib/utils/sport";
 import { SearchPrefillClient } from "@/components/SearchPrefillClient";
+import { PrefilledCourtLink } from "@/components/PrefilledCourtLink";
 
 async function resolveEstablishmentIdBySlug(rawSlug: string): Promise<string | null> {
   const normalized = slugify(rawSlug);
@@ -233,12 +233,16 @@ export default async function EstablishmentSlugPage(props: {
                     </p>
 
                     <div className="mt-4 flex flex-wrap items-center gap-2">
-                      <Link
-                        href={{ pathname: `/courts/${c.id}`, query: { day, time: time ?? undefined } }}
+                      <PrefilledCourtLink
+                        courtId={c.id}
+                        day={day}
+                        time={time}
+                        hasDayParam={hasDayParam}
+                        hasTimeParam={hasTimeParam}
                         className="ph-button-sm"
                       >
                         Ver horarios
-                      </Link>
+                      </PrefilledCourtLink>
 
                       <a
                         href={waLink}

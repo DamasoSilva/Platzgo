@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 
@@ -13,6 +12,7 @@ import { ThemedBackground } from "@/components/ThemedBackground";
 import { EngagementClient } from "./EngagementClient";
 import { formatSportLabel } from "@/lib/utils/sport";
 import { SearchPrefillClient } from "@/components/SearchPrefillClient";
+import { PrefilledCourtLink } from "@/components/PrefilledCourtLink";
 
 export async function generateMetadata(props: {
   params: { id: string } | Promise<{ id: string }>;
@@ -199,12 +199,16 @@ export default async function EstablishmentPage(props: {
                     </p>
 
                     <div className="mt-4 flex flex-wrap items-center gap-2">
-                      <Link
-                        href={{ pathname: `/courts/${c.id}`, query: { day, time: time ?? undefined } }}
+                      <PrefilledCourtLink
+                        courtId={c.id}
+                        day={day}
+                        time={time}
+                        hasDayParam={hasDayParam}
+                        hasTimeParam={hasTimeParam}
                         className="ph-button-sm"
                       >
                         Ver horários
-                      </Link>
+                      </PrefilledCourtLink>
 
                       <a
                         href={waLink}
