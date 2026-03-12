@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 
 import { prisma } from "@/lib/prisma";
-import { enqueueEmail } from "@/lib/emailQueue";
+import { enqueueEmail, processEmailQueueBatch } from "@/lib/emailQueue";
 import { getAppUrl, passwordChangedEmail, passwordResetCodeEmail } from "@/lib/emailTemplates";
 import { getNotificationSettings } from "@/lib/notificationSettings";
 import { checkRateLimit, clearAttempts, recordFailure } from "@/lib/antifraud";
@@ -85,6 +85,8 @@ export async function requestPasswordReset(input: { email: string }) {
     html,
     dedupeKey: `pwdreset:${user.id}:${token_hash}`,
   });
+
+  await processEmailQueueBatch({ limit: 5 });
 
   await clearAttempts(rateKey);
 
