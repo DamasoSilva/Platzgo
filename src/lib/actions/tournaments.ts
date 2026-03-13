@@ -57,6 +57,33 @@ function parseCategories(input?: string[] | string): string[] {
     .filter(Boolean);
 }
 
+const DEFAULT_TOURNAMENT_CATEGORIES = ["sub-9", "sub-13", "sub-15", "sub-17", "sub-20", "Livre", "40+"];
+const DEFAULT_TOURNAMENT_LEVELS = ["Baixo", "Medio", "Avancado", "BAIXO-MEDIO", "MEDIO-AVANCADO", "LIVRE"];
+
+function normalizeLabel(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function filterAllowed(values: string[], allowed: string[]): string[] {
+  const allowedMap = new Map<string, string>();
+  for (const item of allowed) {
+    const key = normalizeLabel(item);
+    if (!key || allowedMap.has(key)) continue;
+    allowedMap.set(key, item);
+  }
+
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of values) {
+    const key = normalizeLabel(item);
+    if (!key || !allowedMap.has(key) || seen.has(key)) continue;
+    out.push(allowedMap.get(key) ?? item.trim());
+    seen.add(key);
+  }
+
+  return out;
+}
+
 function parseLevels(input?: string[] | string): string[] {
   if (!input) return [];
   if (Array.isArray(input)) return input.map((item) => item.trim()).filter(Boolean);
@@ -260,7 +287,7 @@ export async function createTournamentAsAdmin(input: CreateTournamentInput) {
   }
 
   const hasCourtWithSport = await prisma.court.findFirst({
-    where: { establishmentId: establishment.id, sport_type: input.sport_type },
+    where: { establishmentId: establishment.id, sport_type: input.sport_type, is_active: true, inactive_reason_id: null },
     select: { id: true },
   });
 
@@ -269,8 +296,12 @@ export async function createTournamentAsAdmin(input: CreateTournamentInput) {
   }
 
   const rules = parseRules(input.rules);
-  const categories = parseCategories(input.categories);
-  const levels = parseLevels(input.levels);
+  const categoriesRaw = parseCategories(input.categories);
+  const levelsRaw = parseLevels(input.levels);
+  const categories = filterAllowed(categoriesRaw, DEFAULT_TOURNAMENT_CATEGORIES);
+  const levels = filterAllowed(levelsRaw, DEFAULT_TOURNAMENT_LEVELS);
+  const finalCategories = categories.length ? categories : DEFAULT_TOURNAMENT_CATEGORIES;
+  const finalLevels = levels.length ? levels : DEFAULT_TOURNAMENT_LEVELS;
 
   const created = await prisma.tournament.create({
     data: {
@@ -292,17 +323,17 @@ export async function createTournamentAsAdmin(input: CreateTournamentInput) {
       team_size_max: teamSizeMax,
       format: input.format,
       rules,
-      categories: categories.length
+      categories: finalCategories.length
         ? {
             createMany: {
-              data: categories.map((label) => ({ label })),
+              data: finalCategories.map((label) => ({ label })),
             },
           }
         : undefined,
-      levels: levels.length
+      levels: finalLevels.length
         ? {
             createMany: {
-              data: levels.map((label) => ({ label })),
+              data: finalLevels.map((label) => ({ label })),
             },
           }
         : undefined,

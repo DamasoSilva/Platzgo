@@ -51,8 +51,6 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
 
   const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
   const [levels, setLevels] = useState<string[]>(DEFAULT_LEVELS);
-  const [newCategory, setNewCategory] = useState("");
-  const [newLevel, setNewLevel] = useState("");
 
   useEffect(() => {
     if (sportOptions.length === 0) return;
@@ -61,26 +59,28 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
     }
   }, [sport, sportOptions]);
 
-  function addCategory() {
-    const value = newCategory.trim();
-    if (!value) return;
-    setCategories((current) => (current.includes(value) ? current : [...current, value]));
-    setNewCategory("");
+  function toggleCategory(value: string) {
+    setCategories((current) => {
+      const next = new Set(current);
+      if (next.has(value)) {
+        next.delete(value);
+      } else {
+        next.add(value);
+      }
+      return DEFAULT_CATEGORIES.filter((item) => next.has(item));
+    });
   }
 
-  function removeCategory(value: string) {
-    setCategories((current) => current.filter((item) => item !== value));
-  }
-
-  function addLevel() {
-    const value = newLevel.trim();
-    if (!value) return;
-    setLevels((current) => (current.includes(value) ? current : [...current, value]));
-    setNewLevel("");
-  }
-
-  function removeLevel(value: string) {
-    setLevels((current) => current.filter((item) => item !== value));
+  function toggleLevel(value: string) {
+    setLevels((current) => {
+      const next = new Set(current);
+      if (next.has(value)) {
+        next.delete(value);
+      } else {
+        next.add(value);
+      }
+      return DEFAULT_LEVELS.filter((item) => next.has(item));
+    });
   }
 
   function submitTournament(status: "DRAFT" | "OPEN") {
@@ -331,59 +331,37 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <div>
                 <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Categorias</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {categories.map((cat) => (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => removeCategory(cat)}
-                      className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300"
-                      disabled={isPending}
-                    >
-                      {cat} · remover
-                    </button>
+                <div className="mt-3 grid gap-2">
+                  {DEFAULT_CATEGORIES.map((cat) => (
+                    <label key={cat} className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-300">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={categories.includes(cat)}
+                        onChange={() => toggleCategory(cat)}
+                        disabled={isPending}
+                      />
+                      <span>{cat}</span>
+                    </label>
                   ))}
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <input
-                    className="ph-input max-w-xs"
-                    placeholder="Nova categoria"
-                    value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value)}
-                    disabled={isPending}
-                  />
-                  <button type="button" className="ph-button-secondary-sm" onClick={addCategory} disabled={isPending}>
-                    Adicionar
-                  </button>
                 </div>
               </div>
 
               <div>
                 <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Niveis</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {levels.map((level) => (
-                    <button
-                      key={level}
-                      type="button"
-                      onClick={() => removeLevel(level)}
-                      className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300"
-                      disabled={isPending}
-                    >
-                      {level} · remover
-                    </button>
+                <div className="mt-3 grid gap-2">
+                  {DEFAULT_LEVELS.map((level) => (
+                    <label key={level} className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-300">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={levels.includes(level)}
+                        onChange={() => toggleLevel(level)}
+                        disabled={isPending}
+                      />
+                      <span>{level}</span>
+                    </label>
                   ))}
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <input
-                    className="ph-input max-w-xs"
-                    placeholder="Novo nivel"
-                    value={newLevel}
-                    onChange={(e) => setNewLevel(e.target.value)}
-                    disabled={isPending}
-                  />
-                  <button type="button" className="ph-button-secondary-sm" onClick={addLevel} disabled={isPending}>
-                    Adicionar
-                  </button>
                 </div>
               </div>
             </div>

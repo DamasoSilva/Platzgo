@@ -10,7 +10,7 @@ export default async function DashboardTournamentCreatePage() {
 
   const [courts, sportOptionRows] = await Promise.all([
     prisma.court.findMany({
-      where: { establishmentId },
+      where: { establishmentId, is_active: true, inactive_reason_id: null },
       select: { sport_type: true },
       distinct: ["sport_type"],
     }),
