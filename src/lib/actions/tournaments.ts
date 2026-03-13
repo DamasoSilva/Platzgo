@@ -57,8 +57,8 @@ function parseCategories(input?: string[] | string): string[] {
     .filter(Boolean);
 }
 
-const DEFAULT_TOURNAMENT_CATEGORIES = ["sub-9", "sub-13", "sub-15", "sub-17", "sub-20", "Livre", "40+"];
-const DEFAULT_TOURNAMENT_LEVELS = ["Baixo", "Medio", "Avancado", "BAIXO-MEDIO", "MEDIO-AVANCADO", "LIVRE"];
+const DEFAULT_TOURNAMENT_CATEGORIES = ["Sub-9", "Sub-13", "Sub-15", "Sub-17", "Sub-20", "Livre", "40+"];
+const DEFAULT_TOURNAMENT_LEVELS = ["Baixo", "Médio", "Avançado", "Baixo-Médio", "Médio-Avançado", "Livre"];
 
 function normalizeLabel(value: string): string {
   return value.trim().toLowerCase();
@@ -300,8 +300,10 @@ export async function createTournamentAsAdmin(input: CreateTournamentInput) {
   const levelsRaw = parseLevels(input.levels);
   const categories = filterAllowed(categoriesRaw, DEFAULT_TOURNAMENT_CATEGORIES);
   const levels = filterAllowed(levelsRaw, DEFAULT_TOURNAMENT_LEVELS);
-  const finalCategories = categories.length ? categories : DEFAULT_TOURNAMENT_CATEGORIES;
-  const finalLevels = levels.length ? levels : DEFAULT_TOURNAMENT_LEVELS;
+  const selectedCategory = categories[0] ?? DEFAULT_TOURNAMENT_CATEGORIES[0] ?? null;
+  const selectedLevel = levels[0] ?? DEFAULT_TOURNAMENT_LEVELS[0] ?? null;
+  const finalCategories = selectedCategory ? [selectedCategory] : [];
+  const finalLevels = selectedLevel ? [selectedLevel] : [];
 
   const created = await prisma.tournament.create({
     data: {

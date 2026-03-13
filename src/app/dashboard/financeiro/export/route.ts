@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/authz";
+import { PaymentStatus } from "@/generated/prisma/enums";
 
 function toYMD(d: Date): string {
   const y = d.getFullYear();
@@ -26,6 +27,32 @@ function csvEscape(value: string | number | null | undefined): string {
   const str = String(value ?? "");
   if (/[",\n]/.test(str)) return `"${str.replace(/"/g, '""')}"`;
   return str;
+}
+
+function toNumberFromMeta(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return Math.round(value);
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return Math.round(parsed);
+  }
+  return null;
+}
+
+function readNetValueCents(meta: unknown): number | null {
+  if (!meta || typeof meta !== "object") return null;
+  const data = meta as Record<string, unknown>;
+  return toNumberFromMeta(data.net_value_cents);
+}
+
+function getOwnerNetCents(payment: { amount_cents: number; payout_amount_cents?: number | null; metadata?: unknown }): number | null {
+  const netValueCents = readNetValueCents(payment.metadata);
+  const payoutCents = typeof payment.payout_amount_cents === "number" ? payment.payout_amount_cents : null;
+  if (netValueCents != null && payoutCents != null && payment.amount_cents > 0) {
+    return Math.round((netValueCents * payoutCents) / payment.amount_cents);
+  }
+  if (netValueCents != null) return netValueCents;
+  if (payoutCents != null) return payoutCents;
+  return null;
 }
 
 export async function GET(request: Request) {
@@ -80,6 +107,12 @@ export async function GET(request: Request) {
       status: true,
       total_price_cents: true,
       cancel_fee_cents: true,
+      payments: {
+        where: { status: { in: [PaymentStatus.PAID, PaymentStatus.AUTHORIZED] } },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { amount_cents: true, payout_amount_cents: true, metadata: true },
+      },
       customer: { select: { name: true, email: true } },
       customer_name: true,
       customer_email: true,
@@ -96,6 +129,7 @@ export async function GET(request: Request) {
     "email",
     "status",
     "total_cents",
+    "net_cents",
     "cancel_fee_cents",
   ];
 
@@ -107,6 +141,9 @@ export async function GET(request: Request) {
     const dateStr = toYMD(start);
     const startTime = start.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
     const endTime = end.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    const payment = b.payments[0];
+    const netFromPayment = payment ? getOwnerNetCents(payment) ?? payment.payout_amount_cents ?? payment.amount_cents : null;
+    const netCents = b.status === "CANCELLED" ? b.cancel_fee_cents ?? 0 : netFromPayment ?? b.total_price_cents ?? 0;
 
     return [
       dateStr,
@@ -117,6 +154,7 @@ export async function GET(request: Request) {
       customerEmail,
       b.status,
       b.total_price_cents ?? 0,
+      netCents,
       b.cancel_fee_cents ?? 0,
     ].map(csvEscape).join(",");
   });

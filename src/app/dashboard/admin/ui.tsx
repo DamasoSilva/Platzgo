@@ -130,7 +130,7 @@ function MediaGrid(props: { urls: string[]; onRemove?: (url: string) => void; on
         return (
           <div
             key={url}
-            className="group relative overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950"
+            className="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-zinc-100/70 shadow-sm dark:bg-zinc-900/60"
             draggable={Boolean(props.onReorder)}
             onDragStart={() => {
               dragIndexRef.current = idx;
@@ -159,7 +159,7 @@ function MediaGrid(props: { urls: string[]; onRemove?: (url: string) => void; on
                 href={url}
                 target="_blank"
                 rel="noreferrer"
-                className="flex h-28 w-full items-center justify-center bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100"
+                className="flex h-full w-full items-center justify-center bg-black/5 text-zinc-900 dark:bg-black/30 dark:text-zinc-100"
                 title="Abrir vídeo em nova aba"
               >
                 <span className="flex items-center gap-2 text-sm font-semibold">
@@ -172,7 +172,7 @@ function MediaGrid(props: { urls: string[]; onRemove?: (url: string) => void; on
               <img
                 src={url}
                 alt="Mídia enviada"
-                className="h-28 w-full object-cover"
+                className="h-full w-full object-cover"
                 loading="lazy"
                 decoding="async"
               />

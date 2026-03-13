@@ -5,6 +5,32 @@ import { prisma } from "@/lib/prisma";
 
 import { DashboardTournamentDetailClient, type DashboardTournamentDetailView } from "./ui";
 
+function toNumberFromMeta(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return Math.round(value);
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return Math.round(parsed);
+  }
+  return null;
+}
+
+function readNetValueCents(meta: unknown): number | null {
+  if (!meta || typeof meta !== "object") return null;
+  const data = meta as Record<string, unknown>;
+  return toNumberFromMeta(data.net_value_cents);
+}
+
+function getOwnerNetCents(payment: { amount_cents: number; payout_amount_cents?: number | null; metadata?: unknown }): number | null {
+  const netValueCents = readNetValueCents(payment.metadata);
+  const payoutCents = typeof payment.payout_amount_cents === "number" ? payment.payout_amount_cents : null;
+  if (netValueCents != null && payoutCents != null && payment.amount_cents > 0) {
+    return Math.round((netValueCents * payoutCents) / payment.amount_cents);
+  }
+  if (netValueCents != null) return netValueCents;
+  if (payoutCents != null) return payoutCents;
+  return null;
+}
+
 export default async function DashboardTournamentDetailPage({ params }: { params: { id: string } }) {
   const { establishmentId } = await requireAdminWithSetupOrRedirect(`/dashboard/torneios/${params.id}`);
 
@@ -55,15 +81,22 @@ export default async function DashboardTournamentDetailPage({ params }: { params
 
   const payments = await prisma.payment.findMany({
     where: { tournamentRegistration: { tournamentId: tournamentRow.id } },
-    select: { amount_cents: true, status: true },
+    select: { amount_cents: true, status: true, payout_amount_cents: true, metadata: true },
   });
 
-  const receivedCents = payments
+  const receivedGrossCents = payments
     .filter((p) => p.status === "PAID")
     .reduce((acc, p) => acc + p.amount_cents, 0);
-  const pendingCents = payments
+  const pendingGrossCents = payments
     .filter((p) => p.status === "PENDING" || p.status === "AUTHORIZED")
     .reduce((acc, p) => acc + p.amount_cents, 0);
+
+  const receivedNetCents = payments
+    .filter((p) => p.status === "PAID")
+    .reduce((acc, p) => acc + (getOwnerNetCents(p) ?? p.payout_amount_cents ?? p.amount_cents), 0);
+  const pendingNetCents = payments
+    .filter((p) => p.status === "PENDING" || p.status === "AUTHORIZED")
+    .reduce((acc, p) => acc + (getOwnerNetCents(p) ?? p.payout_amount_cents ?? p.amount_cents), 0);
 
   const tournament: DashboardTournamentDetailView = {
     id: tournamentRow.id,
@@ -94,8 +127,10 @@ export default async function DashboardTournamentDetailPage({ params }: { params
       team_b: match.teamB?.name ?? "A definir",
     })),
     finance: {
-      received_cents: receivedCents,
-      pending_cents: pendingCents,
+      received_cents: receivedNetCents,
+      received_gross_cents: receivedGrossCents,
+      pending_cents: pendingNetCents,
+      pending_gross_cents: pendingGrossCents,
     },
   };
 

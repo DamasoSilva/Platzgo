@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAdminWithSetupOrRedirect } from "@/lib/authz";
 import { formatBRLFromCents } from "@/lib/utils/currency";
+import { PaymentStatus } from "@/generated/prisma/enums";
 
 function toYMD(d: Date): string {
   const y = d.getFullYear();
@@ -50,6 +51,32 @@ function parseHHMMToMinutes(hhmm: string): number {
   const h = Math.max(0, Math.min(23, Number(m[1])));
   const min = Math.max(0, Math.min(59, Number(m[2])));
   return h * 60 + min;
+}
+
+function toNumberFromMeta(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return Math.round(value);
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return Math.round(parsed);
+  }
+  return null;
+}
+
+function readNetValueCents(meta: unknown): number | null {
+  if (!meta || typeof meta !== "object") return null;
+  const data = meta as Record<string, unknown>;
+  return toNumberFromMeta(data.net_value_cents);
+}
+
+function getOwnerNetCents(payment: { amount_cents: number; payout_amount_cents?: number | null; metadata?: unknown }): number | null {
+  const netValueCents = readNetValueCents(payment.metadata);
+  const payoutCents = typeof payment.payout_amount_cents === "number" ? payment.payout_amount_cents : null;
+  if (netValueCents != null && payoutCents != null && payment.amount_cents > 0) {
+    return Math.round((netValueCents * payoutCents) / payment.amount_cents);
+  }
+  if (netValueCents != null) return netValueCents;
+  if (payoutCents != null) return payoutCents;
+  return null;
 }
 
 export default async function DashboardFinanceiroPage({
@@ -105,7 +132,19 @@ export default async function DashboardFinanceiroPage({
         start_time: { lt: rangeEnd },
         end_time: { gt: rangeStart },
       },
-      select: { id: true, start_time: true, end_time: true, status: true },
+      select: {
+        id: true,
+        start_time: true,
+        end_time: true,
+        status: true,
+        total_price_cents: true,
+        payments: {
+          where: { status: { in: [PaymentStatus.PAID, PaymentStatus.AUTHORIZED] } },
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: { amount_cents: true, payout_amount_cents: true, metadata: true },
+        },
+      },
     }),
     prisma.booking.aggregate({
       where: {
@@ -175,6 +214,14 @@ export default async function DashboardFinanceiroPage({
   const monthlyRevenue = monthlyAgg._sum.price_cents ?? 0;
   const cancelFeeRevenue = cancelledAgg._sum.cancel_fee_cents ?? 0;
   const totalRevenue = confirmedRevenue + monthlyRevenue + cancelFeeRevenue;
+  const confirmedNetRevenue = bookings
+    .filter((b) => b.status === "CONFIRMED" && b.start_time >= rangeStart && b.start_time < rangeEnd)
+    .reduce((acc, booking) => {
+      const payment = booking.payments[0];
+      const netCents = payment ? getOwnerNetCents(payment) ?? payment.payout_amount_cents ?? payment.amount_cents : null;
+      return acc + (netCents ?? booking.total_price_cents ?? 0);
+    }, 0);
+  const totalNetRevenue = confirmedNetRevenue + monthlyRevenue + cancelFeeRevenue;
 
   const confirmedCount = confirmedAgg._count.id ?? 0;
   const avgTicket = confirmedCount > 0 ? Math.round(confirmedRevenue / confirmedCount) : 0;
@@ -226,10 +273,11 @@ export default async function DashboardFinanceiroPage({
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="ph-card p-5">
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">Receita total</p>
-          <p className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">{formatBRLFromCents(totalRevenue)}</p>
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-            Confirmados: {formatBRLFromCents(confirmedRevenue)} • Mensalidades: {formatBRLFromCents(monthlyRevenue)} • Multas: {formatBRLFromCents(cancelFeeRevenue)}
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">Receita total (líquido)</p>
+          <p className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">{formatBRLFromCents(totalNetRevenue)}</p>
+          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">Bruto: {formatBRLFromCents(totalRevenue)}</p>
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            Confirmados (líquido): {formatBRLFromCents(confirmedNetRevenue)} • Mensalidades: {formatBRLFromCents(monthlyRevenue)} • Multas: {formatBRLFromCents(cancelFeeRevenue)}
           </p>
         </div>
 

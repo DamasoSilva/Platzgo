@@ -126,7 +126,7 @@ function MediaGrid(props: {
         return (
           <div
             key={url}
-            className="group relative overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950"
+            className="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-zinc-100/70 shadow-sm dark:bg-zinc-900/60"
             draggable={Boolean(props.onReorder)}
             onDragStart={() => {
               dragIndexRef.current = idx;
@@ -155,7 +155,7 @@ function MediaGrid(props: {
                 href={url}
                 target="_blank"
                 rel="noreferrer"
-                className="flex h-28 w-full items-center justify-center bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100"
+                className="flex h-full w-full items-center justify-center bg-black/5 text-zinc-900 dark:bg-black/30 dark:text-zinc-100"
                 title="Abrir vídeo em nova aba"
               >
                 <span className="flex items-center gap-2 text-sm font-semibold">
@@ -165,7 +165,7 @@ function MediaGrid(props: {
               </a>
             ) : (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={url} alt="Mídia enviada" className="h-28 w-full object-cover" loading="lazy" decoding="async" />
+              <img src={url} alt="Mídia enviada" className="h-full w-full object-cover" loading="lazy" decoding="async" />
             )}
 
             {props.onRemove ? (
@@ -556,12 +556,12 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
                     <img
                       src={coverUrl}
                       alt={`Foto da quadra ${c.name}`}
-                      className="h-14 w-14 shrink-0 rounded-2xl border border-zinc-200 object-cover dark:border-zinc-800"
+                      className="h-16 w-24 shrink-0 rounded-xl object-cover"
                       loading="lazy"
                       decoding="async"
                     />
                   ) : (
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-zinc-200 bg-zinc-100 text-[11px] font-semibold text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
+                    <div className="flex h-16 w-24 shrink-0 items-center justify-center rounded-xl bg-zinc-100/70 text-[11px] font-semibold text-zinc-600 dark:bg-zinc-900/60 dark:text-zinc-300">
                       Sem foto
                     </div>
                   )}

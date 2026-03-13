@@ -38,6 +38,29 @@ function parseAsaasExpiration(value: unknown): string | null {
   return parsed.toISOString();
 }
 
+function toMoneyCents(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return Math.round(value * 100);
+  if (typeof value === "string") {
+    const parsed = Number(value.replace(",", "."));
+    if (Number.isFinite(parsed)) return Math.round(parsed * 100);
+  }
+  return null;
+}
+
+function readAsaasNetValueCents(payload: unknown): number | null {
+  if (!payload || typeof payload !== "object") return null;
+  const data = payload as Record<string, any>;
+  const netValue =
+    data?.payment?.netValue ??
+    data?.payment?.net_value ??
+    data?.payment?.payment?.netValue ??
+    data?.payment?.payment?.net_value ??
+    data?.netValue ??
+    data?.net_value ??
+    null;
+  return toMoneyCents(netValue);
+}
+
 function expandRangeWithBuffer(start: Date, end: Date, bufferMinutes: number) {
   const bufferMs = Math.max(0, Math.floor(bufferMinutes)) * 60000;
   return {
@@ -703,14 +726,38 @@ export async function applyPaymentStatusForBooking(params: {
 }) {
   const payment = await prisma.payment.findUnique({
     where: { id: params.paymentId },
-    select: { id: true, bookingId: true, requires_confirmation: true, provider: true, payout_status: true, metadata: true },
+    select: {
+      id: true,
+      bookingId: true,
+      requires_confirmation: true,
+      provider: true,
+      payout_status: true,
+      metadata: true,
+      amount_cents: true,
+    },
   });
 
   if (!payment) throw new Error("Pagamento não encontrado");
 
+  const netValueCents =
+    payment.provider === PaymentProvider.ASAAS ? readAsaasNetValueCents(params.payload) : null;
+  const feeCents =
+    netValueCents !== null ? Math.max(0, payment.amount_cents - netValueCents) : null;
+  const nextMetadata =
+    netValueCents !== null
+      ? {
+          ...((payment.metadata as Record<string, unknown> | null) ?? {}),
+          net_value_cents: netValueCents,
+          ...(feeCents !== null ? { asaas_fee_cents: feeCents } : {}),
+        }
+      : null;
+
   await prisma.payment.update({
     where: { id: payment.id },
-    data: { status: params.status },
+    data: {
+      status: params.status,
+      ...(nextMetadata ? { metadata: nextMetadata } : {}),
+    },
     select: { id: true },
   });
 

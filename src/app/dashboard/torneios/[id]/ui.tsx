@@ -31,7 +31,9 @@ export type DashboardTournamentDetailView = {
   }>;
   finance: {
     received_cents: number;
+    received_gross_cents: number;
     pending_cents: number;
+    pending_gross_cents: number;
   };
 };
 
@@ -266,15 +268,21 @@ export function DashboardTournamentDetailClient(props: Props) {
           <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Financeiro</h2>
           <div className="mt-3 grid gap-4 md:grid-cols-2">
             <div className="rounded-2xl border border-zinc-200 bg-white/70 p-4 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-200">
-              <p className="text-xs uppercase tracking-wide text-zinc-400">Recebido</p>
+              <p className="text-xs uppercase tracking-wide text-zinc-400">Recebido (líquido)</p>
               <p className="mt-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
                 {formatBRLFromCents(tournament.finance.received_cents)}
               </p>
+              <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                Bruto: {formatBRLFromCents(tournament.finance.received_gross_cents)}
+              </p>
             </div>
             <div className="rounded-2xl border border-zinc-200 bg-white/70 p-4 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-200">
-              <p className="text-xs uppercase tracking-wide text-zinc-400">Pendente</p>
+              <p className="text-xs uppercase tracking-wide text-zinc-400">Pendente (líquido)</p>
               <p className="mt-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
                 {formatBRLFromCents(tournament.finance.pending_cents)}
+              </p>
+              <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                Bruto: {formatBRLFromCents(tournament.finance.pending_gross_cents)}
               </p>
             </div>
           </div>

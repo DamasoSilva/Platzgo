@@ -67,6 +67,23 @@ function readRefundMeta(meta: unknown): { refundAmountCents: number | null; refu
   };
 }
 
+function readNetValueCents(meta: unknown): number | null {
+  if (!meta || typeof meta !== "object") return null;
+  const data = meta as Record<string, unknown>;
+  return toNumberFromMeta(data.net_value_cents);
+}
+
+function getOwnerNetCents(payment: { amount_cents: number; payout_amount_cents?: number | null; metadata?: unknown }): number | null {
+  const netValueCents = readNetValueCents(payment.metadata);
+  const payoutCents = typeof payment.payout_amount_cents === "number" ? payment.payout_amount_cents : null;
+  if (netValueCents != null && payoutCents != null && payment.amount_cents > 0) {
+    return Math.round((netValueCents * payoutCents) / payment.amount_cents);
+  }
+  if (netValueCents != null) return netValueCents;
+  if (payoutCents != null) return payoutCents;
+  return null;
+}
+
 export default async function DashboardPaymentsPage(props: { searchParams?: SearchParams | Promise<SearchParams> }) {
   const { establishmentId } = await requireAdminWithSetupOrRedirect("/dashboard/pagamentos");
 
@@ -75,12 +92,7 @@ export default async function DashboardPaymentsPage(props: { searchParams?: Sear
   const startParam = (searchParams?.start ?? "").trim();
   const endParam = (searchParams?.end ?? "").trim();
 
-  const providerFilter =
-    providerParam === "asaas"
-      ? PaymentProvider.ASAAS
-      : providerParam === "mercadopago"
-        ? PaymentProvider.MERCADOPAGO
-        : undefined;
+  const providerFilter = providerParam === "asaas" ? PaymentProvider.ASAAS : undefined;
 
   const startDate = parseDateInput(startParam, false);
   const endDate = parseDateInput(endParam, true);
@@ -105,6 +117,7 @@ export default async function DashboardPaymentsPage(props: { searchParams?: Sear
       provider: true,
       status: true,
       amount_cents: true,
+      payout_amount_cents: true,
       provider_payment_id: true,
       bookingId: true,
       monthlyPassId: true,
@@ -145,15 +158,19 @@ export default async function DashboardPaymentsPage(props: { searchParams?: Sear
         payment.status === PaymentStatus.REFUNDED
           ? refundMeta.refundAmountCents ?? payment.amount_cents
           : null;
+      const netCents = getOwnerNetCents(payment);
+      const netFallback = netCents ?? payment.payout_amount_cents ?? payment.amount_cents;
 
       if (payment.status === PaymentStatus.PAID) {
         acc.paidCents += payment.amount_cents;
+        acc.netPaidCents += netFallback;
         acc.paidCount += 1;
       } else if (payment.status === PaymentStatus.REFUNDED) {
         acc.refundCents += refundAmount ?? 0;
         acc.refundCount += 1;
       } else if (payment.status === PaymentStatus.PENDING || payment.status === PaymentStatus.AUTHORIZED) {
         acc.pendingCents += payment.amount_cents;
+        acc.netPendingCents += netFallback;
         acc.pendingCount += 1;
       } else {
         acc.errorCents += payment.amount_cents;
@@ -163,8 +180,10 @@ export default async function DashboardPaymentsPage(props: { searchParams?: Sear
     },
     {
       paidCents: 0,
+      netPaidCents: 0,
       refundCents: 0,
       pendingCents: 0,
+      netPendingCents: 0,
       errorCents: 0,
       paidCount: 0,
       refundCount: 0,
@@ -193,9 +212,7 @@ export default async function DashboardPaymentsPage(props: { searchParams?: Sear
         <form className="mt-6 grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto_auto]" method="get">
           <div>
             <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Administradora</label>
-            <select name="provider" defaultValue={providerParam || "all"} className="ph-input mt-2">
-              <option value="all">Todas</option>
-              <option value="mercadopago">MercadoPago</option>
+            <select name="provider" defaultValue={providerParam || "asaas"} className="ph-input mt-2">
               <option value="asaas">Asaas</option>
             </select>
           </div>
@@ -223,11 +240,12 @@ export default async function DashboardPaymentsPage(props: { searchParams?: Sear
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="ph-card p-5">
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">Recebido</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">Recebido (líquido)</p>
           <p className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
-            {formatMoney(totals.paidCents)}
+            {formatMoney(totals.netPaidCents)}
           </p>
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{totals.paidCount} transacoes</p>
+          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">Bruto: {formatMoney(totals.paidCents)}</p>
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{totals.paidCount} transacoes</p>
         </div>
         <div className="ph-card p-5">
           <p className="text-xs text-zinc-500 dark:text-zinc-400">Reembolsado</p>
@@ -237,11 +255,12 @@ export default async function DashboardPaymentsPage(props: { searchParams?: Sear
           <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{totals.refundCount} transacoes</p>
         </div>
         <div className="ph-card p-5">
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">Pendente</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">Pendente (líquido)</p>
           <p className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
-            {formatMoney(totals.pendingCents)}
+            {formatMoney(totals.netPendingCents)}
           </p>
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{totals.pendingCount} transacoes</p>
+          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">Bruto: {formatMoney(totals.pendingCents)}</p>
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{totals.pendingCount} transacoes</p>
         </div>
         <div className="ph-card p-5">
           <p className="text-xs text-zinc-500 dark:text-zinc-400">Erro</p>
@@ -262,7 +281,8 @@ export default async function DashboardPaymentsPage(props: { searchParams?: Sear
                 <th className="px-3 py-2">Provider</th>
                 <th className="px-3 py-2">Resultado</th>
                 <th className="px-3 py-2">Status</th>
-                <th className="px-3 py-2">Valor</th>
+                <th className="px-3 py-2">Bruto</th>
+                <th className="px-3 py-2">Líquido</th>
                 <th className="px-3 py-2">Reembolso</th>
                 <th className="px-3 py-2">Multa</th>
                 <th className="px-3 py-2">Origem</th>
@@ -274,7 +294,7 @@ export default async function DashboardPaymentsPage(props: { searchParams?: Sear
             <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
               {payments.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="px-3 py-4 text-center text-zinc-500">
+                  <td colSpan={12} className="px-3 py-4 text-center text-zinc-500">
                     Nenhuma transacao encontrada.
                   </td>
                 </tr>
@@ -286,6 +306,8 @@ export default async function DashboardPaymentsPage(props: { searchParams?: Sear
                       ? refundMeta.refundAmountCents ?? payment.amount_cents
                       : null;
                   const refundFee = refundMeta.refundFeeCents;
+                  const netCents = getOwnerNetCents(payment);
+                  const netDisplay = netCents ?? payment.payout_amount_cents ?? null;
                   const origin = payment.bookingId
                     ? "Agendamento"
                     : payment.monthlyPassId
@@ -318,6 +340,9 @@ export default async function DashboardPaymentsPage(props: { searchParams?: Sear
                         </span>
                       </td>
                       <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{formatMoney(payment.amount_cents)}</td>
+                      <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">
+                        {netDisplay != null ? formatMoney(netDisplay) : "-"}
+                      </td>
                       <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">
                         {refundAmount != null ? formatMoney(refundAmount) : "-"}
                       </td>

@@ -6,8 +6,8 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { createTournamentAsAdmin } from "@/lib/actions/tournaments";
 import { SportType } from "@/generated/prisma/enums";
 
-const DEFAULT_CATEGORIES = ["sub-9", "sub-13", "sub-15", "sub-17", "sub-20", "Livre", "40+"];
-const DEFAULT_LEVELS = ["Baixo", "Medio", "Avancado", "BAIXO-MEDIO", "MEDIO-AVANCADO", "LIVRE"];
+const DEFAULT_CATEGORIES = ["Sub-9", "Sub-13", "Sub-15", "Sub-17", "Sub-20", "Livre", "40+"];
+const DEFAULT_LEVELS = ["Baixo", "Médio", "Avançado", "Baixo-Médio", "Médio-Avançado", "Livre"];
 
 type SportOption = {
   sport_type: SportType;
@@ -49,8 +49,8 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
   const [teamSizeMax, setTeamSizeMax] = useState(8);
   const [rules, setRules] = useState("");
 
-  const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
-  const [levels, setLevels] = useState<string[]>(DEFAULT_LEVELS);
+  const [category, setCategory] = useState<string>(DEFAULT_CATEGORIES[0] ?? "");
+  const [level, setLevel] = useState<string>(DEFAULT_LEVELS[0] ?? "");
 
   useEffect(() => {
     if (sportOptions.length === 0) return;
@@ -59,28 +59,12 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
     }
   }, [sport, sportOptions]);
 
-  function toggleCategory(value: string) {
-    setCategories((current) => {
-      const next = new Set(current);
-      if (next.has(value)) {
-        next.delete(value);
-      } else {
-        next.add(value);
-      }
-      return DEFAULT_CATEGORIES.filter((item) => next.has(item));
-    });
+  function selectCategory(value: string) {
+    setCategory(value);
   }
 
-  function toggleLevel(value: string) {
-    setLevels((current) => {
-      const next = new Set(current);
-      if (next.has(value)) {
-        next.delete(value);
-      } else {
-        next.add(value);
-      }
-      return DEFAULT_LEVELS.filter((item) => next.has(item));
-    });
+  function selectLevel(value: string) {
+    setLevel(value);
   }
 
   function submitTournament(status: "DRAFT" | "OPEN") {
@@ -99,8 +83,8 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
           team_size_max: teamSizeMax,
           format: format as "GROUPS_KO" | "LEAGUE" | "SINGLE_ELIM" | "DOUBLE_ELIM",
           rules,
-          categories,
-          levels,
+          categories: category ? [category] : [],
+          levels: level ? [level] : [],
           status: status as "DRAFT" | "OPEN",
         });
 
@@ -326,7 +310,7 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
           </section>
 
           <section className="ph-card p-6">
-            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Categorias e niveis</h2>
+            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Categorias e Níveis</h2>
             <p className="mt-1 text-xs text-zinc-500">Essas opcoes aparecem na inscricao do time.</p>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <div>
@@ -335,10 +319,11 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
                   {DEFAULT_CATEGORIES.map((cat) => (
                     <label key={cat} className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-300">
                       <input
-                        type="checkbox"
+                        type="radio"
+                        name="tournament-category"
                         className="h-4 w-4"
-                        checked={categories.includes(cat)}
-                        onChange={() => toggleCategory(cat)}
+                        checked={category === cat}
+                        onChange={() => selectCategory(cat)}
                         disabled={isPending}
                       />
                       <span>{cat}</span>
@@ -348,18 +333,19 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
               </div>
 
               <div>
-                <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Niveis</p>
+                <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Níveis</p>
                 <div className="mt-3 grid gap-2">
-                  {DEFAULT_LEVELS.map((level) => (
-                    <label key={level} className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-300">
+                  {DEFAULT_LEVELS.map((levelItem) => (
+                    <label key={levelItem} className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-300">
                       <input
-                        type="checkbox"
+                        type="radio"
+                        name="tournament-level"
                         className="h-4 w-4"
-                        checked={levels.includes(level)}
-                        onChange={() => toggleLevel(level)}
+                        checked={level === levelItem}
+                        onChange={() => selectLevel(levelItem)}
                         disabled={isPending}
                       />
-                      <span>{level}</span>
+                      <span>{levelItem}</span>
                     </label>
                   ))}
                 </div>
@@ -391,7 +377,7 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
               O payload do PIX sera gerado na inscricao do time.
             </p>
             <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/70 dark:text-zinc-200">
-              <p>Taxa ativa: PIX + cartao</p>
+              <p>Taxa ativa: PIX</p>
               <p className="mt-2">Minimo recomendado: R$ 5,00</p>
             </div>
           </section>
@@ -464,7 +450,7 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
                   <li>Defina nome, modalidade e datas.</li>
                   <li>Configure limite de times, taxa e tamanho dos elencos.</li>
                   <li>Escolha o formato e escreva as regras principais.</li>
-                  <li>Adicione categorias e niveis para filtrar inscritos.</li>
+                  <li>Adicione categorias e níveis para filtrar inscritos.</li>
                   <li>Salve como rascunho, revise e publique para abrir inscricoes.</li>
                 </ol>
                 <p className="mt-3 text-[11px] text-zinc-500">
