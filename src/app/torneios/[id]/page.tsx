@@ -37,6 +37,7 @@ export default async function TournamentDetailPage({ params }: { params: { id: s
       organizer_user: { select: { name: true } },
       establishment: { select: { name: true, address_text: true } },
       categories: { select: { label: true } },
+      levels: { select: { label: true } },
       registrations: {
         select: {
           id: true,
@@ -89,6 +90,7 @@ export default async function TournamentDetailPage({ params }: { params: { id: s
     format: tournamentRow.format,
     rules: tournamentRow.rules,
     categories: tournamentRow.categories.map((cat) => cat.label),
+    levels: tournamentRow.levels.map((level) => level.label),
     registrations: tournamentRow.registrations.map((reg) => ({
       id: reg.id,
       team_name: reg.team.name,

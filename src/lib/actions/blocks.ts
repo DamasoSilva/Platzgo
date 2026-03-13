@@ -6,6 +6,9 @@ import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/authz";
 import { logAudit } from "@/lib/audit";
 import { buildBlockingBookingWhere } from "@/lib/utils/bookingAvailability";
+import { fromTimeZoneDate } from "@/lib/utils/time";
+
+const APP_TIME_ZONE = "America/Sao_Paulo";
 
 export type CreateCourtBlockInput = {
   courtId: string;
@@ -62,9 +65,8 @@ function parseHHMMToParts(hhmm: string, fieldName: string): { h: number; m: numb
 
 function dateWithHHMM(day: Date, hhmm: string, fieldName: string): Date {
   const { h, m } = parseHHMMToParts(hhmm, fieldName);
-  const d = new Date(day);
-  d.setHours(h, m, 0, 0);
-  return d;
+  const local = new Date(day.getFullYear(), day.getMonth(), day.getDate(), h, m, 0, 0);
+  return fromTimeZoneDate(local, APP_TIME_ZONE);
 }
 
 export async function createCourtBlock(input: CreateCourtBlockInput) {

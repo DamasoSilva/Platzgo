@@ -33,6 +33,7 @@ export default async function TournamentRegistrationPage({ params }: { params: {
       status: true,
       visibility: true,
       categories: { select: { label: true } },
+      levels: { select: { label: true } },
     },
   });
 
@@ -51,6 +52,7 @@ export default async function TournamentRegistrationPage({ params }: { params: {
     team_size_min: tournamentRow.team_size_min,
     team_size_max: tournamentRow.team_size_max,
     categories: tournamentRow.categories.map((cat) => cat.label),
+    levels: tournamentRow.levels.map((level) => level.label),
   };
 
   return (

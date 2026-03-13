@@ -40,6 +40,13 @@ export function toTimeZoneDate(date: Date, timeZone: string): Date {
   return new Date(`${yyyy}-${mm}-${dd}T${hh}:${min}:${ss}`);
 }
 
+// Converts a local wall-time date into the actual instant for the target time zone.
+export function fromTimeZoneDate(date: Date, timeZone: string): Date {
+  const tzDate = toTimeZoneDate(date, timeZone);
+  const diffMs = date.getTime() - tzDate.getTime();
+  return new Date(date.getTime() + diffMs);
+}
+
 export function formatHHMM(date: Date): string {
   const h = String(date.getHours()).padStart(2, "0");
   const m = String(date.getMinutes()).padStart(2, "0");

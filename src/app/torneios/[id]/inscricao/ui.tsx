@@ -14,6 +14,7 @@ export type TournamentRegistrationView = {
   team_size_min: number;
   team_size_max: number;
   categories: string[];
+  levels: string[];
 };
 
 type Props = {
@@ -43,6 +44,7 @@ export function TournamentRegistrationClient(props: Props) {
 
   const [teamName, setTeamName] = useState("");
   const [category, setCategory] = useState(tournament.categories[0] ?? "");
+  const [level, setLevel] = useState(tournament.levels[0] ?? "");
   const [teamSize, setTeamSize] = useState(tournament.team_size_min);
 
   const [players, setPlayers] = useState<PlayerForm[]>(() =>
@@ -73,11 +75,14 @@ export function TournamentRegistrationClient(props: Props) {
   const isFree = tournament.entry_fee_cents === 0;
 
   const canAdvance = useMemo(() => {
-    if (step === 0) return teamName.trim().length > 2 && teamSize >= tournament.team_size_min;
+    if (step === 0) {
+      const hasLevel = tournament.levels.length === 0 || Boolean(level.trim());
+      return teamName.trim().length > 2 && teamSize >= tournament.team_size_min && hasLevel;
+    }
     if (step === 1) return players.every((p) => p.fullName.trim() && p.documentId.trim());
     if (step === 2) return tournament.entry_fee_cents === 0 || Boolean(pixPayload);
     return false;
-  }, [step, teamName, teamSize, players, pixPayload, tournament.entry_fee_cents, tournament.team_size_min]);
+  }, [step, teamName, teamSize, players, pixPayload, level, tournament.entry_fee_cents, tournament.team_size_min, tournament.levels.length]);
 
   function nextStep() {
     setError(null);
@@ -113,6 +118,7 @@ export function TournamentRegistrationClient(props: Props) {
           tournamentId: tournament.id,
           teamName,
           categoryLabel: category || undefined,
+          levelLabel: level || undefined,
           players: payloadPlayers,
         });
 
@@ -200,6 +206,24 @@ export function TournamentRegistrationClient(props: Props) {
                 ))}
               </select>
             </label>
+
+            {tournament.levels.length ? (
+              <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                Nivel
+                <select
+                  value={level}
+                  onChange={(e) => setLevel(e.target.value)}
+                  className="ph-select mt-2"
+                  disabled={isLocked}
+                >
+                  {tournament.levels.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
 
             <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
               Jogadores por time
@@ -324,6 +348,11 @@ export function TournamentRegistrationClient(props: Props) {
                 <p>
                   <span className="font-semibold">Categoria:</span> {category}
                 </p>
+                {tournament.levels.length ? (
+                  <p>
+                    <span className="font-semibold">Nivel:</span> {level}
+                  </p>
+                ) : null}
                 <p>
                   <span className="font-semibold">Jogadores:</span> {players.length}
                 </p>

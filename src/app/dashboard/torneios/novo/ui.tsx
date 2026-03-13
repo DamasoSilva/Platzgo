@@ -4,6 +4,19 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 
 import { createTournamentAsAdmin } from "@/lib/actions/tournaments";
+import { SportType } from "@/generated/prisma/enums";
+
+const DEFAULT_CATEGORIES = ["sub-9", "sub-13", "sub-15", "sub-17", "sub-20", "Livre", "40+"];
+const DEFAULT_LEVELS = ["Baixo", "Medio", "Avancado", "BAIXO-MEDIO", "MEDIO-AVANCADO", "LIVRE"];
+
+type SportOption = {
+  sport_type: SportType;
+  label: string;
+};
+
+type Props = {
+  sportOptions: SportOption[];
+};
 
 function getFocusableElements(container: HTMLElement | null): HTMLElement[] {
   if (!container) return [];
@@ -15,7 +28,7 @@ function getFocusableElements(container: HTMLElement | null): HTMLElement[] {
   return elements.filter((el) => !el.hasAttribute("disabled") && el.getAttribute("aria-hidden") !== "true");
 }
 
-export function DashboardTournamentCreateClient() {
+export function DashboardTournamentCreateClient({ sportOptions }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +38,7 @@ export function DashboardTournamentCreateClient() {
   const bodyOverflowRef = useRef<string | null>(null);
 
   const [name, setName] = useState("");
-  const [sport, setSport] = useState("FUTSAL");
+  const [sport, setSport] = useState<SportType>(() => sportOptions[0]?.sport_type ?? SportType.FUTSAL);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [maxTeams, setMaxTeams] = useState(16);
@@ -36,8 +49,17 @@ export function DashboardTournamentCreateClient() {
   const [teamSizeMax, setTeamSizeMax] = useState(8);
   const [rules, setRules] = useState("");
 
-  const [categories, setCategories] = useState<string[]>(["Iniciante", "Intermediario"]);
+  const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
+  const [levels, setLevels] = useState<string[]>(DEFAULT_LEVELS);
   const [newCategory, setNewCategory] = useState("");
+  const [newLevel, setNewLevel] = useState("");
+
+  useEffect(() => {
+    if (sportOptions.length === 0) return;
+    if (!sportOptions.some((option) => option.sport_type === sport)) {
+      setSport(sportOptions[0]!.sport_type);
+    }
+  }, [sport, sportOptions]);
 
   function addCategory() {
     const value = newCategory.trim();
@@ -50,6 +72,17 @@ export function DashboardTournamentCreateClient() {
     setCategories((current) => current.filter((item) => item !== value));
   }
 
+  function addLevel() {
+    const value = newLevel.trim();
+    if (!value) return;
+    setLevels((current) => (current.includes(value) ? current : [...current, value]));
+    setNewLevel("");
+  }
+
+  function removeLevel(value: string) {
+    setLevels((current) => current.filter((item) => item !== value));
+  }
+
   function submitTournament(status: "DRAFT" | "OPEN") {
     setError(null);
     startTransition(async () => {
@@ -57,7 +90,7 @@ export function DashboardTournamentCreateClient() {
         const result = await createTournamentAsAdmin({
           name,
           description,
-          sport_type: sport as "FUTSAL" | "SOCIETY" | "BEACH_TENNIS" | "PADEL",
+          sport_type: sport,
           start_date: startDate,
           end_date: endDate,
           max_teams: maxTeams,
@@ -67,6 +100,7 @@ export function DashboardTournamentCreateClient() {
           format: format as "GROUPS_KO" | "LEAGUE" | "SINGLE_ELIM" | "DOUBLE_ELIM",
           rules,
           categories,
+          levels,
           status: status as "DRAFT" | "OPEN",
         });
 
@@ -169,11 +203,18 @@ export function DashboardTournamentCreateClient() {
               </label>
               <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
                 Modalidade
-                <select className="ph-select mt-2" value={sport} onChange={(e) => setSport(e.target.value)} disabled={isPending}>
-                  <option value="FUTSAL">Futsal</option>
-                  <option value="SOCIETY">Society</option>
-                  <option value="BEACH_TENNIS">Beach Tennis</option>
-                  <option value="PADEL">Padel</option>
+                <select
+                  className="ph-select mt-2"
+                  value={sport}
+                  onChange={(e) => setSport(e.target.value as SportType)}
+                  disabled={isPending || sportOptions.length === 0}
+                >
+                  {sportOptions.length === 0 ? <option value="">Nenhuma modalidade cadastrada</option> : null}
+                  {sportOptions.map((option) => (
+                    <option key={option.sport_type} value={option.sport_type}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </label>
               <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
@@ -286,30 +327,65 @@ export function DashboardTournamentCreateClient() {
 
           <section className="ph-card p-6">
             <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Categorias e niveis</h2>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => removeCategory(cat)}
-                  className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300"
-                  disabled={isPending}
-                >
-                  {cat} · remover
-                </button>
-              ))}
-            </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <input
-                className="ph-input max-w-xs"
-                placeholder="Nova categoria"
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value)}
-                disabled={isPending}
-              />
-              <button type="button" className="ph-button-secondary-sm" onClick={addCategory} disabled={isPending}>
-                Adicionar
-              </button>
+            <p className="mt-1 text-xs text-zinc-500">Essas opcoes aparecem na inscricao do time.</p>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <div>
+                <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Categorias</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {categories.map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => removeCategory(cat)}
+                      className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300"
+                      disabled={isPending}
+                    >
+                      {cat} · remover
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <input
+                    className="ph-input max-w-xs"
+                    placeholder="Nova categoria"
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    disabled={isPending}
+                  />
+                  <button type="button" className="ph-button-secondary-sm" onClick={addCategory} disabled={isPending}>
+                    Adicionar
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Niveis</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {levels.map((level) => (
+                    <button
+                      key={level}
+                      type="button"
+                      onClick={() => removeLevel(level)}
+                      className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300"
+                      disabled={isPending}
+                    >
+                      {level} · remover
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <input
+                    className="ph-input max-w-xs"
+                    placeholder="Novo nivel"
+                    value={newLevel}
+                    onChange={(e) => setNewLevel(e.target.value)}
+                    disabled={isPending}
+                  />
+                  <button type="button" className="ph-button-secondary-sm" onClick={addLevel} disabled={isPending}>
+                    Adicionar
+                  </button>
+                </div>
+              </div>
             </div>
           </section>
         </div>

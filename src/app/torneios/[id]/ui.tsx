@@ -27,6 +27,7 @@ export type TournamentDetailView = {
   format: string;
   rules: string[];
   categories: string[];
+  levels: string[];
   registrations: Array<{ id: string; team_name: string; status: string; paid: boolean }>;
   matches: Array<{
     id: string;
@@ -138,16 +139,36 @@ export function TournamentDetailClient(props: Props) {
             </div>
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-2">
-            {tournament.categories.map((cat) => (
-              <span
-                key={cat}
-                className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
-              >
-                {cat}
-              </span>
-            ))}
-          </div>
+          {tournament.categories.length ? (
+            <div className="mt-6">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Categorias</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {tournament.categories.map((cat) => (
+                  <span
+                    key={cat}
+                    className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+                  >
+                    {cat}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          {tournament.levels.length ? (
+            <div className="mt-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Niveis</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {tournament.levels.map((level) => (
+                  <span
+                    key={level}
+                    className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+                  >
+                    {level}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="w-full max-w-sm rounded-3xl border border-zinc-200 bg-white/80 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] dark:border-zinc-800 dark:bg-zinc-950/70">
@@ -255,19 +276,39 @@ export function TournamentDetailClient(props: Props) {
               </ul>
             </div>
             <div className="ph-card p-6">
-              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Categorias</h3>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {tournament.categories.map((cat) => (
-                  <span
-                    key={cat}
-                    className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
-                  >
-                    {cat}
-                  </span>
-                ))}
+              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Categorias e niveis</h3>
+              <div className="mt-3 space-y-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Categorias</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {tournament.categories.map((cat) => (
+                      <span
+                        key={cat}
+                        className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+                      >
+                        {cat}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                {tournament.levels.length ? (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Niveis</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {tournament.levels.map((level) => (
+                        <span
+                          key={level}
+                          className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+                        >
+                          {level}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
               <p className="mt-4 text-sm text-zinc-600 dark:text-zinc-300">
-                Escolha a categoria no momento da inscricao do time.
+                Escolha a categoria e o nivel no momento da inscricao do time.
               </p>
             </div>
           </div>

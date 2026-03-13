@@ -7,12 +7,15 @@ import { requireRole } from "@/lib/authz";
 import { MonthlyPassStatus, NotificationType } from "@/generated/prisma/enums";
 import { enqueueEmail } from "@/lib/emailQueue";
 import { buildBlockingBookingWhere } from "@/lib/utils/bookingAvailability";
+import { fromTimeZoneDate } from "@/lib/utils/time";
 import {
   getAppUrl,
   monthlyPassCancelledEmailToCustomer,
   monthlyPassConfirmedEmailToCustomer,
   monthlyPassPendingEmailToOwner,
 } from "@/lib/emailTemplates";
+
+const APP_TIME_ZONE = "America/Sao_Paulo";
 
 function assertMonth(value: string): string {
   if (typeof value !== "string" || !/^\d{4}-\d{2}$/.test(value)) {
@@ -65,7 +68,8 @@ function compareTimes(start: string, end: string): boolean {
 
 function toDateTime(day: Date, timeHHMM: string): Date {
   const [h, m] = timeHHMM.split(":").map(Number);
-  return new Date(day.getFullYear(), day.getMonth(), day.getDate(), h, m, 0, 0);
+  const local = new Date(day.getFullYear(), day.getMonth(), day.getDate(), h, m, 0, 0);
+  return fromTimeZoneDate(local, APP_TIME_ZONE);
 }
 
 function ymdFromDate(d: Date): string {

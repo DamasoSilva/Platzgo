@@ -170,7 +170,7 @@ export function TournamentsListClient(props: Props) {
             </label>
 
             <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-              Nivel
+              Categoria
               <select value={category} onChange={(event) => setCategory(event.target.value)} className="ph-select mt-2">
                 {categoryOptions.map((option) => (
                   <option key={option} value={option}>

@@ -4,8 +4,10 @@ import { getServerSession } from "next-auth";
 
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
-import { dateWithTime, parseHHMM } from "@/lib/utils/time";
+import { dateWithTime, fromTimeZoneDate, parseHHMM, toTimeZoneDate } from "@/lib/utils/time";
 import { buildBlockingBookingWhere } from "@/lib/utils/bookingAvailability";
+
+const APP_TIME_ZONE = "America/Sao_Paulo";
 
 function addMinutes(d: Date, minutes: number): Date {
   return new Date(d.getTime() + minutes * 60000);
@@ -98,7 +100,8 @@ export async function createAvailabilityAlert(input: {
   if (duration <= 0) throw new Error("Duração inválida");
 
   const base = new Date(`${day}T00:00:00`);
-  const start = dateWithTime(base, input.startTimeHHMM);
+  const startLocal = dateWithTime(base, input.startTimeHHMM);
+  const start = fromTimeZoneDate(startLocal, APP_TIME_ZONE);
   const end = addMinutes(start, duration);
 
   assertHalfHourAligned(start);
@@ -126,8 +129,8 @@ export async function createAvailabilityAlert(input: {
 
   await assertOperatingHours({
     establishmentId: court.establishment.id,
-    start,
-    end,
+    start: toTimeZoneDate(start, APP_TIME_ZONE),
+    end: toTimeZoneDate(end, APP_TIME_ZONE),
     open_weekdays: court.establishment.open_weekdays ?? [0, 1, 2, 3, 4, 5, 6],
     opening_time: court.establishment.opening_time,
     closing_time: court.establishment.closing_time,

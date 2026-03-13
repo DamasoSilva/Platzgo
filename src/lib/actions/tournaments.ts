@@ -57,6 +57,15 @@ function parseCategories(input?: string[] | string): string[] {
     .filter(Boolean);
 }
 
+function parseLevels(input?: string[] | string): string[] {
+  if (!input) return [];
+  if (Array.isArray(input)) return input.map((item) => item.trim()).filter(Boolean);
+  return String(input)
+    .split(/\r?\n|,/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function onlyDigits(v: string | null | undefined): string {
   return (v ?? "").replace(/\D/g, "");
 }
@@ -223,6 +232,7 @@ export type CreateTournamentInput = {
   format: TournamentFormat;
   rules?: string[] | string;
   categories?: string[] | string;
+  levels?: string[] | string;
   status?: TournamentStatus;
 };
 
@@ -249,8 +259,18 @@ export async function createTournamentAsAdmin(input: CreateTournamentInput) {
     throw new Error("Estabelecimento nao encontrado");
   }
 
+  const hasCourtWithSport = await prisma.court.findFirst({
+    where: { establishmentId: establishment.id, sport_type: input.sport_type },
+    select: { id: true },
+  });
+
+  if (!hasCourtWithSport) {
+    throw new Error("Modalidade invalida para o estabelecimento");
+  }
+
   const rules = parseRules(input.rules);
   const categories = parseCategories(input.categories);
+  const levels = parseLevels(input.levels);
 
   const created = await prisma.tournament.create({
     data: {
@@ -276,6 +296,13 @@ export async function createTournamentAsAdmin(input: CreateTournamentInput) {
         ? {
             createMany: {
               data: categories.map((label) => ({ label })),
+            },
+          }
+        : undefined,
+      levels: levels.length
+        ? {
+            createMany: {
+              data: levels.map((label) => ({ label })),
             },
           }
         : undefined,
@@ -393,6 +420,7 @@ export type RegisterTeamInput = {
   tournamentId: string;
   teamName: string;
   categoryLabel?: string;
+  levelLabel?: string;
   players: Array<{ fullName: string; documentId: string }>;
 };
 
@@ -411,6 +439,7 @@ export async function registerTeamForTournament(input: RegisterTeamInput) {
       team_size_max: true,
       max_teams: true,
       categories: { select: { label: true } },
+      levels: { select: { label: true } },
     },
   });
 
@@ -445,12 +474,21 @@ export async function registerTeamForTournament(input: RegisterTeamInput) {
     throw new Error("Categoria invalida");
   }
 
+  if (tournament.levels.length && !input.levelLabel) {
+    throw new Error("Nivel obrigatorio");
+  }
+
+  if (input.levelLabel && !tournament.levels.some((level) => level.label === input.levelLabel)) {
+    throw new Error("Nivel invalido");
+  }
+
   const registration = await prisma.$transaction(async (tx) => {
     const team = await tx.team.create({
       data: {
         tournamentId: tournament.id,
         name: teamName,
         category_label: input.categoryLabel?.trim() || null,
+        level_label: input.levelLabel?.trim() || null,
         created_by_id: session.user.id,
       },
       select: { id: true },

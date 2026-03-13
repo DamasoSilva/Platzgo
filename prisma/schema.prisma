@@ -543,6 +543,7 @@ model Tournament {
   organizer_user User @relation("TournamentOrganizer", fields: [organizer_user_id], references: [id])
   establishment Establishment? @relation(fields: [establishmentId], references: [id])
   categories TournamentCategory[]
+  levels     TournamentLevel[]
   teams      Team[]
   registrations TournamentRegistration[]
   matches    TournamentMatch[]
@@ -567,12 +568,24 @@ model TournamentCategory {
   @@index([tournamentId])
 }
 
+model TournamentLevel {
+  id            String   @id @default(cuid())
+  tournamentId  String
+  label         String
+  createdAt     DateTime @default(now())
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@index([tournamentId])
+}
+
 model Team {
   id            String   @id @default(cuid())
   tournamentId  String
   name          String
   logo_url      String?
   category_label String?
+  level_label   String?
   created_by_id String
   createdAt     DateTime @default(now())
 
