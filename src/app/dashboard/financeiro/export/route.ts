@@ -47,11 +47,8 @@ function readNetValueCents(meta: unknown): number | null {
 function getOwnerNetCents(payment: { amount_cents: number; payout_amount_cents?: number | null; metadata?: unknown }): number | null {
   const netValueCents = readNetValueCents(payment.metadata);
   const payoutCents = typeof payment.payout_amount_cents === "number" ? payment.payout_amount_cents : null;
-  if (netValueCents != null && payoutCents != null && payment.amount_cents > 0) {
-    return Math.round((netValueCents * payoutCents) / payment.amount_cents);
-  }
-  if (netValueCents != null) return netValueCents;
   if (payoutCents != null) return payoutCents;
+  if (netValueCents != null) return netValueCents;
   return null;
 }
 
