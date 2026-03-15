@@ -163,6 +163,38 @@ async function ensureAsaasCustomerForUser(
   return String(data.id);
 }
 
+async function cancelAsaasTestCharge(params: {
+  baseUrl: string;
+  apiKey: string;
+  paymentId: string;
+}): Promise<{ ok: true } | { ok: false; message: string }> {
+  const { baseUrl, apiKey, paymentId } = params;
+  const headers = { "Content-Type": "application/json", access_token: apiKey };
+
+  const deleteRes = await fetch(`${baseUrl}/payments/${paymentId}`, {
+    method: "DELETE",
+    headers,
+  }).catch(() => null);
+  if (deleteRes?.ok) return { ok: true };
+
+  const cancelRes = await fetch(`${baseUrl}/payments/${paymentId}/cancel`, {
+    method: "POST",
+    headers,
+  }).catch(() => null);
+  if (cancelRes?.ok) return { ok: true };
+
+  const deletePayload = deleteRes ? await deleteRes.json().catch(() => null) : null;
+  const cancelPayload = cancelRes ? await cancelRes.json().catch(() => null) : null;
+  const detail = extractAsaasErrorMessage(cancelPayload) || extractAsaasErrorMessage(deletePayload);
+  const status = cancelRes?.status ?? deleteRes?.status ?? "?";
+  return {
+    ok: false,
+    message: detail
+      ? `Falha ao cancelar cobrança de teste: ${detail} (HTTP ${status})`
+      : `Falha ao cancelar cobrança de teste (HTTP ${status})`,
+  };
+}
+
 async function validateAsaasWalletId(walletId: string, userId: string): Promise<{ ok: true } | { ok: false; message: string }> {
   const config = await getPaymentConfig();
   if (!config.asaas.apiKey) return { ok: false, message: "Asaas nao configurado" };
@@ -222,6 +254,13 @@ async function validateAsaasWalletId(walletId: string, userId: string): Promise<
           : `Wallet Asaas invalido ou nao encontrado (HTTP ${res.status})`,
       };
     }
+
+    const cancelResult = await cancelAsaasTestCharge({
+      baseUrl,
+      apiKey: config.asaas.apiKey,
+      paymentId: String(data.id),
+    });
+    if (!cancelResult.ok) return cancelResult;
   } catch {
     return { ok: false, message: "Falha ao validar wallet Asaas" };
   }

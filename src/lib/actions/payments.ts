@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/generated/prisma/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { extractAsaasErrorMessage, getPaymentConfig } from "@/lib/payments";
@@ -59,6 +60,49 @@ function readAsaasNetValueCents(payload: unknown): number | null {
     data?.net_value ??
     null;
   return toMoneyCents(netValue);
+}
+
+function readAsaasSplitOwnerNetCents(payload: unknown, walletId?: string | null): number | null {
+  if (!payload || typeof payload !== "object") return null;
+  const data = payload as Record<string, any>;
+  const payment = data?.payment?.payment ?? data?.payment ?? data;
+  const splits = payment?.split;
+  if (!Array.isArray(splits) || splits.length === 0) return null;
+
+  let match = null;
+  if (walletId) {
+    match = splits.find((item) => String(item?.walletId ?? "") === walletId) ?? null;
+  }
+  if (!match) {
+    match = splits.length === 1
+      ? splits[0]
+      : splits.find((item) => item?.totalValue != null || item?.fixedValue != null) ?? splits[0];
+  }
+
+  const totalValue = match?.totalValue ?? match?.fixedValue ?? null;
+  return toMoneyCents(totalValue);
+}
+
+function buildAsaasMetadataUpdate(
+  payment: { provider: PaymentProvider; amount_cents: number; metadata: unknown },
+  payload: unknown
+): Record<string, unknown> | null {
+  if (payment.provider !== PaymentProvider.ASAAS) return null;
+
+  const current = (payment.metadata as Record<string, unknown> | null) ?? {};
+  const netValueCents = readAsaasNetValueCents(payload);
+  const feeCents = netValueCents != null ? Math.max(0, payment.amount_cents - netValueCents) : null;
+  const walletId = typeof current.asaas_wallet_id === "string" ? current.asaas_wallet_id : null;
+  const ownerNetValueCents = readAsaasSplitOwnerNetCents(payload, walletId);
+
+  if (netValueCents == null && ownerNetValueCents == null) return null;
+
+  return {
+    ...current,
+    ...(netValueCents != null ? { net_value_cents: netValueCents } : {}),
+    ...(feeCents != null ? { asaas_fee_cents: feeCents } : {}),
+    ...(ownerNetValueCents != null ? { owner_net_value_cents: ownerNetValueCents } : {}),
+  };
 }
 
 function expandRangeWithBuffer(start: Date, end: Date, bufferMinutes: number) {
@@ -632,6 +676,9 @@ export async function startPaymentForBooking(input: { bookingId: string; provide
   const requiresConfirmation = booking.court.establishment.online_payments_enabled
     ? false
     : booking.court.establishment.requires_booking_confirmation !== false;
+  const commissionPercent =
+    provider === PaymentProvider.ASAAS ? clampPercent(config.asaas.splitPercent ?? 0) : null;
+  const ownerPercent = commissionPercent != null ? Math.max(0, 100 - commissionPercent) : null;
 
   const payment = await prisma.payment.create({
     data: {
@@ -670,6 +717,15 @@ export async function startPaymentForBooking(input: { bookingId: string; provide
 
     const pixExpiresAt = expiresAt.toISOString();
 
+    const asaasMetadata =
+      provider === PaymentProvider.ASAAS
+        ? {
+            admin_commission_percent: commissionPercent ?? undefined,
+            owner_percent: ownerPercent ?? undefined,
+            asaas_wallet_id: booking.court.establishment.asaas_wallet_id ?? undefined,
+          }
+        : {};
+
     await prisma.payment.update({
       where: { id: payment.id },
       data: {
@@ -683,6 +739,7 @@ export async function startPaymentForBooking(input: { bookingId: string; provide
                 start: booking.start_time.toISOString(),
                 end: booking.end_time.toISOString(),
                 payout_mode: "split",
+                ...asaasMetadata,
                 pix_payload: result.pixPayload ?? undefined,
                 pix_qr_base64: result.pixQrBase64 ?? undefined,
                 pix_expires_at: pixExpiresAt ?? undefined,
@@ -690,6 +747,7 @@ export async function startPaymentForBooking(input: { bookingId: string; provide
             : {
                 start: booking.start_time.toISOString(),
                 end: booking.end_time.toISOString(),
+                ...asaasMetadata,
                 pix_payload: result.pixPayload ?? undefined,
                 pix_qr_base64: result.pixQrBase64 ?? undefined,
                 pix_expires_at: pixExpiresAt ?? undefined,
@@ -739,24 +797,13 @@ export async function applyPaymentStatusForBooking(params: {
 
   if (!payment) throw new Error("Pagamento não encontrado");
 
-  const netValueCents =
-    payment.provider === PaymentProvider.ASAAS ? readAsaasNetValueCents(params.payload) : null;
-  const feeCents =
-    netValueCents !== null ? Math.max(0, payment.amount_cents - netValueCents) : null;
-  const nextMetadata =
-    netValueCents !== null
-      ? {
-          ...((payment.metadata as Record<string, unknown> | null) ?? {}),
-          net_value_cents: netValueCents,
-          ...(feeCents !== null ? { asaas_fee_cents: feeCents } : {}),
-        }
-      : null;
+  const nextMetadata = buildAsaasMetadataUpdate(payment, params.payload);
 
   await prisma.payment.update({
     where: { id: payment.id },
     data: {
       status: params.status,
-      ...(nextMetadata ? { metadata: nextMetadata } : {}),
+      ...(nextMetadata ? { metadata: nextMetadata as Prisma.InputJsonValue } : {}),
     },
     select: { id: true },
   });
@@ -868,14 +915,29 @@ export async function handleAsaasWebhook(payload: any) {
 
   const payment = await prisma.payment.findFirst({
     where: { provider: PaymentProvider.ASAAS, provider_payment_id: String(paymentId) },
-    select: { id: true, requires_confirmation: true },
+    select: { id: true, requires_confirmation: true, provider: true, amount_cents: true, metadata: true },
   });
-  if (!payment) throw new Error("Pagamento não encontrado");
 
   const eventType = String(payload?.event ?? "");
+  if (!payment) {
+    console.warn("Asaas webhook ignorado: pagamento não encontrado", { paymentId, eventType });
+    return;
+  }
   const paidEvents = new Set(["PAYMENT_RECEIVED", "PAYMENT_CONFIRMED"]);
   const cancelEvents = new Set(["PAYMENT_CANCELED", "PAYMENT_DELETED", "PAYMENT_OVERDUE"]);
   const refundEvents = new Set(["PAYMENT_REFUNDED", "PAYMENT_CHARGEBACK_REQUESTED", "PAYMENT_CHARGEBACK_DISPUTE"]);
+
+  if (!paidEvents.has(eventType) && !refundEvents.has(eventType) && !cancelEvents.has(eventType)) {
+    const nextMetadata = buildAsaasMetadataUpdate(payment, payload);
+    if (nextMetadata) {
+      await prisma.payment.update({
+        where: { id: payment.id },
+        data: { metadata: nextMetadata as Prisma.InputJsonValue },
+        select: { id: true },
+      });
+    }
+    return;
+  }
 
   if (paidEvents.has(eventType)) {
     await applyPaymentStatusForBooking({

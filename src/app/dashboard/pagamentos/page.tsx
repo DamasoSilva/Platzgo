@@ -73,12 +73,80 @@ function readNetValueCents(meta: unknown): number | null {
   return toNumberFromMeta(data.net_value_cents);
 }
 
-function getOwnerNetCents(payment: { amount_cents: number; payout_amount_cents?: number | null; metadata?: unknown }): number | null {
-  const netValueCents = readNetValueCents(payment.metadata);
-  const payoutCents = typeof payment.payout_amount_cents === "number" ? payment.payout_amount_cents : null;
-  if (payoutCents != null) return payoutCents;
-  if (netValueCents != null) return netValueCents;
+function readOwnerNetValueCents(meta: unknown): number | null {
+  if (!meta || typeof meta !== "object") return null;
+  const data = meta as Record<string, unknown>;
+  return toNumberFromMeta(data.owner_net_value_cents);
+}
+
+function readAdminCommissionPercent(meta: unknown): number | null {
+  if (!meta || typeof meta !== "object") return null;
+  const data = meta as Record<string, unknown>;
+  return toNumberFromMeta(data.admin_commission_percent);
+}
+
+function readOwnerPercent(meta: unknown): number | null {
+  if (!meta || typeof meta !== "object") return null;
+  const data = meta as Record<string, unknown>;
+  return toNumberFromMeta(data.owner_percent);
+}
+
+function readAsaasFeeCents(meta: unknown, amountCents: number): number | null {
+  if (meta && typeof meta === "object") {
+    const data = meta as Record<string, unknown>;
+    const stored = toNumberFromMeta(data.asaas_fee_cents);
+    if (stored != null) return stored;
+  }
+  const netValueCents = readNetValueCents(meta);
+  if (netValueCents != null) return Math.max(0, amountCents - netValueCents);
   return null;
+}
+
+function getOwnerNetCents(payment: { amount_cents: number; payout_amount_cents?: number | null; metadata?: unknown }): number | null {
+  const ownerNetValueCents = readOwnerNetValueCents(payment.metadata);
+  if (ownerNetValueCents != null) return ownerNetValueCents;
+
+  const netValueCents = readNetValueCents(payment.metadata);
+  const adminPercent = readAdminCommissionPercent(payment.metadata);
+  const ownerPercent = readOwnerPercent(payment.metadata);
+  const payoutCents = typeof payment.payout_amount_cents === "number" ? payment.payout_amount_cents : null;
+
+  if (netValueCents != null) {
+    if (adminPercent != null) return Math.round(netValueCents * (1 - adminPercent / 100));
+    if (ownerPercent != null) return Math.round(netValueCents * (ownerPercent / 100));
+    if (payoutCents != null && payment.amount_cents > 0) {
+      return Math.round((netValueCents * payoutCents) / payment.amount_cents);
+    }
+    return netValueCents;
+  }
+
+  if (payoutCents != null) return payoutCents;
+  return null;
+}
+
+function getAdminCommissionPercent(payment: { amount_cents: number; payout_amount_cents?: number | null; metadata?: unknown }): number | null {
+  const metaPercent = readAdminCommissionPercent(payment.metadata);
+  if (metaPercent != null) return metaPercent;
+  const payoutCents = typeof payment.payout_amount_cents === "number" ? payment.payout_amount_cents : null;
+  if (payoutCents != null && payment.amount_cents > 0) {
+    const ownerPercent = (payoutCents / payment.amount_cents) * 100;
+    return Math.max(0, Math.min(100, 100 - ownerPercent));
+  }
+  return null;
+}
+
+function getAdminCommissionCents(payment: { amount_cents: number; payout_amount_cents?: number | null; metadata?: unknown }): number | null {
+  const netValueCents = readNetValueCents(payment.metadata);
+  if (netValueCents == null) return null;
+  const ownerNetCents = getOwnerNetCents(payment);
+  if (ownerNetCents != null) return Math.max(0, netValueCents - ownerNetCents);
+  const percent = getAdminCommissionPercent(payment);
+  if (percent != null) return Math.round(netValueCents * (percent / 100));
+  return null;
+}
+
+function getAsaasFeeCents(payment: { amount_cents: number; metadata?: unknown }): number | null {
+  return readAsaasFeeCents(payment.metadata, payment.amount_cents);
 }
 
 export default async function DashboardPaymentsPage(props: { searchParams?: SearchParams | Promise<SearchParams> }) {
@@ -156,11 +224,15 @@ export default async function DashboardPaymentsPage(props: { searchParams?: Sear
           ? refundMeta.refundAmountCents ?? payment.amount_cents
           : null;
       const netCents = getOwnerNetCents(payment);
-      const netFallback = netCents ?? payment.payout_amount_cents ?? payment.amount_cents;
+      const netFallback = netCents ?? payment.amount_cents;
+      const feeCents = getAsaasFeeCents(payment) ?? 0;
+      const adminCommissionCents = getAdminCommissionCents(payment) ?? 0;
 
       if (payment.status === PaymentStatus.PAID) {
         acc.paidCents += payment.amount_cents;
         acc.netPaidCents += netFallback;
+        acc.paidFeeCents += feeCents;
+        acc.paidAdminCommissionCents += adminCommissionCents;
         acc.paidCount += 1;
       } else if (payment.status === PaymentStatus.REFUNDED) {
         acc.refundCents += refundAmount ?? 0;
@@ -168,6 +240,8 @@ export default async function DashboardPaymentsPage(props: { searchParams?: Sear
       } else if (payment.status === PaymentStatus.PENDING || payment.status === PaymentStatus.AUTHORIZED) {
         acc.pendingCents += payment.amount_cents;
         acc.netPendingCents += netFallback;
+        acc.pendingFeeCents += feeCents;
+        acc.pendingAdminCommissionCents += adminCommissionCents;
         acc.pendingCount += 1;
       } else {
         acc.errorCents += payment.amount_cents;
@@ -178,9 +252,13 @@ export default async function DashboardPaymentsPage(props: { searchParams?: Sear
     {
       paidCents: 0,
       netPaidCents: 0,
+      paidFeeCents: 0,
+      paidAdminCommissionCents: 0,
       refundCents: 0,
       pendingCents: 0,
       netPendingCents: 0,
+      pendingFeeCents: 0,
+      pendingAdminCommissionCents: 0,
       errorCents: 0,
       paidCount: 0,
       refundCount: 0,
@@ -242,6 +320,17 @@ export default async function DashboardPaymentsPage(props: { searchParams?: Sear
             {formatMoney(totals.netPaidCents)}
           </p>
           <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">Bruto: {formatMoney(totals.paidCents)}</p>
+          {totals.paidFeeCents > 0 ? (
+            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Taxa Asaas: {formatMoney(totals.paidFeeCents)}</p>
+          ) : null}
+          {totals.paidAdminCommissionCents > 0 ? (
+            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+              Comissão admin: {formatMoney(totals.paidAdminCommissionCents)}
+            </p>
+          ) : null}
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            Cálculo: (Bruto - Taxa Asaas) x (1 - Comissão admin)
+          </p>
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{totals.paidCount} transacoes</p>
         </div>
         <div className="ph-card p-5">
@@ -257,6 +346,17 @@ export default async function DashboardPaymentsPage(props: { searchParams?: Sear
             {formatMoney(totals.netPendingCents)}
           </p>
           <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">Bruto: {formatMoney(totals.pendingCents)}</p>
+          {totals.pendingFeeCents > 0 ? (
+            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Taxa Asaas: {formatMoney(totals.pendingFeeCents)}</p>
+          ) : null}
+          {totals.pendingAdminCommissionCents > 0 ? (
+            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+              Comissão admin: {formatMoney(totals.pendingAdminCommissionCents)}
+            </p>
+          ) : null}
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            Cálculo: (Bruto - Taxa Asaas) x (1 - Comissão admin)
+          </p>
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{totals.pendingCount} transacoes</p>
         </div>
         <div className="ph-card p-5">
@@ -280,6 +380,8 @@ export default async function DashboardPaymentsPage(props: { searchParams?: Sear
                 <th className="px-3 py-2">Status</th>
                 <th className="px-3 py-2">Bruto</th>
                 <th className="px-3 py-2">Líquido</th>
+                <th className="px-3 py-2">Taxa Asaas</th>
+                <th className="px-3 py-2">Comissão admin</th>
                 <th className="px-3 py-2">Reembolso</th>
                 <th className="px-3 py-2">Multa</th>
                 <th className="px-3 py-2">Origem</th>
@@ -291,7 +393,7 @@ export default async function DashboardPaymentsPage(props: { searchParams?: Sear
             <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
               {payments.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="px-3 py-4 text-center text-zinc-500">
+                  <td colSpan={14} className="px-3 py-4 text-center text-zinc-500">
                     Nenhuma transacao encontrada.
                   </td>
                 </tr>
@@ -304,7 +406,14 @@ export default async function DashboardPaymentsPage(props: { searchParams?: Sear
                       : null;
                   const refundFee = refundMeta.refundFeeCents;
                   const netCents = getOwnerNetCents(payment);
-                  const netDisplay = netCents ?? payment.payout_amount_cents ?? null;
+                  const netDisplay = netCents ?? null;
+                  const feeCents = getAsaasFeeCents(payment);
+                  const adminCommissionCents = getAdminCommissionCents(payment);
+                  const adminPercent = getAdminCommissionPercent(payment);
+                  const adminPercentLabel =
+                    adminPercent != null
+                      ? `${adminPercent.toFixed(adminPercent % 1 === 0 ? 0 : 1)}%`
+                      : null;
                   const origin = payment.bookingId
                     ? "Agendamento"
                     : payment.monthlyPassId
@@ -339,6 +448,14 @@ export default async function DashboardPaymentsPage(props: { searchParams?: Sear
                       <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{formatMoney(payment.amount_cents)}</td>
                       <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">
                         {netDisplay != null ? formatMoney(netDisplay) : "-"}
+                      </td>
+                      <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">
+                        {feeCents != null ? formatMoney(feeCents) : "-"}
+                      </td>
+                      <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">
+                        {adminCommissionCents != null
+                          ? `${formatMoney(adminCommissionCents)}${adminPercentLabel ? ` (${adminPercentLabel})` : ""}`
+                          : "-"}
                       </td>
                       <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">
                         {refundAmount != null ? formatMoney(refundAmount) : "-"}

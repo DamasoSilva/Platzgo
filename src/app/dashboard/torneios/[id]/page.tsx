@@ -20,11 +20,43 @@ function readNetValueCents(meta: unknown): number | null {
   return toNumberFromMeta(data.net_value_cents);
 }
 
+function readOwnerNetValueCents(meta: unknown): number | null {
+  if (!meta || typeof meta !== "object") return null;
+  const data = meta as Record<string, unknown>;
+  return toNumberFromMeta(data.owner_net_value_cents);
+}
+
+function readAdminCommissionPercent(meta: unknown): number | null {
+  if (!meta || typeof meta !== "object") return null;
+  const data = meta as Record<string, unknown>;
+  return toNumberFromMeta(data.admin_commission_percent);
+}
+
+function readOwnerPercent(meta: unknown): number | null {
+  if (!meta || typeof meta !== "object") return null;
+  const data = meta as Record<string, unknown>;
+  return toNumberFromMeta(data.owner_percent);
+}
+
 function getOwnerNetCents(payment: { amount_cents: number; payout_amount_cents?: number | null; metadata?: unknown }): number | null {
+  const ownerNetValueCents = readOwnerNetValueCents(payment.metadata);
+  if (ownerNetValueCents != null) return ownerNetValueCents;
+
   const netValueCents = readNetValueCents(payment.metadata);
+  const adminPercent = readAdminCommissionPercent(payment.metadata);
+  const ownerPercent = readOwnerPercent(payment.metadata);
   const payoutCents = typeof payment.payout_amount_cents === "number" ? payment.payout_amount_cents : null;
+
+  if (netValueCents != null) {
+    if (adminPercent != null) return Math.round(netValueCents * (1 - adminPercent / 100));
+    if (ownerPercent != null) return Math.round(netValueCents * (ownerPercent / 100));
+    if (payoutCents != null && payment.amount_cents > 0) {
+      return Math.round((netValueCents * payoutCents) / payment.amount_cents);
+    }
+    return netValueCents;
+  }
+
   if (payoutCents != null) return payoutCents;
-  if (netValueCents != null) return netValueCents;
   return null;
 }
 
@@ -90,10 +122,10 @@ export default async function DashboardTournamentDetailPage({ params }: { params
 
   const receivedNetCents = payments
     .filter((p) => p.status === "PAID")
-    .reduce((acc, p) => acc + (getOwnerNetCents(p) ?? p.payout_amount_cents ?? p.amount_cents), 0);
+    .reduce((acc, p) => acc + (getOwnerNetCents(p) ?? p.amount_cents), 0);
   const pendingNetCents = payments
     .filter((p) => p.status === "PENDING" || p.status === "AUTHORIZED")
-    .reduce((acc, p) => acc + (getOwnerNetCents(p) ?? p.payout_amount_cents ?? p.amount_cents), 0);
+    .reduce((acc, p) => acc + (getOwnerNetCents(p) ?? p.amount_cents), 0);
 
   const tournament: DashboardTournamentDetailView = {
     id: tournamentRow.id,

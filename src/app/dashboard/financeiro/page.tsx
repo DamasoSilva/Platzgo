@@ -68,12 +68,69 @@ function readNetValueCents(meta: unknown): number | null {
   return toNumberFromMeta(data.net_value_cents);
 }
 
-function getOwnerNetCents(payment: { amount_cents: number; payout_amount_cents?: number | null; metadata?: unknown }): number | null {
-  const netValueCents = readNetValueCents(payment.metadata);
-  const payoutCents = typeof payment.payout_amount_cents === "number" ? payment.payout_amount_cents : null;
-  if (payoutCents != null) return payoutCents;
-  if (netValueCents != null) return netValueCents;
+function readOwnerNetValueCents(meta: unknown): number | null {
+  if (!meta || typeof meta !== "object") return null;
+  const data = meta as Record<string, unknown>;
+  return toNumberFromMeta(data.owner_net_value_cents);
+}
+
+function readAdminCommissionPercent(meta: unknown): number | null {
+  if (!meta || typeof meta !== "object") return null;
+  const data = meta as Record<string, unknown>;
+  return toNumberFromMeta(data.admin_commission_percent);
+}
+
+function readOwnerPercent(meta: unknown): number | null {
+  if (!meta || typeof meta !== "object") return null;
+  const data = meta as Record<string, unknown>;
+  return toNumberFromMeta(data.owner_percent);
+}
+
+function readAsaasFeeCents(meta: unknown, amountCents: number): number | null {
+  if (meta && typeof meta === "object") {
+    const data = meta as Record<string, unknown>;
+    const stored = toNumberFromMeta(data.asaas_fee_cents);
+    if (stored != null) return stored;
+  }
+  const netValueCents = readNetValueCents(meta);
+  if (netValueCents != null) return Math.max(0, amountCents - netValueCents);
   return null;
+}
+
+function getOwnerNetCents(payment: { amount_cents: number; payout_amount_cents?: number | null; metadata?: unknown }): number | null {
+  const ownerNetValueCents = readOwnerNetValueCents(payment.metadata);
+  if (ownerNetValueCents != null) return ownerNetValueCents;
+
+  const netValueCents = readNetValueCents(payment.metadata);
+  const adminPercent = readAdminCommissionPercent(payment.metadata);
+  const ownerPercent = readOwnerPercent(payment.metadata);
+  const payoutCents = typeof payment.payout_amount_cents === "number" ? payment.payout_amount_cents : null;
+
+  if (netValueCents != null) {
+    if (adminPercent != null) return Math.round(netValueCents * (1 - adminPercent / 100));
+    if (ownerPercent != null) return Math.round(netValueCents * (ownerPercent / 100));
+    if (payoutCents != null && payment.amount_cents > 0) {
+      return Math.round((netValueCents * payoutCents) / payment.amount_cents);
+    }
+    return netValueCents;
+  }
+
+  if (payoutCents != null) return payoutCents;
+  return null;
+}
+
+function getAdminCommissionCents(payment: { amount_cents: number; payout_amount_cents?: number | null; metadata?: unknown }): number | null {
+  const netValueCents = readNetValueCents(payment.metadata);
+  if (netValueCents == null) return null;
+  const ownerNetCents = getOwnerNetCents(payment);
+  if (ownerNetCents != null) return Math.max(0, netValueCents - ownerNetCents);
+  const adminPercent = readAdminCommissionPercent(payment.metadata);
+  if (adminPercent != null) return Math.round(netValueCents * (adminPercent / 100));
+  return null;
+}
+
+function getAsaasFeeCents(payment: { amount_cents: number; metadata?: unknown }): number | null {
+  return readAsaasFeeCents(payment.metadata, payment.amount_cents);
 }
 
 export default async function DashboardFinanceiroPage({
@@ -215,10 +272,25 @@ export default async function DashboardFinanceiroPage({
     .filter((b) => b.status === "CONFIRMED" && b.start_time >= rangeStart && b.start_time < rangeEnd)
     .reduce((acc, booking) => {
       const payment = booking.payments[0];
-      const netCents = payment ? getOwnerNetCents(payment) ?? payment.payout_amount_cents ?? payment.amount_cents : null;
+      const netCents = payment ? getOwnerNetCents(payment) ?? payment.amount_cents : null;
       return acc + (netCents ?? booking.total_price_cents ?? 0);
     }, 0);
   const totalNetRevenue = confirmedNetRevenue + monthlyRevenue + cancelFeeRevenue;
+
+  const confirmedBreakdown = bookings
+    .filter((b) => b.status === "CONFIRMED" && b.start_time >= rangeStart && b.start_time < rangeEnd)
+    .reduce(
+      (acc, booking) => {
+        const payment = booking.payments[0];
+        if (!payment) return acc;
+        const feeCents = getAsaasFeeCents(payment);
+        const adminCommissionCents = getAdminCommissionCents(payment);
+        acc.feeCents += feeCents ?? 0;
+        acc.adminCommissionCents += adminCommissionCents ?? 0;
+        return acc;
+      },
+      { feeCents: 0, adminCommissionCents: 0 }
+    );
 
   const confirmedCount = confirmedAgg._count.id ?? 0;
   const avgTicket = confirmedCount > 0 ? Math.round(confirmedRevenue / confirmedCount) : 0;
@@ -273,6 +345,19 @@ export default async function DashboardFinanceiroPage({
           <p className="text-xs text-zinc-500 dark:text-zinc-400">Receita total (líquido)</p>
           <p className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">{formatBRLFromCents(totalNetRevenue)}</p>
           <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">Bruto: {formatBRLFromCents(totalRevenue)}</p>
+          {confirmedBreakdown.feeCents > 0 ? (
+            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+              Taxa Asaas: {formatBRLFromCents(confirmedBreakdown.feeCents)}
+            </p>
+          ) : null}
+          {confirmedBreakdown.adminCommissionCents > 0 ? (
+            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+              Comissão admin: {formatBRLFromCents(confirmedBreakdown.adminCommissionCents)}
+            </p>
+          ) : null}
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            Cálculo: (Bruto - Taxa Asaas) x (1 - Comissão admin)
+          </p>
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
             Confirmados (líquido): {formatBRLFromCents(confirmedNetRevenue)} • Mensalidades: {formatBRLFromCents(monthlyRevenue)} • Multas: {formatBRLFromCents(cancelFeeRevenue)}
           </p>

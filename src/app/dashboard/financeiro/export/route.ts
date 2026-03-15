@@ -44,11 +44,43 @@ function readNetValueCents(meta: unknown): number | null {
   return toNumberFromMeta(data.net_value_cents);
 }
 
+function readOwnerNetValueCents(meta: unknown): number | null {
+  if (!meta || typeof meta !== "object") return null;
+  const data = meta as Record<string, unknown>;
+  return toNumberFromMeta(data.owner_net_value_cents);
+}
+
+function readAdminCommissionPercent(meta: unknown): number | null {
+  if (!meta || typeof meta !== "object") return null;
+  const data = meta as Record<string, unknown>;
+  return toNumberFromMeta(data.admin_commission_percent);
+}
+
+function readOwnerPercent(meta: unknown): number | null {
+  if (!meta || typeof meta !== "object") return null;
+  const data = meta as Record<string, unknown>;
+  return toNumberFromMeta(data.owner_percent);
+}
+
 function getOwnerNetCents(payment: { amount_cents: number; payout_amount_cents?: number | null; metadata?: unknown }): number | null {
+  const ownerNetValueCents = readOwnerNetValueCents(payment.metadata);
+  if (ownerNetValueCents != null) return ownerNetValueCents;
+
   const netValueCents = readNetValueCents(payment.metadata);
+  const adminPercent = readAdminCommissionPercent(payment.metadata);
+  const ownerPercent = readOwnerPercent(payment.metadata);
   const payoutCents = typeof payment.payout_amount_cents === "number" ? payment.payout_amount_cents : null;
+
+  if (netValueCents != null) {
+    if (adminPercent != null) return Math.round(netValueCents * (1 - adminPercent / 100));
+    if (ownerPercent != null) return Math.round(netValueCents * (ownerPercent / 100));
+    if (payoutCents != null && payment.amount_cents > 0) {
+      return Math.round((netValueCents * payoutCents) / payment.amount_cents);
+    }
+    return netValueCents;
+  }
+
   if (payoutCents != null) return payoutCents;
-  if (netValueCents != null) return netValueCents;
   return null;
 }
 
@@ -139,7 +171,7 @@ export async function GET(request: Request) {
     const startTime = start.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
     const endTime = end.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
     const payment = b.payments[0];
-    const netFromPayment = payment ? getOwnerNetCents(payment) ?? payment.payout_amount_cents ?? payment.amount_cents : null;
+    const netFromPayment = payment ? getOwnerNetCents(payment) ?? payment.amount_cents : null;
     const netCents = b.status === "CANCELLED" ? b.cancel_fee_cents ?? 0 : netFromPayment ?? b.total_price_cents ?? 0;
 
     return [
