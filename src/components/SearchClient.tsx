@@ -321,10 +321,23 @@ export function SearchClient(props: Props) {
   }
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-white dark:bg-[#121212]">
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-[#050608] text-white">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 opacity-90"
+        style={{
+          backgroundImage:
+            "radial-gradient(680px 420px at 12% 10%, rgba(204,255,0,0.18), transparent 60%)," +
+            "radial-gradient(520px 360px at 85% 15%, rgba(56,189,248,0.18), transparent 60%)," +
+            "radial-gradient(720px 460px at 50% 100%, rgba(139,92,246,0.16), transparent 60%)," +
+            "linear-gradient(to bottom, rgba(5,6,8,0.96), rgba(5,6,8,1))",
+        }}
+      />
+      <div className="pointer-events-none absolute -top-24 left-8 h-48 w-48 rounded-full bg-[#CCFF00]/20 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-32 right-10 h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
 
       <CustomerHeader
-        variant="light"
+        variant="dark"
         subtitle="Agende quadras com poucos cliques"
         viewer={{
           isLoggedIn: props.viewer.isLoggedIn,
@@ -352,20 +365,33 @@ export function SearchClient(props: Props) {
         }
       />
 
-      <main className="relative z-10 mx-auto w-full max-w-7xl flex-1 px-6 pb-6 pt-6">
-        {props.hero ? (
-          <div className="pt-4">
-            <div className="max-w-2xl">
-              <h1 className="text-balance text-4xl font-semibold leading-tight tracking-tight text-zinc-900 dark:text-white sm:text-5xl">
-                {props.hero.title}
-              </h1>
-              <p className="mt-4 text-lg leading-8 text-zinc-600 dark:text-zinc-300">{props.hero.description}</p>
+      <main className="relative z-10 mx-auto w-full max-w-7xl flex-1 px-6 pb-10 pt-8">
+        <section className={props.hero ? "grid gap-10 lg:grid-cols-12 lg:items-start" : ""}>
+          {props.hero ? (
+            <div className="lg:col-span-6 space-y-6 pt-4 ph-fade-up">
+              <span className="ph-kicker">PlatzGo</span>
+              <div className="max-w-2xl">
+                <h1 className="ph-display text-balance text-4xl font-semibold leading-tight tracking-tight text-white sm:text-5xl">
+                  <span className="ph-grad-text ph-glow-text">{props.hero.title}</span>
+                </h1>
+                <p className="mt-4 text-lg leading-8 text-zinc-300">{props.hero.description}</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <a href="#busca" className="ph-button">
+                  Buscar quadras
+                </a>
+              </div>
+              <p className="text-xs text-zinc-400">Agende em minutos. Sem ligações, sem filas.</p>
             </div>
-          </div>
-        ) : null}
+          ) : null}
 
-        <div className={(props.hero ? "mt-10 " : "") + "rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/5 dark:backdrop-blur"}>
-          <div className="grid gap-4 lg:grid-cols-12">
+          <div id="busca" className={(props.hero ? "lg:col-span-6" : "") + " ph-panel ph-glow-border p-6 ph-fade-up ph-delay-1"}>
+            <div>
+              <p className="text-sm font-semibold text-white">Encontre quadras perto de voce</p>
+              <p className="mt-1 text-xs text-zinc-400">Filtre por esporte, horario e preco para achar o melhor horario.</p>
+            </div>
+
+            <div className="mt-5 grid gap-4 lg:grid-cols-12">
             <div className="lg:col-span-5">
               <PlacesLocationPicker
                 apiKey={props.apiKey}
@@ -483,11 +509,11 @@ export function SearchClient(props: Props) {
                 Dica: digite a cidade/rua ou use o botão “Usar minha localização”.
               </p>
             </div>
-          </div>
+            </div>
 
-          {error ? <p className="mt-4 text-sm text-red-600 dark:text-red-300">{error}</p> : null}
+            {error ? <p className="mt-4 text-sm text-red-300">{error}</p> : null}
 
-          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <div className="mt-6 flex flex-wrap items-center gap-3">
             <button
               type="button"
               disabled={isPending}
@@ -500,7 +526,7 @@ export function SearchClient(props: Props) {
                 }
                 fetchNearby({ userLat: lat, userLng: lng, radiusKm: effectiveRadiusKm });
               }}
-              className="inline-flex items-center justify-center bg-[#CCFF00] text-black font-bold py-3 px-6 rounded-full hover:scale-105 transition-all disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-full bg-[#CCFF00] px-6 py-3 text-sm font-bold text-black transition-all hover:scale-105 hover:shadow-[0_16px_40px_rgba(204,255,0,0.18)] disabled:opacity-60"
             >
               {isPending ? "Buscando..." : "Buscar quadras"}
             </button>
@@ -515,12 +541,13 @@ export function SearchClient(props: Props) {
             ) : null}
 
             {!props.viewer.isLoggedIn ? (
-              <span className="text-xs text-zinc-500 dark:text-zinc-400">
+              <span className="text-xs text-zinc-400">
                 Faça login para ver preços, contatos e mapa.
               </span>
             ) : null}
+            </div>
           </div>
-        </div>
+        </section>
 
         {!props.viewer.isLoggedIn && props.showMarketingCardsOnLoggedOut ? (
           <section className="mt-14 grid gap-6 md:grid-cols-3">
@@ -528,10 +555,16 @@ export function SearchClient(props: Props) {
               { t: "Para jogadores", d: "Encontre quadras perto de você e veja horários." },
               { t: "Para arenas", d: "Gerencie quadras, preços e disponibilidade." },
               { t: "Pagamentos (em breve)", d: "Checkout e repasse automatizado (roadmap)." },
-            ].map((c) => (
-              <div key={c.t} className="rounded-3xl border border-zinc-200 bg-white p-6 text-zinc-900 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-white">
+            ].map((c, idx) => (
+              <div
+                key={c.t}
+                className={
+                  "ph-panel-soft p-6 text-white ph-fade-up " +
+                  (idx === 1 ? "ph-delay-1" : idx === 2 ? "ph-delay-2" : "")
+                }
+              >
                 <p className="text-sm font-semibold">{c.t}</p>
-                <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">{c.d}</p>
+                <p className="mt-2 text-sm text-zinc-300">{c.d}</p>
               </div>
             ))}
           </section>
@@ -540,7 +573,7 @@ export function SearchClient(props: Props) {
         {hasSearched ? (
           <div ref={resultsRef} className="mt-10 grid gap-6 lg:grid-cols-12">
             <section className="lg:col-span-8 space-y-4">
-              <div className="text-sm text-zinc-600 dark:text-zinc-300">
+              <div className="text-sm text-zinc-400">
                 {cards.length} estabelecimentos encontrados • {effectiveRadiusKm} km
               </div>
 
@@ -564,9 +597,9 @@ export function SearchClient(props: Props) {
                       key={c.estId}
                       href={href}
                       onMouseEnter={() => setHoveredEstId(c.estId)}
-                      className="block overflow-hidden rounded-3xl border border-zinc-200 bg-white text-zinc-900 shadow-sm hover:bg-zinc-50 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+                      className="group block overflow-hidden rounded-[28px] border border-white/10 bg-white/5 text-white shadow-[0_24px_60px_rgba(0,0,0,0.35)] transition-all hover:-translate-y-1 hover:bg-white/10"
                     >
-                      <div className="h-36 w-full bg-zinc-100 dark:bg-white/10">
+                      <div className="h-36 w-full bg-white/5">
                         {coverUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={coverUrl} alt={`Foto de ${c.estName}`} className="h-full w-full object-cover" />
@@ -588,7 +621,7 @@ export function SearchClient(props: Props) {
                                 "inline-flex h-7 w-7 items-center justify-center rounded-full border text-xs " +
                                 (c.isFavorite
                                   ? "border-[#CCFF00] bg-[#CCFF00] text-black"
-                                  : "border-zinc-200 bg-white text-zinc-900 dark:border-white/20 dark:bg-white/10 dark:text-white")
+                                  : "border-white/20 bg-white/10 text-white")
                               }
                               title={c.isFavorite ? "Remover favorito" : "Favoritar"}
                               aria-label={c.isFavorite ? "Remover favorito" : "Favoritar"}
@@ -598,27 +631,27 @@ export function SearchClient(props: Props) {
                             </button>
                           ) : null}
                         </div>
-                        <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-300">
+                        <div className="mt-1 text-xs text-zinc-300">
                           {c.reviewsCount > 0 ? `${c.avgRating.toFixed(1)} ★ • ${c.reviewsCount} avaliações` : "Sem avaliações"}
                         </div>
-                        <p className={"mt-1 truncate text-xs text-zinc-600 dark:text-zinc-300 " + blurClass}>
+                        <p className={"mt-1 truncate text-xs text-zinc-300 " + blurClass}>
                           Quadra: <span className="font-semibold">{c.highlightCourtName}</span>
                           {c.matchingCourtsCount > 1 ? ` • +${c.matchingCourtsCount - 1} quadra(s)` : ""}
                         </p>
 
-                        <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-300">
+                        <p className="mt-2 text-xs text-zinc-400">
                           {c.requiresBookingConfirmation
                             ? "Exige confirmação do horário pelo estabelecimento"
                             : "NÃO exige confirmação de horário pelo estabelecimento"}
                         </p>
 
-                        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-zinc-600 dark:text-zinc-300">
-                          <span className={"rounded-full bg-zinc-100 px-3 py-1 dark:bg-white/10 " + blurClass}>{c.highlightSportType}</span>
+                        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-zinc-300">
+                          <span className={"rounded-full border border-white/10 bg-white/10 px-3 py-1 text-white/80 " + blurClass}>{c.highlightSportType}</span>
                           <span className={blurClass}>• {formatBRLFromCents(c.highlightPricePerHourCents)}/h</span>
                           <span className={blurClass}>• {c.distanceKm.toFixed(1)} km</span>
                         </div>
 
-                        <div className="mt-3 space-y-1 text-xs text-zinc-600 dark:text-zinc-300">
+                        <div className="mt-3 space-y-1 text-xs text-zinc-300">
                           <div>
                             Funcionamento: {formatWeekdays(c.openWeekdays)} • {c.openingTime} - {c.closingTime}
                           </div>
@@ -634,7 +667,7 @@ export function SearchClient(props: Props) {
                             </span>
                             <button
                               type="button"
-                              className="inline-flex items-center justify-center rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs text-zinc-900 hover:bg-zinc-50 dark:border-white/15 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+                              className="inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs text-white transition-all hover:bg-white/20"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 window.open(toWaMeLink(c.whatsappNumber), "_blank", "noopener,noreferrer");
@@ -644,7 +677,7 @@ export function SearchClient(props: Props) {
                             </button>
                           </div>
                         ) : (
-                          <div className="mt-4 text-xs text-zinc-500 dark:text-zinc-400">Entre para ver preço, contato e agendar.</div>
+                          <div className="mt-4 text-xs text-zinc-400">Entre para ver preço, contato e agendar.</div>
                         )}
                       </div>
                     </Link>
@@ -653,8 +686,8 @@ export function SearchClient(props: Props) {
               </div>
 
               {cards.length === 0 ? (
-                <div className="rounded-3xl border border-zinc-200 bg-white p-6 text-zinc-900 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-white">
-                  <p className="text-sm text-zinc-600 dark:text-zinc-300">Nenhum estabelecimento encontrado nesses filtros.</p>
+                <div className="ph-panel-soft p-6 text-white">
+                  <p className="text-sm text-zinc-300">Nenhum estabelecimento encontrado nesses filtros.</p>
                 </div>
               ) : null}
             </section>
@@ -663,12 +696,12 @@ export function SearchClient(props: Props) {
               <aside className="lg:col-span-4">
                 <div className="sticky top-6">
                   {props.apiKey ? (
-                    <div className="rounded-3xl border border-zinc-200 bg-white p-2 shadow-sm dark:border-white/10 dark:bg-white/5 dark:backdrop-blur">
-                      <div ref={mapDivRef} className="h-[380px] lg:h-[520px] w-full rounded-3xl" />
+                    <div className="ph-panel-soft p-2">
+                      <div ref={mapDivRef} className="h-[380px] lg:h-[520px] w-full rounded-[22px]" />
                     </div>
                   ) : (
-                    <div className="rounded-3xl border border-zinc-200 bg-white p-6 text-zinc-900 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-white">
-                      <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                    <div className="ph-panel-soft p-6 text-white">
+                      <p className="text-sm text-zinc-300">
                         Defina <span className="font-mono">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</span> para habilitar o mapa.
                       </p>
                     </div>
@@ -681,8 +714,8 @@ export function SearchClient(props: Props) {
       </main>
 
       {props.showFooter ? (
-        <footer className="relative z-10 mt-auto border-t border-zinc-200 px-6 py-4 dark:border-white/10">
-          <div className="mx-auto max-w-7xl text-xs text-zinc-500 dark:text-zinc-400">© {new Date().getFullYear()} PlatzGo!</div>
+        <footer className="relative z-10 mt-auto border-t border-white/10 px-6 py-4">
+          <div className="mx-auto max-w-7xl text-xs text-zinc-500">© {new Date().getFullYear()} PlatzGo!</div>
         </footer>
       ) : null}
     </div>

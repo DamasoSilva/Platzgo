@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 import { CustomerHeader } from "@/components/CustomerHeader";
-import { ThemedBackground } from "@/components/ThemedBackground";
 import { createBooking, getMyBookingStatus } from "@/lib/actions/bookings";
 import { getCourtBookingsForDay } from "@/lib/actions/courts";
 import { createAvailabilityAlert } from "@/lib/actions/availabilityAlerts";
@@ -713,11 +712,23 @@ export function CourtDetailsClient(props: {
   const courtPhotos = data.court.photo_urls?.length ? data.court.photo_urls : establishmentCover ? [establishmentCover] : [];
 
   return (
-    <div className="ph-page">
-      <ThemedBackground />
+    <div className="relative min-h-screen overflow-hidden bg-[#050608] text-white">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 opacity-90"
+        style={{
+          backgroundImage:
+            "radial-gradient(680px 420px at 12% 10%, rgba(204,255,0,0.16), transparent 60%)," +
+            "radial-gradient(520px 360px at 85% 15%, rgba(56,189,248,0.18), transparent 60%)," +
+            "radial-gradient(720px 460px at 50% 100%, rgba(139,92,246,0.14), transparent 60%)," +
+            "linear-gradient(to bottom, rgba(5,6,8,0.96), rgba(5,6,8,1))",
+        }}
+      />
+      <div className="pointer-events-none absolute -top-24 left-8 h-48 w-48 rounded-full bg-[#CCFF00]/20 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-32 right-10 h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
       <div className="relative z-10">
       <CustomerHeader
-        variant="light"
+        variant="dark"
         viewer={{
           isLoggedIn: Boolean(props.userId),
           name: props.viewer?.name ?? null,
@@ -730,7 +741,7 @@ export function CourtDetailsClient(props: {
               href={waLink}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex h-10 items-center justify-center rounded-full bg-green-600 px-4 text-sm font-bold text-white transition-all hover:scale-105"
+              className="inline-flex h-10 items-center justify-center rounded-full border border-emerald-400/40 bg-emerald-500/10 px-4 text-sm font-semibold text-emerald-200 transition-all hover:scale-105 hover:bg-emerald-500/20"
             >
               WhatsApp
             </a>
@@ -910,19 +921,19 @@ export function CourtDetailsClient(props: {
         </div>
       ) : null}
 
-      <div className="mx-auto max-w-7xl px-6 pb-8">
-        <div>
-          <p className="text-xs text-zinc-600 dark:text-zinc-400">{data.court.establishment.name}</p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">{data.court.name}</h1>
-          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+      <div className="mx-auto max-w-7xl px-6 pb-10 pt-6">
+        <div className="ph-fade-up">
+          <p className="text-[11px] uppercase tracking-[0.2em] text-white/60">{data.court.establishment.name}</p>
+          <h1 className="ph-display mt-2 text-4xl font-semibold tracking-tight text-white sm:text-5xl">{data.court.name}</h1>
+          <p className="mt-3 text-sm text-zinc-300">
             {formatSportLabel(data.court.sport_type)} • {formatBRLFromCents(data.court.price_per_hour)}/h
           </p>
         </div>
 
-        <div className="mt-6 grid gap-6 md:grid-cols-12 md:items-start">
-          <div className="md:col-span-7 space-y-3">
+        <div className="mt-8 grid gap-8 md:grid-cols-12 md:items-start">
+          <div className="md:col-span-7 space-y-4">
             {courtPhotos.length ? (
-              <div className="h-72 overflow-hidden rounded-3xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900">
+              <div className="h-72 overflow-hidden rounded-[28px] border border-white/10 bg-white/5 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={courtPhotos[0]!}
@@ -937,7 +948,7 @@ export function CourtDetailsClient(props: {
                 {courtPhotos.slice(1, 5).map((url, idx) => (
                   <div
                     key={url}
-                    className="h-34 overflow-hidden rounded-3xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900"
+                    className="h-34 overflow-hidden rounded-[24px] border border-white/10 bg-white/5"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={url} alt={`Foto da quadra ${data.court.name} ${idx + 2}`} className="h-full w-full object-cover" />
@@ -948,7 +959,7 @@ export function CourtDetailsClient(props: {
           </div>
 
           <div className="md:col-span-5">
-            <div className="md:sticky md:top-6 rounded-3xl border border-zinc-200 bg-gradient-to-b from-white to-zinc-50 p-6 shadow-[0_12px_30px_rgba(0,0,0,0.08)] dark:border-zinc-800 dark:from-zinc-900 dark:to-zinc-950">
+            <div className="md:sticky md:top-6 ph-panel ph-glow-border p-6 ph-fade-up ph-delay-1">
               <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{isOwnerPreview ? "Preview" : "Agendar"}</h2>
 
               {hasMonthly ? (
@@ -1258,7 +1269,7 @@ export function CourtDetailsClient(props: {
                       </p>
                     </div>
 
-                    <div className="rounded-3xl bg-zinc-100 dark:bg-zinc-800 p-4">
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                       <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Resumo</p>
                       <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">
                         {selectedStart && selectedEnd
@@ -1330,28 +1341,28 @@ export function CourtDetailsClient(props: {
         </div>
 
         <div className="mt-6">
-          <div className="relative overflow-hidden rounded-3xl border border-zinc-200 bg-gradient-to-br from-white via-white to-[#F7FBE8] p-6 shadow-[0_12px_30px_rgba(0,0,0,0.08)] dark:border-zinc-800 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-950">
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Sobre</h2>
-            <p className="mt-3 text-sm leading-7 text-zinc-700 dark:text-zinc-300">
+          <div className="relative overflow-hidden ph-panel ph-glow-border p-6 ph-fade-up ph-delay-2">
+            <h2 className="text-lg font-semibold text-white">Sobre</h2>
+            <p className="mt-3 text-sm leading-7 text-zinc-300">
               {data.court.establishment.description ?? "Sem descrição."}
             </p>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-3xl border border-zinc-200/70 bg-gradient-to-br from-zinc-100 to-white p-4 shadow-sm dark:border-zinc-800 dark:from-zinc-900 dark:to-zinc-950">
-                <p className="text-xs font-medium text-zinc-600 dark:text-zinc-300">Endereço</p>
-                <p className="mt-1 text-sm text-zinc-900 dark:text-zinc-50">
+              <div className="rounded-[24px] border border-white/10 bg-black/40 p-4">
+                <p className="text-xs font-medium text-zinc-300">Endereço</p>
+                <p className="mt-1 text-sm text-white">
                   {data.court.establishment.address_text}
                 </p>
                 <a
                   href={mapsHref}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-2 inline-block text-sm text-zinc-900 dark:text-zinc-100 underline"
+                  className="mt-2 inline-block text-sm text-white underline"
                 >
                   Ver no mapa
                 </a>
 
-                <div className="mt-3 overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+                <div className="mt-3 overflow-hidden rounded-2xl border border-white/10 bg-black/60">
                   <iframe
                     title="Mapa"
                     src={mapsEmbedSrc}
@@ -1362,20 +1373,20 @@ export function CourtDetailsClient(props: {
                 </div>
               </div>
 
-                <div className="rounded-3xl border border-zinc-200/70 bg-gradient-to-br from-zinc-100 to-white p-4 shadow-sm dark:border-zinc-800 dark:from-zinc-900 dark:to-zinc-950">
-                <p className="text-xs font-medium text-zinc-600 dark:text-zinc-300">Comodidades</p>
+                <div className="rounded-[24px] border border-white/10 bg-black/40 p-4">
+                <p className="text-xs font-medium text-zinc-300">Comodidades</p>
                 <div className="mt-2 flex flex-wrap gap-2 text-xs">
                   {(data.court.amenities ?? []).length ? (
                     (data.court.amenities ?? []).map((t) => (
                       <span
                         key={t}
-                        className="rounded-full bg-white/70 px-3 py-1 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100"
+                        className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-white"
                       >
                         {t}
                       </span>
                     ))
                   ) : (
-                    <span className="text-sm text-zinc-600 dark:text-zinc-300">Sem comodidades informadas.</span>
+                    <span className="text-sm text-zinc-300">Sem comodidades informadas.</span>
                   )}
                 </div>
               </div>
