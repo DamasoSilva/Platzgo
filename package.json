@@ -24,14 +24,17 @@
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",
     "bcryptjs": "^3.0.3",
+    "framer-motion": "^12.36.0",
     "ioredis": "^5.6.0",
+    "lucide-react": "^0.577.0",
     "next": "16.1.6",
     "next-auth": "^4.24.13",
     "nodemailer": "^7.0.12",
     "pg": "^8.17.2",
     "prisma": "^7.3.0",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

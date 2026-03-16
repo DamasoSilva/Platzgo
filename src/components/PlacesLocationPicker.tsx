@@ -18,8 +18,8 @@ type Props = {
     lng?: number;
   };
   onChange: (value: { address: string; lat: number; lng: number }) => void;
-};
-
+                "block text-xs font-medium " +
+                (variant === "dark" ? "text-muted-foreground" : "text-muted-foreground")
 export function PlacesLocationPicker(props: Props) {
   const apiKey = props.apiKey;
   const onChange = props.onChange;
@@ -30,8 +30,8 @@ export function PlacesLocationPicker(props: Props) {
   const [error, setError] = useState<string | null>(null);
   const [value, setValue] = useState<{ address: string; lat: number; lng: number } | null>(() => {
     const lat = props.initial?.lat;
-    const lng = props.initial?.lng;
-    const address = props.initial?.address;
+                  ? "rounded-lg border border-border bg-card/50 px-4 py-2 text-xs font-semibold text-foreground hover:bg-card"
+                  : "rounded-lg border border-border bg-card/50 px-4 py-2 text-xs font-semibold text-foreground hover:bg-card"
     if (typeof lat === "number" && typeof lng === "number" && Number.isFinite(lat) && Number.isFinite(lng)) {
       return { address: address ?? "", lat, lng };
     }
@@ -53,8 +53,8 @@ export function PlacesLocationPicker(props: Props) {
     Promise.resolve().then(() => {
       if (cancelled) return;
       setError(null);
-    });
-
+              ? "mt-2 w-full rounded-xl bg-secondary px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+              : "mt-2 w-full rounded-xl bg-secondary px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
     void (async () => {
       try {
         await loadGoogleMaps(apiKey);
@@ -65,8 +65,8 @@ export function PlacesLocationPicker(props: Props) {
           fields: ["formatted_address", "geometry"],
           types: ["geocode"],
         });
-
-        listener = autocomplete.addListener("place_changed", () => {
+                  ? "gradient-primary text-primary-foreground font-bold text-sm px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity"
+                  : "gradient-primary text-primary-foreground font-bold text-sm px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity"
           const place = autocomplete.getPlace();
           const address = place.formatted_address ?? "";
           const loc = place.geometry?.location;
@@ -75,8 +75,8 @@ export function PlacesLocationPicker(props: Props) {
           setValue(next);
           onChange(next);
         });
-      } catch (e) {
-        if (cancelled) return;
+          <p className="text-xs text-muted-foreground">Coordenadas capturadas automaticamente.</p>
+          <p className="text-xs text-muted-foreground">Selecione um endereço ou use o GPS.</p>
         setError(e instanceof Error ? e.message : "Erro ao carregar Google Maps");
       }
     })();
@@ -167,7 +167,7 @@ export function PlacesLocationPicker(props: Props) {
       ) : (
         <label
           className={
-            "block text-xs font-bold " + (variant === "dark" ? "text-zinc-200" : "text-zinc-700 dark:text-zinc-300")
+            "block text-xs font-bold text-muted-foreground"
           }
           style={props.labelStyle}
         >
@@ -203,8 +203,8 @@ export function PlacesLocationPicker(props: Props) {
 
       {value ? (
         <p className={variant === "dark" ? "text-xs text-zinc-300" : "ph-help"}>Coordenadas capturadas automaticamente.</p>
-      ) : props.required ? (
-        <p className={variant === "dark" ? "text-xs text-zinc-300" : "ph-help"}>Selecione um endereço ou use o GPS.</p>
+        ) : props.required ? (
+          <p className="text-xs text-muted-foreground">Selecione um endereço ou use o GPS.</p>
       ) : null}
 
       {error ? <p className={variant === "dark" ? "text-sm text-red-200" : "text-sm text-red-600"}>{error}</p> : null}

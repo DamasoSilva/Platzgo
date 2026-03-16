@@ -5,6 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { getSession, signOut } from "next-auth/react";
 import type { Role } from "@/generated/prisma/enums";
+import { Menu, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 
 type Props = {
   variant?: "dark" | "light";
@@ -35,7 +37,7 @@ function initials(name?: string | null): string {
 }
 
 export function CustomerHeader(props: Props) {
-  const variant = props.variant ?? "light";
+  const variant = props.variant ?? "dark";
   const isLoggedIn = Boolean(props.viewer?.isLoggedIn);
   const role = props.viewer?.role ?? null;
   const router = useRouter();
@@ -117,191 +119,169 @@ export function CustomerHeader(props: Props) {
   const name = useMemo(() => firstTwoNames(props.viewer?.name), [props.viewer?.name]);
   const avatarInitials = useMemo(() => initials(props.viewer?.name), [props.viewer?.name]);
 
-  const baseText = variant === "dark" ? "text-white" : "text-zinc-900 dark:text-zinc-50";
-  const subText = variant === "dark" ? "text-zinc-300" : "text-zinc-600 dark:text-zinc-400";
-  const pill =
-    variant === "dark"
-      ? "inline-flex h-10 items-center justify-center rounded-full border border-white/15 bg-white/5 px-4 text-sm text-white backdrop-blur transition-all duration-150 hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/10 hover:shadow-[0_0_16px_rgba(255,255,255,0.25)] dark:hover:bg-white/20"
-      : "inline-flex h-10 items-center justify-center rounded-full border border-zinc-200 bg-white px-4 text-sm text-zinc-900 transition-all duration-150 hover:-translate-y-0.5 hover:border-zinc-300 hover:bg-zinc-50 hover:shadow-[0_0_16px_rgba(59,130,246,0.25)] dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800 dark:hover:shadow-[0_0_16px_rgba(255,255,255,0.18)]";
-  const menuItem =
-    variant === "dark"
-      ? "block px-4 py-3 text-sm text-white transition-all duration-150 hover:-translate-y-0.5 hover:bg-white/10 hover:shadow-[0_0_14px_rgba(255,255,255,0.2)]"
-      : "block px-4 py-3 text-sm text-zinc-900 transition-all duration-150 hover:-translate-y-0.5 hover:bg-zinc-50 hover:shadow-[0_0_14px_rgba(59,130,246,0.18)] dark:text-zinc-100 dark:hover:bg-zinc-900/70 dark:hover:shadow-[0_0_14px_rgba(255,255,255,0.16)]";
+  const baseText = "text-foreground";
+  const subText = "text-muted-foreground";
+  const pill = "text-sm text-muted-foreground hover:text-foreground transition-colors";
+  const menuItem = "block px-4 py-3 text-sm text-foreground hover:bg-secondary/60 transition-colors";
 
   const homeLabel = role === "CUSTOMER" ? "Agende Já" : "Início";
 
   return (
     <header
       className={
-        "sticky top-0 z-40 w-full border-b backdrop-blur shadow-md " +
-        (variant === "dark"
-          ? "border-white/10 bg-black/70 text-white"
-          : "border-zinc-200 bg-white/90 text-zinc-900 dark:border-white/10 dark:bg-[#121212]/90")
-      }
-    >
-      <div className="relative z-20 mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-4">
-        <div>
-          <Link href={homeHref} onClick={onHomeClick} className={"flex items-center gap-3 text-lg font-semibold tracking-tight " + baseText}>
-            <span className="relative h-12 w-24 overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo" alt="PlatzGo!" className="h-full w-full object-contain" />
-            </span>
-          </Link>
-          <p className={"text-xs font-semibold " + subText}>{props.subtitle ?? "A partida começa AQUI"}</p>
-        </div>
+        const baseLinks = [
+          { label: "Início", href: "/" },
+          { label: "Agendar", href: "/#busca" },
+          { label: "Como funciona", href: "/#como-funciona" },
+          { label: "Contato", href: "/#contato" },
+        ];
+        const appLinks = [
+          { label: "Torneios", href: "/torneios" },
+          { label: "Sorteio de times", href: "/sorteio-times" },
+        ];
+        if (isLoggedIn && role === "CUSTOMER") {
+          appLinks.push({ label: "Meus agendamentos", href: "/meus-agendamentos" });
+        }
+        const links = [...baseLinks, ...appLinks];
 
-        <div className="flex items-center gap-3">
-          {props.rightSlot ? <div className="hidden items-center gap-3 sm:flex">{props.rightSlot}</div> : null}
-
-          <div className="hidden items-center gap-2 sm:flex">
-            <Link href="/torneios" className={pill}>
-              Torneios
-            </Link>
-            <Link href="/sorteio-times" className={pill}>
-              Sorteio de times
-            </Link>
-            {isLoggedIn && role === "CUSTOMER" ? (
-              <Link href="/meus-agendamentos" className={pill}>
-                Meus agendamentos
-              </Link>
-            ) : null}
-          </div>
-
-          {!isLoggedIn ? (
-            <Link href={`/signin?callbackUrl=${encodeURIComponent(signInCallbackUrl)}`} className={pill}>
-              Entrar
-            </Link>
-          ) : (
-            <div className="relative hidden sm:block">
-              <button
-                type="button"
-                className={
-                  variant === "dark"
-                    ? "flex h-10 items-center gap-3 rounded-full border border-white/15 bg-white/5 px-4 text-sm text-white backdrop-blur transition-all duration-150 hover:-translate-y-0.5 hover:bg-white/10 hover:shadow-[0_0_14px_rgba(255,255,255,0.2)] dark:hover:bg-white/20"
-                    : "flex h-10 items-center gap-3 rounded-full border border-zinc-200 bg-white px-4 text-sm text-zinc-900 transition-all duration-150 hover:-translate-y-0.5 hover:bg-zinc-50 hover:shadow-[0_0_14px_rgba(59,130,246,0.18)] dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800 dark:hover:shadow-[0_0_14px_rgba(255,255,255,0.16)]"
-                }
-                onClick={() => setOpen((s) => !s)}
-              >
-                <span className="hidden sm:block font-semibold">{name || "Usuário"}</span>
-                <span className="relative h-8 w-8 overflow-hidden rounded-full bg-white/10">
-                  {props.viewer?.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={props.viewer.image} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <span
-                      className={
-                        "flex h-full w-full items-center justify-center text-xs font-bold " +
-                        (variant === "dark" ? "text-white" : "text-zinc-900 dark:text-zinc-50")
-                      }
-                    >
-                      {avatarInitials}
-                    </span>
-                  )}
-                </span>
-              </button>
-
-              {open ? (
-                <div
-                  className={
-                    "absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border shadow-xl " +
-                    (variant === "dark"
-                      ? "border-white/10 bg-black/60 text-white backdrop-blur"
-                      : "border-zinc-200 bg-white text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100")
-                  }
-                  onMouseLeave={() => setOpen(false)}
-                >
-                  {role === "SYSADMIN" ? (
-                    <>
-                      <Link href="/sysadmin" className={menuItem} onClick={() => setOpen(false)}>
-                        Painel do sysadmin
-                      </Link>
-                      <Link href="/dashboard/admin" className={menuItem} onClick={() => setOpen(false)}>
-                        Painel do administrador
-                      </Link>
-                      <Link href="/" className={menuItem} onClick={() => setOpen(false)}>
-                        Ver como cliente
-                      </Link>
-                    </>
-                  ) : null}
-
-                  <Link href="/perfil" className={menuItem} onClick={() => setOpen(false)}>
-                    Meu perfil
-                  </Link>
-                  <button
-                    type="button"
-                    className={`${menuItem} w-full text-left`}
-                    onClick={() => signOut({ callbackUrl: signOutCallbackUrl })}
-                  >
-                    Sair
-                  </button>
+        return (
+          <nav className="fixed top-0 left-0 right-0 z-50 glass">
+            <div className="container flex items-center justify-between h-16">
+              <Link href={homeHref} onClick={onHomeClick} className={"flex items-center gap-2 " + baseText}>
+                <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center font-display font-bold text-primary-foreground text-sm">
+                  P
                 </div>
-              ) : null}
-            </div>
-          )}
-
-          {showHomeButton ? (
-            <Link
-              href={homeHref}
-              onClick={onHomeClick}
-              className={
-                "hidden h-10 items-center justify-center rounded-full bg-[#CCFF00] px-5 text-sm font-bold text-black transition-all hover:scale-105 sm:inline-flex"
-              }
-            >
-              {homeLabel}
-            </Link>
-          ) : null}
-
-          <button
-            type="button"
-            className={
-              "inline-flex h-10 w-10 items-center justify-center rounded-full border sm:hidden " +
-              (variant === "dark"
-                ? "border-white/20 text-white hover:bg-white/10"
-                : "border-zinc-200 text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-800")
-            }
-            aria-label="Abrir menu"
-            onClick={() => setMenuOpen((s) => !s)}
-          >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
-              <path
-                d="M4 6h16M4 12h16M4 18h16"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeWidth="2"
-              />
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      {menuOpen ? (
-        <div
-          className={
-            "border-t px-6 py-4 sm:hidden " +
-            (variant === "dark"
-              ? "border-white/10 bg-black/70"
-              : "border-zinc-200 bg-white/95 dark:border-white/10 dark:bg-[#121212]/95")
-          }
-        >
-          <div className="flex flex-col gap-2">
-            {showHomeButton ? (
-              <Link
-                href={homeHref}
-                onClick={(e) => {
-                  onHomeClick(e);
-                  setMenuOpen(false);
-                }}
-                className={pill}
-              >
-                {homeLabel}
+                <span className="font-display font-bold text-xl tracking-tight">
+                  Platz<span className="gradient-text">Go!</span>
+                </span>
               </Link>
-            ) : null}
-            <Link href="/torneios" className={pill} onClick={() => setMenuOpen(false)}>
-              Torneios
-            </Link>
-            <Link href="/sorteio-times" className={pill} onClick={() => setMenuOpen(false)}>
-              Sorteio de times
+
+              <div className="hidden md:flex items-center gap-8">
+                {links.map((link) => (
+                  <Link key={link.label} href={link.href} className={pill}>
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-3">
+                {props.rightSlot ? <div className="hidden items-center gap-3 sm:flex">{props.rightSlot}</div> : null}
+
+                {showHomeButton ? (
+                  <Link
+                    href={homeHref}
+                    onClick={onHomeClick}
+                    className="hidden sm:inline-flex gradient-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity"
+                  >
+                    {homeLabel}
+                  </Link>
+                ) : null}
+
+                {!isLoggedIn ? (
+                  <Link
+                    href={`/signin?callbackUrl=${encodeURIComponent(signInCallbackUrl)}`}
+                    className="hidden sm:inline-flex border border-border bg-card/50 text-foreground font-medium text-sm px-5 py-2.5 rounded-lg hover:bg-card transition-colors"
+                  >
+                    Entrar
+                  </Link>
+                ) : (
+                  <div className="relative hidden sm:block">
+                    <button
+                      type="button"
+                      className="flex items-center gap-3 rounded-lg border border-border bg-card/60 px-4 py-2 text-sm text-foreground backdrop-blur hover:bg-card transition-colors"
+                      onClick={() => setOpen((s) => !s)}
+                    >
+                      <span className="hidden sm:block font-semibold">{name || "Usuário"}</span>
+                      <span className="relative h-8 w-8 overflow-hidden rounded-full bg-secondary">
+                        {props.viewer?.image ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={props.viewer.image} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          <span className="flex h-full w-full items-center justify-center text-xs font-bold text-foreground">
+                            {avatarInitials}
+                          </span>
+                        )}
+                      </span>
+                    </button>
+
+                    {open ? (
+                      <div
+                        className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-border bg-card/90 text-foreground shadow-xl backdrop-blur"
+                        onMouseLeave={() => setOpen(false)}
+                      >
+                        {role === "SYSADMIN" ? (
+                          <>
+                            <Link href="/sysadmin" className={menuItem} onClick={() => setOpen(false)}>
+                              Painel do sysadmin
+                            </Link>
+                            <Link href="/dashboard/admin" className={menuItem} onClick={() => setOpen(false)}>
+                              Painel do administrador
+                            </Link>
+                            <Link href="/" className={menuItem} onClick={() => setOpen(false)}>
+                              Ver como cliente
+                            </Link>
+                          </>
+                        ) : null}
+
+                        <Link href="/perfil" className={menuItem} onClick={() => setOpen(false)}>
+                          Meu perfil
+                        </Link>
+                        <button
+                          type="button"
+                          className={`${menuItem} w-full text-left`}
+                          onClick={() => signOut({ callbackUrl: signOutCallbackUrl })}
+                        >
+                          Sair
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border md:hidden"
+                  onClick={() => setMenuOpen((s) => !s)}
+                >
+                  {menuOpen ? <X size={20} /> : <Menu size={20} />}
+                </button>
+              </div>
+            </div>
+
+            <AnimatePresence>
+              {menuOpen ? (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="md:hidden glass border-t border-border/50 overflow-hidden"
+                >
+                  <div className="container py-4 flex flex-col gap-3">
+                    {links.map((link) => (
+                      <Link
+                        key={link.label}
+                        href={link.href}
+                        onClick={() => setMenuOpen(false)}
+                        className={pill}
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                    {!isLoggedIn ? (
+                      <Link
+                        href={`/signin?callbackUrl=${encodeURIComponent(signInCallbackUrl)}`}
+                        onClick={() => setMenuOpen(false)}
+                        className="gradient-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-lg text-center"
+                      >
+                        Entrar
+                      </Link>
+                    ) : null}
+                  </div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </nav>
+        );
             </Link>
             {isLoggedIn && role === "CUSTOMER" ? (
               <Link href="/meus-agendamentos" className={pill} onClick={() => setMenuOpen(false)}>

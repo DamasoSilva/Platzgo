@@ -103,10 +103,6 @@ export default async function Home(props: {
   return (
     <SearchClient
       apiKey={apiKey}
-      hero={{
-        title: "O jeito mais rápido de encontrar e agendar sua próxima partida.",
-        description: "Busque quadras por localização, veja disponibilidade e finalize o agendamento.",
-      }}
       showOwnerCtaOnLoggedOut={!isLoggedIn}
       showMarketingCardsOnLoggedOut={!isLoggedIn}
       showFooter

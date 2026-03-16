@@ -1,205 +1,239 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@layer base {
+  :root {
+    --background: 220 20% 6%;
+    --foreground: 60 10% 92%;
+
+    --card: 220 18% 10%;
+    --card-foreground: 60 10% 92%;
+
+    --popover: 220 18% 10%;
+    --popover-foreground: 60 10% 92%;
+
+    --primary: 72 100% 50%;
+    --primary-foreground: 220 20% 6%;
+
+    --secondary: 220 15% 16%;
+    --secondary-foreground: 60 10% 92%;
+
+    --muted: 220 15% 14%;
+    --muted-foreground: 220 10% 55%;
+
+    --accent: 72 100% 50%;
+    --accent-foreground: 220 20% 6%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 60 10% 92%;
+
+    --border: 220 15% 18%;
+    --input: 220 15% 18%;
+    --ring: 72 100% 50%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 220 18% 8%;
+    --sidebar-foreground: 60 10% 92%;
+    --sidebar-primary: 72 100% 50%;
+    --sidebar-primary-foreground: 220 20% 6%;
+    --sidebar-accent: 220 15% 14%;
+    --sidebar-accent-foreground: 60 10% 92%;
+    --sidebar-border: 220 15% 18%;
+    --sidebar-ring: 72 100% 50%;
+
+    --glow: 72 100% 50%;
+    --surface: 220 18% 12%;
+    --surface-hover: 220 18% 16%;
+  }
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-outfit);
-  --font-display: var(--font-space);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  font-family: var(--font-sans);
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-glow: hsl(var(--glow));
+  --color-surface: hsl(var(--surface));
+  --color-surface-hover: hsl(var(--surface-hover));
+  --color-sidebar-background: hsl(var(--sidebar-background));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+  --font-display: var(--font-outfit);
+  --font-body: var(--font-space);
+  --font-sans: var(--font-space);
 }
 
 @layer base {
-  ::selection {
-    background: rgba(204, 255, 0, 0.35);
-    color: #0a0a0a;
+  * {
+    @apply border-border;
   }
 
-  html {
-    scroll-behavior: smooth;
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
   }
 }
 
 @layer components {
-  .ph-container {
-    @apply mx-auto max-w-7xl px-6;
+  .container {
+    @apply mx-auto w-full max-w-[1400px] px-6;
   }
 
   .ph-page {
-    @apply relative isolate min-h-screen overflow-hidden bg-white dark:bg-[#121212];
-    background-image: radial-gradient(600px circle at 10% 10%, rgba(204, 255, 0, 0.08), transparent 45%),
-      radial-gradient(520px circle at 90% 0%, rgba(99, 102, 241, 0.08), transparent 45%);
+    @apply min-h-screen bg-background text-foreground;
+  }
+
+  .ph-container {
+    @apply container;
   }
 
   .ph-card {
-    @apply rounded-3xl border border-zinc-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.06)] transition-shadow;
-    @apply hover:shadow-[0_24px_70px_rgba(15,23,42,0.12)];
-    @apply dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-[0_24px_70px_rgba(0,0,0,0.35)];
+    @apply rounded-2xl bg-card border border-border;
   }
 
   .ph-card-glass {
-    @apply rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl;
+    @apply glass rounded-2xl;
   }
 
   .ph-surface {
-    @apply rounded-3xl border border-zinc-200 bg-white/80 backdrop-blur;
-    @apply shadow-[0_14px_40px_rgba(15,23,42,0.06)];
-    @apply dark:border-zinc-800 dark:bg-zinc-950/60 dark:shadow-[0_18px_50px_rgba(0,0,0,0.35)];
+    @apply rounded-2xl bg-card border border-border;
   }
 
   .ph-input {
-    @apply w-full rounded-xl border border-transparent bg-zinc-100 px-4 py-3 text-sm text-zinc-900 outline-none;
-    @apply placeholder:text-zinc-500 focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00];
-    @apply dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder:text-zinc-500/80;
+    @apply w-full rounded-xl border border-input bg-secondary/70 px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-ring;
   }
 
   .ph-textarea {
-    @apply w-full rounded-xl border border-transparent bg-zinc-100 px-4 py-3 text-sm text-zinc-900 outline-none;
-    @apply placeholder:text-zinc-500 focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00];
-    @apply dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder:text-zinc-500/80;
+    @apply w-full rounded-xl border border-input bg-secondary/70 px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-ring;
   }
 
   .ph-select {
-    @apply w-full rounded-xl border border-transparent bg-zinc-100 px-4 py-3 text-sm text-zinc-900 outline-none;
-    @apply focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00];
-    @apply dark:bg-zinc-800 dark:text-zinc-100;
+    @apply w-full rounded-xl border border-input bg-secondary/70 px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring;
   }
 
   .ph-button {
-    @apply inline-flex items-center justify-center rounded-full bg-[#CCFF00] px-6 py-3 text-sm font-bold text-black transition-all;
-    @apply hover:scale-105 hover:shadow-[0_12px_40px_rgba(204,255,0,0.22)] disabled:opacity-60;
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#CCFF00] focus-visible:ring-offset-2 focus-visible:ring-offset-white;
-    @apply dark:focus-visible:ring-offset-[#121212];
+    @apply inline-flex items-center justify-center rounded-xl px-6 py-3 text-sm font-bold text-primary-foreground transition-opacity;
+    background: linear-gradient(135deg, hsl(72 100% 50%), hsl(90 100% 40%));
+  }
+
+  .ph-button:hover {
+    opacity: 0.9;
   }
 
   .ph-button-secondary {
-    @apply inline-flex items-center justify-center rounded-full border border-zinc-200 bg-white/70 px-6 py-3 text-sm font-semibold text-zinc-900 backdrop-blur;
-    @apply hover:bg-white/90 hover:border-zinc-300 hover:shadow-sm;
-    @apply dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-100 dark:hover:bg-zinc-950/60;
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#CCFF00] focus-visible:ring-offset-2 focus-visible:ring-offset-white;
-    @apply dark:focus-visible:ring-offset-[#121212];
+    @apply inline-flex items-center justify-center rounded-xl border border-border bg-card/50 px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-card;
   }
 
   .ph-button-sm {
-    @apply inline-flex h-10 items-center justify-center rounded-full bg-[#CCFF00] px-4 text-sm font-bold text-black transition-all;
-    @apply hover:scale-105 hover:shadow-[0_12px_40px_rgba(204,255,0,0.22)] disabled:opacity-60;
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#CCFF00] focus-visible:ring-offset-2 focus-visible:ring-offset-white;
-    @apply dark:focus-visible:ring-offset-[#121212];
+    @apply inline-flex h-10 items-center justify-center rounded-xl px-4 text-sm font-bold text-primary-foreground transition-opacity;
+    background: linear-gradient(135deg, hsl(72 100% 50%), hsl(90 100% 40%));
+  }
+
+  .ph-button-sm:hover {
+    opacity: 0.9;
   }
 
   .ph-button-secondary-sm {
-    @apply inline-flex h-10 items-center justify-center rounded-full border border-zinc-200 bg-white/70 px-4 text-sm font-semibold text-zinc-900 backdrop-blur;
-    @apply hover:bg-white/90 hover:border-zinc-300 hover:shadow-sm;
-    @apply dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-100 dark:hover:bg-zinc-950/60;
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#CCFF00] focus-visible:ring-offset-2 focus-visible:ring-offset-white;
-    @apply dark:focus-visible:ring-offset-[#121212];
+    @apply inline-flex h-10 items-center justify-center rounded-xl border border-border bg-card/50 px-4 text-sm font-medium text-foreground transition-colors hover:bg-card;
   }
 
   .ph-button-secondary-xs {
-    @apply inline-flex h-9 items-center justify-center rounded-full border border-zinc-200 bg-white/70 px-3 text-xs font-bold text-zinc-900 backdrop-blur;
-    @apply hover:bg-white/90 hover:border-zinc-300 hover:shadow-sm;
-    @apply dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-100 dark:hover:bg-zinc-950/60;
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#CCFF00] focus-visible:ring-offset-2 focus-visible:ring-offset-white;
-    @apply dark:focus-visible:ring-offset-[#121212];
+    @apply inline-flex h-9 items-center justify-center rounded-lg border border-border bg-card/50 px-3 text-xs font-semibold text-foreground transition-colors hover:bg-card;
   }
 
   .ph-help {
-    @apply text-xs text-black dark:text-zinc-400;
+    @apply text-xs text-muted-foreground;
   }
 
   .ph-display {
-    font-family: var(--font-display);
-    letter-spacing: -0.02em;
-  }
-
-  .ph-kicker {
-    @apply inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-white/70;
+    @apply font-display;
   }
 
   .ph-panel {
-    border-radius: 28px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
-    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(18px);
+    @apply glass rounded-3xl;
   }
 
   .ph-panel-soft {
-    border-radius: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(15, 17, 21, 0.72);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-    backdrop-filter: blur(12px);
+    @apply bg-card/60 border border-border/50 rounded-2xl;
+  }
+
+  .ph-kicker {
+    @apply text-primary text-sm font-semibold uppercase tracking-widest;
   }
 }
 
-@keyframes ph-fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.4;
   }
-  to {
+  50% {
     opacity: 1;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
     transform: translateY(0);
   }
-}
-
-@keyframes ph-fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
+  50% {
+    transform: translateY(-10px);
   }
 }
 
 @layer utilities {
-  .ph-grad-text {
-    background-image: linear-gradient(135deg, #ccff00, #86ff4c);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
   }
 
-  .ph-glow-text {
-    text-shadow: 0 0 40px rgba(204, 255, 0, 0.3), 0 0 90px rgba(204, 255, 0, 0.15);
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
   }
 
-  .ph-glow-border {
-    box-shadow: inset 0 0 0 1px rgba(204, 255, 0, 0.16), 0 0 30px rgba(204, 255, 0, 0.12);
+  .glow-text {
+    text-shadow: 0 0 40px hsl(72 100% 50% / 0.4), 0 0 80px hsl(72 100% 50% / 0.15);
   }
 
-  .ph-fade-up {
-    animation: ph-fade-up 0.7s ease-out both;
+  .glow-box {
+    box-shadow: 0 0 30px hsl(72 100% 50% / 0.15), 0 0 60px hsl(72 100% 50% / 0.05);
   }
 
-  .ph-fade-in {
-    animation: ph-fade-in 0.7s ease-out both;
+  .glow-border {
+    box-shadow: inset 0 0 0 1px hsl(72 100% 50% / 0.2), 0 0 20px hsl(72 100% 50% / 0.08);
   }
 
-  .ph-delay-1 {
-    animation-delay: 0.08s;
+  .glass {
+    @apply bg-card/60 backdrop-blur-xl border border-border/50;
   }
 
-  .ph-delay-2 {
-    animation-delay: 0.16s;
+  .gradient-primary {
+    background: linear-gradient(135deg, hsl(72 100% 50%), hsl(90 100% 40%));
   }
 
-  .ph-delay-3 {
-    animation-delay: 0.24s;
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(72 100% 50%), hsl(90 100% 45%));
   }
 }

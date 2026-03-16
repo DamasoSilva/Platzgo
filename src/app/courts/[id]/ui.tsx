@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { motion } from "framer-motion";
+import { Check } from "lucide-react";
 
 import { CustomerHeader } from "@/components/CustomerHeader";
 import { createBooking, getMyBookingStatus } from "@/lib/actions/bookings";
@@ -711,22 +713,15 @@ export function CourtDetailsClient(props: {
   const establishmentCover = (data.court.establishment.photo_urls ?? []).find((u) => (u ?? "").trim()) ?? null;
   const courtPhotos = data.court.photo_urls?.length ? data.court.photo_urls : establishmentCover ? [establishmentCover] : [];
 
+  const bookingStep = bookingAlert ? 3 : selectedStart ? 2 : 1;
+  const bookingSteps = [
+    { n: 1, label: "Escolha a quadra" },
+    { n: 2, label: "Horario" },
+    { n: 3, label: "Confirmacao" },
+  ];
+
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#050608] text-white">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 opacity-90"
-        style={{
-          backgroundImage:
-            "radial-gradient(680px 420px at 12% 10%, rgba(204,255,0,0.16), transparent 60%)," +
-            "radial-gradient(520px 360px at 85% 15%, rgba(56,189,248,0.18), transparent 60%)," +
-            "radial-gradient(720px 460px at 50% 100%, rgba(139,92,246,0.14), transparent 60%)," +
-            "linear-gradient(to bottom, rgba(5,6,8,0.96), rgba(5,6,8,1))",
-        }}
-      />
-      <div className="pointer-events-none absolute -top-24 left-8 h-48 w-48 rounded-full bg-[#CCFF00]/20 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-32 right-10 h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
-      <div className="relative z-10">
+    <div className="min-h-screen bg-background text-foreground">
       <CustomerHeader
         variant="dark"
         viewer={{
@@ -741,7 +736,7 @@ export function CourtDetailsClient(props: {
               href={waLink}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex h-10 items-center justify-center rounded-full border border-emerald-400/40 bg-emerald-500/10 px-4 text-sm font-semibold text-emerald-200 transition-all hover:scale-105 hover:bg-emerald-500/20"
+              className="inline-flex h-10 items-center justify-center rounded-full border border-primary/30 bg-primary/10 px-4 text-sm font-semibold text-primary transition-all hover:scale-105 hover:bg-primary/20"
             >
               WhatsApp
             </a>
@@ -751,18 +746,18 @@ export function CourtDetailsClient(props: {
 
       {bookingAlert ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-lg rounded-3xl border border-emerald-200 bg-white p-6 text-emerald-900 shadow-xl dark:border-emerald-900/40 dark:bg-zinc-950 dark:text-emerald-100">
+          <div className="w-full max-w-lg rounded-3xl border border-border bg-card p-6 text-foreground shadow-2xl">
             <div className="text-lg font-semibold">{bookingAlert.title}</div>
             <div className="mt-4 space-y-2 text-sm">
               {bookingAlert.rows.map((row) => (
                 <div key={row.label} className="flex flex-wrap justify-between gap-2">
-                  <span className="text-zinc-600 dark:text-zinc-300">{row.label}</span>
-                  <span className="font-semibold text-zinc-900 dark:text-zinc-50">{row.value}</span>
+                  <span className="text-muted-foreground">{row.label}</span>
+                  <span className="font-semibold text-foreground">{row.value}</span>
                 </div>
               ))}
             </div>
             {bookingAlert.note ? (
-              <p className="mt-4 text-xs text-zinc-600 dark:text-zinc-400">{bookingAlert.note}</p>
+              <p className="mt-4 text-xs text-muted-foreground">{bookingAlert.note}</p>
             ) : null}
             {paymentUrl && !pixPayload && !pixQrBase64 ? (
               <div className="mt-4">
@@ -770,7 +765,7 @@ export function CourtDetailsClient(props: {
                   href={paymentUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center rounded-full bg-[#CCFF00] px-4 py-2 text-xs font-bold text-black"
+                  className="inline-flex items-center rounded-full gradient-primary px-4 py-2 text-xs font-bold text-primary-foreground"
                 >
                   Ir para pagamento
                 </a>
@@ -783,7 +778,7 @@ export function CourtDetailsClient(props: {
                 setBookingAlert(null);
                 router.replace(next);
               }}
-              className="mt-6 w-full rounded-full bg-emerald-700 px-4 py-3 text-sm font-bold text-white"
+              className="mt-6 w-full rounded-full gradient-primary px-4 py-3 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90"
             >
               OK
             </button>
@@ -793,22 +788,22 @@ export function CourtDetailsClient(props: {
 
       {cpfPromptOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-md rounded-3xl border border-amber-200 bg-white p-6 text-amber-900 shadow-xl dark:border-amber-900/40 dark:bg-zinc-950 dark:text-amber-100">
+          <div className="w-full max-w-md rounded-3xl border border-border bg-card p-6 text-foreground shadow-2xl">
             <div className="text-lg font-semibold">CPF/CNPJ necessario</div>
-            <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">
+            <p className="mt-2 text-sm text-muted-foreground">
               Para pagamento online, informe o CPF/CNPJ do titular.
             </p>
             {cpfPromptError ? (
-              <div className="mt-3 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-100">
+              <div className="mt-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
                 {cpfPromptError}
               </div>
             ) : null}
             <div className="mt-4">
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">CPF/CNPJ</label>
+              <label className="block text-xs font-medium text-muted-foreground">CPF/CNPJ</label>
               <input
                 value={cpfCnpj}
                 onChange={(e) => setCpfCnpj(normalizeCpfCnpj(e.target.value).slice(0, 14))}
-                className="mt-2 w-full rounded-xl border-none bg-zinc-100 px-4 py-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                className="mt-2 w-full rounded-xl border border-input bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-ring"
                 inputMode="numeric"
                 maxLength={14}
                 placeholder="Somente numeros"
@@ -819,7 +814,7 @@ export function CourtDetailsClient(props: {
                 type="button"
                 onClick={saveCpfCnpj}
                 disabled={isCpfPending}
-                className="rounded-full bg-amber-600 px-4 py-2 text-xs font-bold text-white hover:bg-amber-500 disabled:opacity-60"
+                className="rounded-full gradient-primary px-4 py-2 text-xs font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
               >
                 {isCpfPending ? "Salvando..." : "Salvar e continuar"}
               </button>
@@ -829,7 +824,7 @@ export function CourtDetailsClient(props: {
                   setCpfPromptOpen(false);
                   setCpfPromptNext(false);
                 }}
-                className="rounded-full border border-zinc-200 px-4 py-2 text-xs font-semibold text-zinc-700 dark:border-zinc-700 dark:text-zinc-200"
+                className="rounded-full border border-border bg-card/50 px-4 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-card"
               >
                 Cancelar
               </button>
@@ -840,14 +835,14 @@ export function CourtDetailsClient(props: {
 
       {pixModalOpen && (pixPayload || pixQrBase64) ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="w-full max-w-md rounded-3xl border border-emerald-200 bg-white p-6 text-emerald-900 shadow-xl dark:border-emerald-900/40 dark:bg-zinc-950 dark:text-emerald-100">
+          <div className="w-full max-w-md rounded-3xl border border-border bg-card p-6 text-foreground shadow-2xl">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="h-9 w-20 overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src="/logo" alt="PlatzGo" className="h-full w-full object-contain" />
                 </div>
-                <div className="h-6 w-px bg-emerald-200 dark:bg-emerald-900/50" />
+                <div className="h-6 w-px bg-border" />
                 <div className="h-8 w-20 overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src="/asaas-logo.svg" alt="Asaas" className="h-full w-full object-contain" />
@@ -856,25 +851,25 @@ export function CourtDetailsClient(props: {
               <button
                 type="button"
                 onClick={() => setPixModalOpen(false)}
-                className="rounded-full border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-900 dark:border-emerald-900/50 dark:text-emerald-100"
+                className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-foreground transition-colors hover:bg-card"
               >
                 Fechar
               </button>
             </div>
 
-            <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 dark:border-emerald-900/40 dark:bg-emerald-950/30">
-              <p className="text-xs font-semibold text-emerald-800 dark:text-emerald-100">Valor do pagamento</p>
-              <p className="mt-1 text-2xl font-semibold text-emerald-900 dark:text-emerald-50">
+            <div className="mt-4 rounded-2xl border border-border bg-secondary/50 p-4">
+              <p className="text-xs font-semibold text-muted-foreground">Valor do pagamento</p>
+              <p className="mt-1 text-2xl font-semibold text-foreground">
                 {typeof pixAmountCents === "number" ? formatBRLFromCents(pixAmountCents) : "--"}
               </p>
-              <div className="mt-2 flex items-center justify-between text-xs text-emerald-800 dark:text-emerald-200">
+              <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
                 <span>Expira em</span>
-                <span className={pixExpired ? "font-semibold text-red-700 dark:text-red-300" : "font-semibold"}>
+                <span className={pixExpired ? "font-semibold text-destructive" : "font-semibold"}>
                   {pixRemaining ?? "--:--"}
                 </span>
               </div>
               {pixExpired ? (
-                <p className="mt-2 text-[11px] text-red-700 dark:text-red-300">
+                <p className="mt-2 text-[11px] text-destructive">
                   PIX expirado. Gere um novo pagamento.
                 </p>
               ) : null}
@@ -886,18 +881,18 @@ export function CourtDetailsClient(props: {
                 <img
                   src={`data:image/png;base64,${pixQrBase64}`}
                   alt="QR Code PIX"
-                  className="h-48 w-48 rounded-2xl border border-emerald-200 bg-white p-2"
+                  className="h-48 w-48 rounded-2xl border border-border bg-card p-2"
                 />
               </div>
             ) : null}
 
             {pixPayload ? (
-              <div className="mt-4 rounded-2xl border border-emerald-200 bg-white p-3 text-xs text-emerald-900 dark:border-emerald-900/40 dark:bg-zinc-950 dark:text-emerald-100">
+              <div className="mt-4 rounded-2xl border border-border bg-card p-3 text-xs text-foreground">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-semibold">PIX copia e cola</span>
                   <button
                     type="button"
-                    className="rounded-full bg-emerald-700 px-3 py-1 text-[11px] font-bold text-white"
+                    className="rounded-full gradient-primary px-3 py-1 text-[11px] font-bold text-primary-foreground"
                     onClick={async () => {
                       try {
                         await navigator.clipboard.writeText(pixPayload);
@@ -910,10 +905,10 @@ export function CourtDetailsClient(props: {
                     Copiar
                   </button>
                 </div>
-                <div className="mt-2 break-words rounded-xl bg-emerald-50 px-3 py-2 text-[11px] text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100">
+                <div className="mt-2 break-words rounded-xl bg-secondary/50 px-3 py-2 text-[11px] text-foreground">
                   {pixPayload}
                 </div>
-                {pixCopyStatus ? <div className="mt-2 text-[11px]">{pixCopyStatus}</div> : null}
+                {pixCopyStatus ? <div className="mt-2 text-[11px] text-muted-foreground">{pixCopyStatus}</div> : null}
               </div>
             ) : null}
 
@@ -921,19 +916,44 @@ export function CourtDetailsClient(props: {
         </div>
       ) : null}
 
-      <div className="mx-auto max-w-7xl px-6 pb-10 pt-6">
-        <div className="ph-fade-up">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-white/60">{data.court.establishment.name}</p>
-          <h1 className="ph-display mt-2 text-4xl font-semibold tracking-tight text-white sm:text-5xl">{data.court.name}</h1>
-          <p className="mt-3 text-sm text-zinc-300">
-            {formatSportLabel(data.court.sport_type)} • {formatBRLFromCents(data.court.price_per_hour)}/h
-          </p>
+      <div className="container pt-24 pb-16">
+        <div className="flex items-center justify-center gap-4 mb-12">
+          {bookingSteps.map((s, i) => (
+            <div key={s.n} className="flex items-center gap-3">
+              <div
+                className={
+                  "w-10 h-10 rounded-full flex items-center justify-center font-display font-bold text-sm transition-all " +
+                  (bookingStep >= s.n
+                    ? "gradient-primary text-primary-foreground"
+                    : "bg-secondary text-muted-foreground")
+                }
+              >
+                {bookingStep > s.n ? <Check size={16} /> : s.n}
+              </div>
+              <span className="hidden sm:block text-sm font-medium">{s.label}</span>
+              {i < bookingSteps.length - 1 ? (
+                <div className={"w-12 h-px " + (bookingStep > s.n ? "bg-primary" : "bg-border")} />
+              ) : null}
+            </div>
+          ))}
         </div>
 
-        <div className="mt-8 grid gap-8 md:grid-cols-12 md:items-start">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="mb-10"
+        >
+          <h1 className="text-3xl md:text-4xl font-display font-bold mb-2">{data.court.name}</h1>
+          <p className="text-muted-foreground">
+            {data.court.establishment.name} • {formatSportLabel(data.court.sport_type)} • {formatBRLFromCents(data.court.price_per_hour)}/h
+          </p>
+        </motion.div>
+
+        <div className="grid gap-8 md:grid-cols-12 md:items-start">
           <div className="md:col-span-7 space-y-4">
             {courtPhotos.length ? (
-              <div className="h-72 overflow-hidden rounded-[28px] border border-white/10 bg-white/5 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+              <div className="h-72 overflow-hidden rounded-2xl border border-border bg-card shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={courtPhotos[0]!}
@@ -948,7 +968,7 @@ export function CourtDetailsClient(props: {
                 {courtPhotos.slice(1, 5).map((url, idx) => (
                   <div
                     key={url}
-                    className="h-34 overflow-hidden rounded-[24px] border border-white/10 bg-white/5"
+                    className="h-34 overflow-hidden rounded-2xl border border-border bg-card"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={url} alt={`Foto da quadra ${data.court.name} ${idx + 2}`} className="h-full w-full object-cover" />
@@ -959,40 +979,40 @@ export function CourtDetailsClient(props: {
           </div>
 
           <div className="md:col-span-5">
-            <div className="md:sticky md:top-6 ph-panel ph-glow-border p-6 ph-fade-up ph-delay-1">
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{isOwnerPreview ? "Preview" : "Agendar"}</h2>
+            <div className="md:sticky md:top-24 rounded-2xl bg-card border border-border p-6">
+              <h2 className="text-lg font-semibold">{isOwnerPreview ? "Preview" : "Agendar"}</h2>
 
               {hasMonthly ? (
-                <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
+                <div className="mt-4 rounded-2xl border border-border bg-card p-4 text-sm text-foreground">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Mensalidade</p>
-                      <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
+                      <p className="text-sm font-semibold text-foreground">Mensalidade</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
                         Valor: {formatBRLFromCents(data.court.monthly_price_cents!)} / mês ({monthKey})
                       </p>
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         {monthlyIsActive ? (
-                          <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100">Ativa</span>
+                          <span className="inline-flex rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Ativa</span>
                         ) : monthlyIsPending ? (
-                          <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900 dark:bg-amber-950/30 dark:text-amber-100">Pendente</span>
+                          <span className="inline-flex rounded-full border border-border bg-secondary/60 px-3 py-1 text-xs font-semibold text-muted-foreground">Pendente</span>
                         ) : (
-                          <span className="inline-flex rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100">Disponível</span>
+                          <span className="inline-flex rounded-full border border-border bg-card/50 px-3 py-1 text-xs font-semibold text-foreground">Disponível</span>
                         )}
                       </div>
 
                       {monthlyTerms ? (
                         <details className="mt-3">
-                          <summary className="cursor-pointer text-xs font-semibold text-zinc-900 underline dark:text-zinc-100">Ver termos</summary>
-                          <p className="mt-2 whitespace-pre-wrap text-xs leading-6 text-zinc-600 dark:text-zinc-400">{monthlyTerms}</p>
+                          <summary className="cursor-pointer text-xs font-semibold text-foreground underline">Ver termos</summary>
+                          <p className="mt-2 whitespace-pre-wrap text-xs leading-6 text-muted-foreground">{monthlyTerms}</p>
                         </details>
                       ) : (
-                        <p className="mt-2 text-xs leading-6 text-zinc-600 dark:text-zinc-400">
+                        <p className="mt-2 text-xs leading-6 text-muted-foreground">
                           Mensalidade sem termos configurados. Fale com o estabelecimento.
                         </p>
                       )}
 
                       {!isOwnerPreview && monthlyTerms && canRequestMonthly ? (
-                        <label className="mt-3 flex items-start gap-2 text-xs text-zinc-700 dark:text-zinc-300">
+                        <label className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
                           <input
                             type="checkbox"
                             checked={monthlyAccepted}
@@ -1004,8 +1024,8 @@ export function CourtDetailsClient(props: {
                       ) : null}
 
                       {monthlyBlockedReason ? (
-                        <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-100">
-                          <p className="font-semibold">Mensalidade indisponível</p>
+                        <div className="mt-3 rounded-2xl border border-primary/30 bg-primary/10 p-3 text-xs text-foreground">
+                          <p className="font-semibold text-primary">Mensalidade indisponível</p>
                           <p className="mt-1">{monthlyBlockedReason}</p>
                           {monthKey === nextMonthKey ? (
                             <p className="mt-1">Liberado a partir de {penultimateWeekLabel}.</p>
@@ -1014,19 +1034,19 @@ export function CourtDetailsClient(props: {
                             <button
                               type="button"
                               onClick={focusRepeat}
-                              className="mt-2 inline-flex rounded-full border border-amber-300 px-3 py-1 text-[11px] font-semibold text-amber-900"
+                              className="mt-2 inline-flex rounded-full border border-primary/30 px-3 py-1 text-[11px] font-semibold text-primary"
                             >
                               Usar repetição semanal
                             </button>
                           ) : null}
                         </div>
                       ) : monthKey === nextMonthKey ? (
-                        <p className="mt-3 text-xs text-zinc-600 dark:text-zinc-400">
+                        <p className="mt-3 text-xs text-muted-foreground">
                           Mensalidade do próximo mês abre na penúltima semana do mês anterior (a partir de {penultimateWeekLabel}).
                         </p>
                       ) : null}
 
-                      <p className="mt-3 text-xs text-zinc-600 dark:text-zinc-400">
+                      <p className="mt-3 text-xs text-muted-foreground">
                         Duração selecionada: {durationMinutes} min.
                       </p>
                     </div>
@@ -1035,7 +1055,7 @@ export function CourtDetailsClient(props: {
                         type="button"
                         disabled={isPending || !canRequestMonthlyFinal || (monthlyTerms ? !monthlyAccepted : false)}
                         onClick={onRequestMonthlyPass}
-                        className="shrink-0 rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold text-white hover:bg-zinc-800 disabled:opacity-60 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+                        className="shrink-0 rounded-full gradient-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
                       >
                         {monthlyIsActive ? "Ativa" : monthlyIsPending ? "Solicitada" : "Solicitar"}
                       </button>
@@ -1045,9 +1065,9 @@ export function CourtDetailsClient(props: {
               ) : null}
 
               {isOwnerPreview ? (
-                <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
+                <div className="mt-4 rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">
                   Você está logado como dono/admin. Nesta tela o agendamento fica desativado (somente visualização).
-                  <div className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
+                  <div className="mt-2 text-xs text-muted-foreground">
                     Dica: abra em janela anônima para ver como cliente.
                   </div>
                 </div>
@@ -1058,10 +1078,10 @@ export function CourtDetailsClient(props: {
                   className={
                     "mt-4 rounded-2xl border p-4 text-sm " +
                     (message.type === "success"
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-100"
+                      ? "border-primary/30 bg-primary/10 text-foreground"
                       : message.type === "error"
-                        ? "border-red-200 bg-red-50 text-red-900 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-100"
-                        : "border-zinc-200 bg-white text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200")
+                        ? "border-destructive/30 bg-destructive/10 text-destructive"
+                        : "border-border bg-card text-foreground")
                   }
                 >
                   {message.text}
@@ -1071,7 +1091,7 @@ export function CourtDetailsClient(props: {
                         href={paymentUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center rounded-full bg-[#CCFF00] px-4 py-2 text-xs font-bold text-black"
+                        className="inline-flex items-center rounded-full gradient-primary px-4 py-2 text-xs font-bold text-primary-foreground"
                       >
                         Ir para pagamento
                       </a>
@@ -1082,7 +1102,7 @@ export function CourtDetailsClient(props: {
                       <button
                         type="button"
                         onClick={() => setPixModalOpen(true)}
-                        className="inline-flex items-center rounded-full bg-emerald-700 px-4 py-2 text-xs font-bold text-white"
+                        className="inline-flex items-center rounded-full gradient-primary px-4 py-2 text-xs font-bold text-primary-foreground"
                       >
                         Ver PIX
                       </button>
@@ -1097,7 +1117,7 @@ export function CourtDetailsClient(props: {
                             callbackUrl: `/courts/${props.courtId}?day=${day}${loginTime ? `&time=${loginTime}` : ""}`,
                           },
                         }}
-                        className="text-sm text-zinc-900 dark:text-zinc-100 underline"
+                        className="text-sm text-foreground underline"
                       >
                         Entrar para agendar
                       </Link>
@@ -1111,10 +1131,10 @@ export function CourtDetailsClient(props: {
                   className={
                     "mt-4 rounded-2xl border p-4 text-sm " +
                     (alertMessage.type === "success"
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-100"
+                      ? "border-primary/30 bg-primary/10 text-foreground"
                       : alertMessage.type === "error"
-                        ? "border-red-200 bg-red-50 text-red-900 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-100"
-                        : "border-zinc-200 bg-white text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200")
+                        ? "border-destructive/30 bg-destructive/10 text-destructive"
+                        : "border-border bg-card text-foreground")
                   }
                 >
                   {alertMessage.text}
@@ -1126,7 +1146,7 @@ export function CourtDetailsClient(props: {
                   <div className="space-y-4">
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div>
-                        <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Data</label>
+                        <label className="block text-xs font-medium text-muted-foreground">Data</label>
                         <input
                           type="date"
                           value={day}
@@ -1136,19 +1156,19 @@ export function CourtDetailsClient(props: {
                             refreshDay(next);
                           }}
                           min={todayYmd}
-                          className="mt-2 w-full rounded-xl border-none bg-zinc-100 px-4 py-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                          className="mt-2 w-full rounded-xl border border-input bg-secondary px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Duração</label>
+                        <label className="block text-xs font-medium text-muted-foreground">Duração</label>
                         <select
                           value={durationMinutes}
                           onChange={(e) => {
                             setDurationMinutes(Number(e.target.value));
                             setSelectedStart(null);
                           }}
-                          className="mt-2 w-full rounded-xl border-none bg-zinc-100 px-4 py-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                          className="mt-2 w-full rounded-xl border border-input bg-secondary px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                         >
                           <option value={60}>60 min</option>
                           <option value={90}>90 min</option>
@@ -1160,30 +1180,30 @@ export function CourtDetailsClient(props: {
                     <details
                       ref={repeatRef}
                       id="repeat-weeks"
-                      className="rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200"
+                      className="rounded-2xl border border-border bg-card p-4 text-sm text-foreground"
                     >
-                      <summary className="cursor-pointer text-sm font-semibold text-zinc-900 dark:text-zinc-50">Repetição semanal</summary>
+                      <summary className="cursor-pointer text-sm font-semibold">Repetição semanal</summary>
                       <div className="mt-3">
-                        <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Repetir por semanas</label>
+                        <label className="block text-xs font-medium text-muted-foreground">Repetir por semanas</label>
                         <input
                           type="number"
                           min={0}
                           max={3}
                           value={repeatWeeks}
                           onChange={(e) => setRepeatWeeks(Math.max(0, Math.min(3, Math.floor(Number(e.target.value) || 0))))}
-                          className="mt-2 w-full rounded-xl border-none bg-zinc-100 px-4 py-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                          className="mt-2 w-full rounded-xl border border-input bg-secondary px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                         />
-                        <p className="mt-2 text-[11px] text-zinc-500 dark:text-zinc-400">
+                        <p className="mt-2 text-[11px] text-muted-foreground">
                           0 = sem recorrência semanal (máx. 3 semanas; acima disso use mensalidade)
                         </p>
                       </div>
                     </details>
 
-                    <details className="rounded-3xl border border-zinc-200 bg-white p-4 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
-                      <summary className="cursor-pointer text-sm font-semibold text-zinc-900 dark:text-zinc-50">Alerta de disponibilidade</summary>
+                    <details className="rounded-2xl border border-border bg-card p-4 text-sm text-foreground">
+                      <summary className="cursor-pointer text-sm font-semibold">Alerta de disponibilidade</summary>
                       <div className="mt-3">
                         <div className="flex items-start justify-between gap-3">
-                          <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                          <p className="text-xs text-muted-foreground">
                             Se não encontrou horário, receba aviso quando ficar disponível.
                           </p>
                           {selectedStart ? (
@@ -1198,18 +1218,18 @@ export function CourtDetailsClient(props: {
                         </div>
                         <div className="mt-3 grid gap-3 sm:grid-cols-2">
                           <div>
-                            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Horário</label>
+                            <label className="block text-xs font-medium text-muted-foreground">Horário</label>
                             <input
                               type="time"
                               step={1800}
                               value={alertTime}
                               onChange={(e) => setAlertTime(e.target.value)}
-                              className="ph-input mt-2"
+                              className="mt-2 w-full rounded-xl border border-input bg-secondary px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                             />
                           </div>
                           <div>
-                            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Duração</label>
-                            <div className="mt-2 rounded-xl bg-zinc-100 px-4 py-3 text-sm text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100">
+                            <label className="block text-xs font-medium text-muted-foreground">Duração</label>
+                            <div className="mt-2 rounded-xl bg-secondary px-4 py-3 text-sm text-foreground">
                               {durationMinutes} min
                             </div>
                           </div>
@@ -1218,7 +1238,7 @@ export function CourtDetailsClient(props: {
                           type="button"
                           disabled={isPending || isOwnerPreview}
                           onClick={confirmAlert}
-                          className="ph-button-secondary mt-4 w-full"
+                          className="mt-4 w-full rounded-xl border border-border bg-card/50 px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-card"
                         >
                           Criar alerta
                         </button>
@@ -1228,13 +1248,13 @@ export function CourtDetailsClient(props: {
 
                   <div className="space-y-4">
                     <div>
-                      <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Grade de Horários Disponíveis</p>
+                      <p className="text-xs font-medium text-muted-foreground">Grade de Horários Disponíveis</p>
                       {data.dayInfo.is_closed ? (
-                        <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                        <div className="mt-3 rounded-2xl border border-primary/30 bg-primary/10 p-3 text-sm text-foreground">
                           {data.dayInfo.notice ?? "Fechado neste dia."}
                         </div>
                       ) : data.dayInfo.notice ? (
-                        <div className="mt-3 rounded-2xl border border-zinc-200 bg-white p-3 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
+                        <div className="mt-3 rounded-2xl border border-border bg-card p-3 text-sm text-muted-foreground">
                           {data.dayInfo.notice}
                         </div>
                       ) : null}
@@ -1250,10 +1270,10 @@ export function CourtDetailsClient(props: {
                               type="button"
                               className={
                                 disabled
-                                  ? "rounded-full bg-zinc-100 px-4 py-2 text-sm text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500 cursor-not-allowed"
+                                  ? "rounded-full bg-secondary/50 px-4 py-2 text-sm text-muted-foreground cursor-not-allowed"
                                   : active
-                                    ? "rounded-full bg-[#CCFF00] px-4 py-2 text-sm font-bold text-black"
-                                    : "rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-900 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                                    ? "rounded-full gradient-primary px-4 py-2 text-sm font-bold text-primary-foreground"
+                                    : "rounded-full border border-border bg-card px-4 py-2 text-sm text-foreground hover:bg-secondary"
                               }
                             >
                               {formatHHMM(start)}
@@ -1261,22 +1281,22 @@ export function CourtDetailsClient(props: {
                           );
                         })}
                         {slotOptions.length === 0 ? (
-                          <p className="text-sm text-zinc-600 dark:text-zinc-400">Sem horários disponíveis para essa duração.</p>
+                          <p className="text-sm text-muted-foreground">Sem horários disponíveis para essa duração.</p>
                         ) : null}
                       </div>
-                      <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
+                      <p className="mt-3 text-xs text-muted-foreground">
                         Janela: {formatHHMM(openClose.open)} - {formatHHMM(openClose.close)}
                       </p>
                     </div>
 
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                      <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Resumo</p>
-                      <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">
+                    <div className="rounded-2xl border border-border bg-secondary/50 p-4">
+                      <p className="text-sm font-semibold">Resumo</p>
+                      <p className="mt-2 text-sm text-muted-foreground">
                         {selectedStart && selectedEnd
                           ? `${formatHHMM(selectedStart)} → ${formatHHMM(selectedEnd)} (${durationMinutes} min)`
                           : "Selecione um horário"}
                       </p>
-                      <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
+                      <p className="mt-1 text-sm text-muted-foreground">
                         {monthlyIsActive && selectedStart && selectedEnd
                           ? `Total: ${formatBRLFromCents(0)} (mensalidade)`
                           : totalPriceCents != null
@@ -1284,11 +1304,11 @@ export function CourtDetailsClient(props: {
                             : `Preço/h: ${formatBRLFromCents(data.court.price_per_hour)}`}
                       </p>
                       {repeatWeeks > 0 ? (
-                        <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
+                        <p className="mt-2 text-xs text-muted-foreground">
                           Recorrência: semanal por {repeatWeeks} semanas (total {repeatWeeks + 1} agendamentos)
                         </p>
                       ) : null}
-                      <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                      <p className="mt-2 text-xs text-muted-foreground">
                         Cancelamento: até {data.court.establishment.cancel_min_hours}h antes. Multa: {data.court.establishment.cancel_fee_fixed_cents > 0
                           ? formatBRLFromCents(data.court.establishment.cancel_fee_fixed_cents)
                           : `${data.court.establishment.cancel_fee_percent}%`}.
@@ -1296,13 +1316,13 @@ export function CourtDetailsClient(props: {
                     </div>
 
                     {!data.paymentsEnabled && data.paymentsEnabledReason ? (
-                      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+                      <div className="rounded-2xl border border-primary/30 bg-primary/10 p-3 text-xs text-foreground">
                         {data.paymentsEnabledReason}
                       </div>
                     ) : null}
 
                     {data.paymentsEnabled ? (
-                      <label className="flex items-start gap-2 text-xs text-zinc-700 dark:text-zinc-300">
+                      <label className="flex items-start gap-2 text-xs text-muted-foreground">
                         <input
                           type="checkbox"
                           checked={payAtCourt}
@@ -1314,12 +1334,12 @@ export function CourtDetailsClient(props: {
                     ) : null}
 
                     {requiresCpfCnpj && !cpfValid ? (
-                      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-                        <div className="font-semibold">CPF/CNPJ necessario para pagar online.</div>
+                      <div className="rounded-2xl border border-primary/30 bg-primary/10 p-3 text-xs text-foreground">
+                        <div className="font-semibold text-primary">CPF/CNPJ necessario para pagar online.</div>
                         <button
                           type="button"
                           onClick={() => openCpfPrompt(false)}
-                          className="mt-2 inline-flex rounded-full bg-amber-600 px-3 py-1 text-[11px] font-bold text-white"
+                          className="mt-2 inline-flex rounded-full gradient-primary px-3 py-1 text-[11px] font-bold text-primary-foreground"
                         >
                           Informar CPF/CNPJ
                         </button>
@@ -1329,7 +1349,7 @@ export function CourtDetailsClient(props: {
                     <button
                       onClick={confirmBooking}
                       disabled={isPending || isOwnerPreview}
-                      className="bg-[#CCFF00] text-black font-bold py-3 px-6 rounded-full hover:scale-105 transition-all disabled:opacity-60 w-full"
+                      className="gradient-primary text-primary-foreground font-bold py-3 px-6 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-60 w-full"
                     >
                       {isPending ? "Processando..." : "Confirmar Agendamento"}
                     </button>
@@ -1340,29 +1360,29 @@ export function CourtDetailsClient(props: {
           </div>
         </div>
 
-        <div className="mt-6">
-          <div className="relative overflow-hidden ph-panel ph-glow-border p-6 ph-fade-up ph-delay-2">
-            <h2 className="text-lg font-semibold text-white">Sobre</h2>
-            <p className="mt-3 text-sm leading-7 text-zinc-300">
+        <div className="mt-12">
+          <div className="relative overflow-hidden rounded-2xl bg-card border border-border p-6">
+            <h2 className="text-lg font-semibold">Sobre</h2>
+            <p className="mt-3 text-sm leading-7 text-muted-foreground">
               {data.court.establishment.description ?? "Sem descrição."}
             </p>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-[24px] border border-white/10 bg-black/40 p-4">
-                <p className="text-xs font-medium text-zinc-300">Endereço</p>
-                <p className="mt-1 text-sm text-white">
+              <div className="rounded-2xl border border-border bg-secondary/50 p-4">
+                <p className="text-xs font-medium text-muted-foreground">Endereço</p>
+                <p className="mt-1 text-sm text-foreground">
                   {data.court.establishment.address_text}
                 </p>
                 <a
                   href={mapsHref}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-2 inline-block text-sm text-white underline"
+                  className="mt-2 inline-block text-sm text-foreground underline"
                 >
                   Ver no mapa
                 </a>
 
-                <div className="mt-3 overflow-hidden rounded-2xl border border-white/10 bg-black/60">
+                <div className="mt-3 overflow-hidden rounded-2xl border border-border bg-card">
                   <iframe
                     title="Mapa"
                     src={mapsEmbedSrc}
@@ -1373,27 +1393,26 @@ export function CourtDetailsClient(props: {
                 </div>
               </div>
 
-                <div className="rounded-[24px] border border-white/10 bg-black/40 p-4">
-                <p className="text-xs font-medium text-zinc-300">Comodidades</p>
+              <div className="rounded-2xl border border-border bg-secondary/50 p-4">
+                <p className="text-xs font-medium text-muted-foreground">Comodidades</p>
                 <div className="mt-2 flex flex-wrap gap-2 text-xs">
                   {(data.court.amenities ?? []).length ? (
                     (data.court.amenities ?? []).map((t) => (
                       <span
                         key={t}
-                        className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-white"
+                        className="rounded-full border border-border bg-card px-3 py-1 text-foreground"
                       >
                         {t}
                       </span>
                     ))
                   ) : (
-                    <span className="text-sm text-zinc-300">Sem comodidades informadas.</span>
+                    <span className="text-sm text-muted-foreground">Sem comodidades informadas.</span>
                   )}
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
       </div>
     </div>
   );
