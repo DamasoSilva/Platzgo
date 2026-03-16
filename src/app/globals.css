@@ -115,7 +115,7 @@
   }
 
   .ph-card-glass {
-    @apply glass rounded-2xl;
+    @apply rounded-2xl bg-card/60 backdrop-blur-xl border border-border/50;
   }
 
   .ph-surface {
@@ -173,7 +173,7 @@
   }
 
   .ph-panel {
-    @apply glass rounded-3xl;
+    @apply rounded-3xl bg-card/60 backdrop-blur-xl border border-border/50;
   }
 
   .ph-panel-soft {

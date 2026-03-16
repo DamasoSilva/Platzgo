@@ -43,9 +43,9 @@ export function CustomerHeader(props: Props) {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Proteção contra BFCache (voltar do navegador após logout).
-  // Se a rota for protegida e não houver mais sessão, força login.
-  // Isso evita o cenário de "parecer logado" por HTML restaurado.
+  // Protecao contra BFCache (voltar do navegador apos logout).
+  // Se a rota for protegida e nao houver mais sessao, força login.
+  // Isso evita o cenario de "parecer logado" por HTML restaurado.
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -110,7 +110,6 @@ export function CustomerHeader(props: Props) {
   }
 
   const signInCallbackUrl = props.signInCallbackUrl ?? "/";
-
   const signOutCallbackUrl = role === "ADMIN" ? "/signin?logout=1&callbackUrl=%2Fdashboard" : "/signin?logout=1&callbackUrl=%2F";
 
   const [open, setOpen] = useState(false);
@@ -119,214 +118,197 @@ export function CustomerHeader(props: Props) {
   const name = useMemo(() => firstTwoNames(props.viewer?.name), [props.viewer?.name]);
   const avatarInitials = useMemo(() => initials(props.viewer?.name), [props.viewer?.name]);
 
-  const baseText = "text-foreground";
-  const subText = "text-muted-foreground";
   const pill = "text-sm text-muted-foreground hover:text-foreground transition-colors";
   const menuItem = "block px-4 py-3 text-sm text-foreground hover:bg-secondary/60 transition-colors";
+  const homeLabel = role === "CUSTOMER" ? "Agende Ja" : "Inicio";
 
-  const homeLabel = role === "CUSTOMER" ? "Agende Já" : "Início";
+  const baseLinks = [
+    { label: "Inicio", href: "/" },
+    { label: "Agendar", href: "/#busca" },
+    { label: "Como funciona", href: "/#como-funciona" },
+    { label: "Contato", href: "/#contato" },
+  ];
+  const appLinks = [
+    { label: "Torneios", href: "/torneios" },
+    { label: "Sorteio de times", href: "/sorteio-times" },
+  ];
+  if (isLoggedIn && role === "CUSTOMER") {
+    appLinks.push({ label: "Meus agendamentos", href: "/meus-agendamentos" });
+  }
+  const links = [...baseLinks, ...appLinks];
+
+  const headerClass =
+    variant === "light"
+      ? "fixed top-0 left-0 right-0 z-50 bg-white/80 text-zinc-900 backdrop-blur border-b border-zinc-200/60"
+      : "fixed top-0 left-0 right-0 z-50 glass";
 
   return (
-    <header
-      className={
-        const baseLinks = [
-          { label: "Início", href: "/" },
-          { label: "Agendar", href: "/#busca" },
-          { label: "Como funciona", href: "/#como-funciona" },
-          { label: "Contato", href: "/#contato" },
-        ];
-        const appLinks = [
-          { label: "Torneios", href: "/torneios" },
-          { label: "Sorteio de times", href: "/sorteio-times" },
-        ];
-        if (isLoggedIn && role === "CUSTOMER") {
-          appLinks.push({ label: "Meus agendamentos", href: "/meus-agendamentos" });
-        }
-        const links = [...baseLinks, ...appLinks];
-
-        return (
-          <nav className="fixed top-0 left-0 right-0 z-50 glass">
-            <div className="container flex items-center justify-between h-16">
-              <Link href={homeHref} onClick={onHomeClick} className={"flex items-center gap-2 " + baseText}>
-                <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center font-display font-bold text-primary-foreground text-sm">
-                  P
-                </div>
-                <span className="font-display font-bold text-xl tracking-tight">
-                  Platz<span className="gradient-text">Go!</span>
-                </span>
-              </Link>
-
-              <div className="hidden md:flex items-center gap-8">
-                {links.map((link) => (
-                  <Link key={link.label} href={link.href} className={pill}>
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-
-              <div className="flex items-center gap-3">
-                {props.rightSlot ? <div className="hidden items-center gap-3 sm:flex">{props.rightSlot}</div> : null}
-
-                {showHomeButton ? (
-                  <Link
-                    href={homeHref}
-                    onClick={onHomeClick}
-                    className="hidden sm:inline-flex gradient-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity"
-                  >
-                    {homeLabel}
-                  </Link>
-                ) : null}
-
-                {!isLoggedIn ? (
-                  <Link
-                    href={`/signin?callbackUrl=${encodeURIComponent(signInCallbackUrl)}`}
-                    className="hidden sm:inline-flex border border-border bg-card/50 text-foreground font-medium text-sm px-5 py-2.5 rounded-lg hover:bg-card transition-colors"
-                  >
-                    Entrar
-                  </Link>
-                ) : (
-                  <div className="relative hidden sm:block">
-                    <button
-                      type="button"
-                      className="flex items-center gap-3 rounded-lg border border-border bg-card/60 px-4 py-2 text-sm text-foreground backdrop-blur hover:bg-card transition-colors"
-                      onClick={() => setOpen((s) => !s)}
-                    >
-                      <span className="hidden sm:block font-semibold">{name || "Usuário"}</span>
-                      <span className="relative h-8 w-8 overflow-hidden rounded-full bg-secondary">
-                        {props.viewer?.image ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={props.viewer.image} alt="" className="h-full w-full object-cover" />
-                        ) : (
-                          <span className="flex h-full w-full items-center justify-center text-xs font-bold text-foreground">
-                            {avatarInitials}
-                          </span>
-                        )}
-                      </span>
-                    </button>
-
-                    {open ? (
-                      <div
-                        className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-border bg-card/90 text-foreground shadow-xl backdrop-blur"
-                        onMouseLeave={() => setOpen(false)}
-                      >
-                        {role === "SYSADMIN" ? (
-                          <>
-                            <Link href="/sysadmin" className={menuItem} onClick={() => setOpen(false)}>
-                              Painel do sysadmin
-                            </Link>
-                            <Link href="/dashboard/admin" className={menuItem} onClick={() => setOpen(false)}>
-                              Painel do administrador
-                            </Link>
-                            <Link href="/" className={menuItem} onClick={() => setOpen(false)}>
-                              Ver como cliente
-                            </Link>
-                          </>
-                        ) : null}
-
-                        <Link href="/perfil" className={menuItem} onClick={() => setOpen(false)}>
-                          Meu perfil
-                        </Link>
-                        <button
-                          type="button"
-                          className={`${menuItem} w-full text-left`}
-                          onClick={() => signOut({ callbackUrl: signOutCallbackUrl })}
-                        >
-                          Sair
-                        </button>
-                      </div>
-                    ) : null}
-                  </div>
-                )}
-
-                <button
-                  type="button"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border md:hidden"
-                  onClick={() => setMenuOpen((s) => !s)}
-                >
-                  {menuOpen ? <X size={20} /> : <Menu size={20} />}
-                </button>
-              </div>
-            </div>
-
-            <AnimatePresence>
-              {menuOpen ? (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="md:hidden glass border-t border-border/50 overflow-hidden"
-                >
-                  <div className="container py-4 flex flex-col gap-3">
-                    {links.map((link) => (
-                      <Link
-                        key={link.label}
-                        href={link.href}
-                        onClick={() => setMenuOpen(false)}
-                        className={pill}
-                      >
-                        {link.label}
-                      </Link>
-                    ))}
-                    {!isLoggedIn ? (
-                      <Link
-                        href={`/signin?callbackUrl=${encodeURIComponent(signInCallbackUrl)}`}
-                        onClick={() => setMenuOpen(false)}
-                        className="gradient-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-lg text-center"
-                      >
-                        Entrar
-                      </Link>
-                    ) : null}
-                  </div>
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
-          </nav>
-        );
-            </Link>
-            {isLoggedIn && role === "CUSTOMER" ? (
-              <Link href="/meus-agendamentos" className={pill} onClick={() => setMenuOpen(false)}>
-                Meus agendamentos
-              </Link>
-            ) : null}
-
-            {role === "SYSADMIN" ? (
-              <>
-                <Link href="/sysadmin" className={pill} onClick={() => setMenuOpen(false)}>
-                  Painel do sysadmin
-                </Link>
-                <Link href="/dashboard/admin" className={pill} onClick={() => setMenuOpen(false)}>
-                  Painel do administrador
-                </Link>
-                <Link href="/" className={pill} onClick={() => setMenuOpen(false)}>
-                  Ver como cliente
-                </Link>
-              </>
-            ) : null}
-
-            {isLoggedIn ? (
-              <>
-                <Link href="/perfil" className={pill} onClick={() => setMenuOpen(false)}>
-                  Meu perfil
-                </Link>
-                <button
-                  type="button"
-                  className={pill}
-                  onClick={() => {
-                    setMenuOpen(false);
-                    signOut({ callbackUrl: signOutCallbackUrl });
-                  }}
-                >
-                  Sair
-                </button>
-              </>
-            ) : (
-              <Link href={`/signin?callbackUrl=${encodeURIComponent(signInCallbackUrl)}`} className={pill} onClick={() => setMenuOpen(false)}>
-                Entrar
-              </Link>
-            )}
+    <header className={headerClass}>
+      <nav className="container flex items-center justify-between h-16">
+        <Link href={homeHref} onClick={onHomeClick} className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center font-display font-bold text-primary-foreground text-sm">
+            P
           </div>
+          <span className="font-display font-bold text-xl tracking-tight">
+            Platz<span className="gradient-text">Go!</span>
+          </span>
+        </Link>
+
+        <div className="hidden md:flex items-center gap-8">
+          {links.map((link) => (
+            <Link key={link.label} href={link.href} className={pill}>
+              {link.label}
+            </Link>
+          ))}
         </div>
-      ) : null}
+
+        <div className="flex items-center gap-3">
+          {props.rightSlot ? <div className="hidden items-center gap-3 sm:flex">{props.rightSlot}</div> : null}
+
+          {showHomeButton ? (
+            <Link
+              href={homeHref}
+              onClick={onHomeClick}
+              className="hidden sm:inline-flex gradient-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity"
+            >
+              {homeLabel}
+            </Link>
+          ) : null}
+
+          {!isLoggedIn ? (
+            <Link
+              href={`/signin?callbackUrl=${encodeURIComponent(signInCallbackUrl)}`}
+              className="hidden sm:inline-flex border border-border bg-card/50 text-foreground font-medium text-sm px-5 py-2.5 rounded-lg hover:bg-card transition-colors"
+            >
+              Entrar
+            </Link>
+          ) : (
+            <div className="relative hidden sm:block">
+              <button
+                type="button"
+                className="flex items-center gap-3 rounded-lg border border-border bg-card/60 px-4 py-2 text-sm text-foreground backdrop-blur hover:bg-card transition-colors"
+                onClick={() => setOpen((s) => !s)}
+              >
+                <span className="hidden sm:block font-semibold">{name || "Usuario"}</span>
+                <span className="relative h-8 w-8 overflow-hidden rounded-full bg-secondary">
+                  {props.viewer?.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={props.viewer.image} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center text-xs font-bold text-foreground">
+                      {avatarInitials}
+                    </span>
+                  )}
+                </span>
+              </button>
+
+              {open ? (
+                <div
+                  className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-border bg-card/90 text-foreground shadow-xl backdrop-blur"
+                  onMouseLeave={() => setOpen(false)}
+                >
+                  {role === "SYSADMIN" ? (
+                    <>
+                      <Link href="/sysadmin" className={menuItem} onClick={() => setOpen(false)}>
+                        Painel do sysadmin
+                      </Link>
+                      <Link href="/dashboard/admin" className={menuItem} onClick={() => setOpen(false)}>
+                        Painel do administrador
+                      </Link>
+                      <Link href="/" className={menuItem} onClick={() => setOpen(false)}>
+                        Ver como cliente
+                      </Link>
+                    </>
+                  ) : null}
+
+                  <Link href="/perfil" className={menuItem} onClick={() => setOpen(false)}>
+                    Meu perfil
+                  </Link>
+                  <button
+                    type="button"
+                    className={`${menuItem} w-full text-left`}
+                    onClick={() => signOut({ callbackUrl: signOutCallbackUrl })}
+                  >
+                    Sair
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          )}
+
+          <button
+            type="button"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border md:hidden"
+            onClick={() => setMenuOpen((s) => !s)}
+          >
+            {menuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
+      </nav>
+
+      <AnimatePresence>
+        {menuOpen ? (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="md:hidden glass border-t border-border/50 overflow-hidden"
+          >
+            <div className="container py-4 flex flex-col gap-3">
+              {links.map((link) => (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  onClick={() => setMenuOpen(false)}
+                  className={pill}
+                >
+                  {link.label}
+                </Link>
+              ))}
+
+              {role === "SYSADMIN" ? (
+                <>
+                  <Link href="/sysadmin" className={pill} onClick={() => setMenuOpen(false)}>
+                    Painel do sysadmin
+                  </Link>
+                  <Link href="/dashboard/admin" className={pill} onClick={() => setMenuOpen(false)}>
+                    Painel do administrador
+                  </Link>
+                  <Link href="/" className={pill} onClick={() => setMenuOpen(false)}>
+                    Ver como cliente
+                  </Link>
+                </>
+              ) : null}
+
+              {isLoggedIn ? (
+                <>
+                  <Link href="/perfil" className={pill} onClick={() => setMenuOpen(false)}>
+                    Meu perfil
+                  </Link>
+                  <button
+                    type="button"
+                    className={pill}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      signOut({ callbackUrl: signOutCallbackUrl });
+                    }}
+                  >
+                    Sair
+                  </button>
+                </>
+              ) : (
+                <Link
+                  href={`/signin?callbackUrl=${encodeURIComponent(signInCallbackUrl)}`}
+                  onClick={() => setMenuOpen(false)}
+                  className="gradient-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-lg text-center"
+                >
+                  Entrar
+                </Link>
+              )}
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </header>
   );
 }

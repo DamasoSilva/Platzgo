@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
-  BarChart3,
   Calendar,
   CalendarCheck,
   Clock,
@@ -26,6 +25,7 @@ import { listSearchSportOptionsForPublic } from "@/lib/actions/sysadmin";
 import { toggleFavoriteEstablishment } from "@/lib/actions/favorites";
 import { loadGoogleMaps } from "@/lib/client/googleMaps";
 import { formatBRLFromCents } from "@/lib/utils/currency";
+import { formatSportLabel } from "@/lib/utils/sport";
 import { toWaMeLink } from "@/lib/utils/whatsapp";
 import { SportType } from "@/generated/prisma/enums";
 
@@ -63,26 +63,367 @@ type MarkerInfo = {
   lng: number;
 };
 
+type Card = {
+  estId: string;
+  estName: string;
+  estPhotoUrl: string | null;
+  courtPhotoUrl: string | null;
+  highlightCourtName: string;
+  highlightSportType: string;
+  highlightPricePerHourCents: number;
+  matchingCourtsCount: number;
+  reviewsCount: number;
+  avgRating: number;
+  whatsappNumber: string;
+  contactNumber: string | null;
+  addressText: string;
+  openWeekdays: number[];
+  openingTime: string;
+  closingTime: string;
+  requiresBookingConfirmation: boolean;
+  distanceKm: number;
+  lat: number;
+  lng: number;
+  isFavorite: boolean;
+};
+
 const landingFeatures = [
   {
     icon: Zap,
-    title: "Reserva instantânea",
+    title: "Reserva instantanea",
     description: "Escolha, reserve e confirme sua quadra em menos de 30 segundos.",
   },
   {
     icon: Calendar,
     title: "Agenda inteligente",
-    description: "Veja horários disponíveis em tempo real e nunca perca seu jogo.",
+    description: "Veja horarios disponiveis em tempo real e nunca perca seu jogo.",
   },
   {
     icon: CreditCard,
     title: "Pagamento integrado",
-    description: "Pague via Pix, cartão ou boleto direto pela plataforma.",
+    description: "Pague via Pix, cartao ou boleto direto pela plataforma.",
   },
   {
     icon: Star,
-    title: "Avaliações reais",
-    description: "Confira avaliações de outros jogadores antes de reservar.",
+    title: "Avaliacoes reais",
+    description: "Confira avaliacoes de outros jogadores antes de reservar.",
+  },
+  {
+    icon: Shield,
+    title: "Seguranca total",
+    description: "Ambiente protegido com confirmacoes e dados criptografados.",
+  },
+  {
+    icon: Users,
+    title: "Comunidade ativa",
+    description: "Conecte-se a milhares de jogadores e quadras ativas.",
+  },
+];
+
+const landingSteps = [
+  {
+    step: 1,
+    title: "Busque sua quadra",
+    description: "Use filtros por localizacao, horario e modalidade.",
+    icon: Search,
+  },
+  {
+    step: 2,
+    title: "Escolha o horario",
+    description: "Veja disponibilidade em tempo real e selecione o melhor horario.",
+    icon: CalendarCheck,
+  },
+  {
+    step: 3,
+    title: "Pague com seguranca",
+    description: "Finalize o pagamento em segundos e receba confirmacao.",
+    icon: CreditCard,
+  },
+  {
+    step: 4,
+    title: "Entre em quadra",
+    description: "Chegue e jogue. O agendamento ja esta garantido.",
+    icon: Trophy,
+  },
+];
+
+const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"];
+
+function formatWeekdays(days: number[]): string {
+  if (!Array.isArray(days) || days.length === 0) return "Sem informacao";
+  const sorted = [...days].sort((a, b) => a - b);
+  return sorted.map((d) => WEEKDAYS[d] ?? "?").join(", ");
+}
+
+function firstNonEmpty(list?: Array<string | null> | null): string | null {
+  if (!list) return null;
+  const found = list.find((u) => (u ?? "").trim());
+  return found ? found : null;
+}
+
+export function SearchClient(props: Props) {
+  const heroTitle = props.hero?.title ?? "Sua quadra. Seu horario. Sem complicacao.";
+  const heroDescription =
+    props.hero?.description ??
+    "Encontre quadras perto de voce, veja disponibilidade em tempo real e finalize seu agendamento em segundos.";
+
+  const [lat, setLat] = useState(props.initial.lat);
+  const [lng, setLng] = useState(props.initial.lng);
+  const [radiusKm, setRadiusKm] = useState(props.initial.radiusKm);
+  const [sport, setSport] = useState<SportType | "ALL">(props.initial.sport);
+  const [day, setDay] = useState(props.initial.day);
+  const [time, setTime] = useState(props.initial.time ?? "");
+  const [q, setQ] = useState(props.initial.q ?? "");
+  const [maxPrice, setMaxPrice] = useState(props.initial.maxPrice ?? 0);
+  const [onlyFavorites, setOnlyFavorites] = useState(Boolean(props.initial.onlyFavorites));
+  const [sortBy, setSortBy] = useState<"distance" | "rating">("distance");
+  const [hasSearched, setHasSearched] = useState(props.initial.locationSource === "query");
+  const [cards, setCards] = useState<Card[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const [isFavPending, startFavTransition] = useTransition();
+  const [hoveredEstId, setHoveredEstId] = useState<string | null>(null);
+
+  const resultsRef = useRef<HTMLElement | null>(null);
+  const mapDivRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const markersRef = useRef<Map<string, google.maps.Marker>>(new Map());
+
+  const [mapReady, setMapReady] = useState(false);
+  const [sportSelectOptions, setSportSelectOptions] = useState<Array<{ sport_type: SportType; label: string }>>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    listSearchSportOptionsForPublic()
+      .then((res) => {
+        if (cancelled) return;
+        setSportSelectOptions(res ?? []);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setSportSelectOptions([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const sportLabelMap = useMemo(() => {
+    return new Map(sportSelectOptions.map((o) => [o.sport_type, o.label] as const));
+  }, [sportSelectOptions]);
+
+  const effectiveSport = useMemo(() => {
+    if (sport === "ALL") return "ALL";
+    return sportLabelMap.has(sport) ? sport : "ALL";
+  }, [sport, sportLabelMap]);
+
+  const effectiveRadiusKm = useMemo(() => {
+    if (Number.isFinite(radiusKm) && radiusKm > 0) return radiusKm;
+    return 10;
+  }, [radiusKm]);
+
+  const effectiveMaxPrice = useMemo(() => {
+    if (Number.isFinite(maxPrice) && maxPrice > 0) return maxPrice;
+    return null;
+  }, [maxPrice]);
+
+  const searchHref = useMemo(() => {
+    const params = new URLSearchParams();
+    if (Number.isFinite(lat)) params.set("lat", String(lat));
+    if (Number.isFinite(lng)) params.set("lng", String(lng));
+    if (Number.isFinite(radiusKm) && radiusKm > 0) params.set("radiusKm", String(radiusKm));
+    if (effectiveSport !== "ALL") params.set("sport", String(effectiveSport));
+    if (day) params.set("day", day);
+    if (time) params.set("time", time);
+    if (q) params.set("q", q);
+    if (Number.isFinite(maxPrice) && maxPrice > 0) params.set("maxPrice", String(maxPrice));
+    if (onlyFavorites) params.set("onlyFavorites", "1");
+    const qs = params.toString();
+    return qs ? `/?${qs}` : "/";
+  }, [lat, lng, radiusKm, effectiveSport, day, time, q, maxPrice, onlyFavorites]);
+
+  useEffect(() => {
+    if (!props.viewer.isLoggedIn && onlyFavorites) {
+      setOnlyFavorites(false);
+    }
+  }, [props.viewer.isLoggedIn, onlyFavorites]);
+
+  const normalizeCards = useCallback(
+    (establishments: NearbyEstablishment[]): Card[] => {
+      return establishments.map((est) => {
+        const courts = est.courts ?? [];
+        const primaryCourt = courts[0] ?? null;
+        const sportLabel = primaryCourt
+          ? sportLabelMap.get(primaryCourt.sport_type) ?? formatSportLabel(primaryCourt.sport_type)
+          : formatSportLabel(effectiveSport === "ALL" ? "" : effectiveSport);
+
+        return {
+          estId: est.id,
+          estName: est.name,
+          estPhotoUrl: firstNonEmpty(est.photo_urls ?? null),
+          courtPhotoUrl: firstNonEmpty(primaryCourt?.photo_urls ?? null),
+          highlightCourtName: primaryCourt?.name ?? "Quadra",
+          highlightSportType: sportLabel,
+          highlightPricePerHourCents: primaryCourt?.price_per_hour ?? 0,
+          matchingCourtsCount: courts.length,
+          reviewsCount: est.reviewsCount ?? 0,
+          avgRating: est.avgRating ?? 0,
+          whatsappNumber: est.whatsapp_number,
+          contactNumber: est.contact_number ?? null,
+          addressText: est.address_text,
+          openWeekdays: est.open_weekdays,
+          openingTime: est.opening_time,
+          closingTime: est.closing_time,
+          requiresBookingConfirmation: est.requires_booking_confirmation,
+          distanceKm: est.distanceKm ?? 0,
+          lat: est.latitude,
+          lng: est.longitude,
+          isFavorite: est.isFavorite ?? false,
+        };
+      });
+    },
+    [effectiveSport, sportLabelMap]
+  );
+
+  const fetchNearby = useCallback(
+    (params: { userLat: number; userLng: number; radiusKm: number }) => {
+      setError(null);
+      startTransition(async () => {
+        try {
+          const results = await getNearbyEstablishments({
+            userLat: params.userLat,
+            userLng: params.userLng,
+            radiusKm: params.radiusKm,
+            viewerUserId: props.viewer.userId,
+            sport: effectiveSport,
+            maxPrice: effectiveMaxPrice,
+            day,
+            q,
+            onlyFavorites: props.viewer.isLoggedIn ? onlyFavorites : false,
+          });
+
+          const normalized = normalizeCards(results);
+          const sorted = [...normalized].sort((a, b) => {
+            if (sortBy === "rating") {
+              const byRating = b.avgRating - a.avgRating;
+              return byRating !== 0 ? byRating : a.distanceKm - b.distanceKm;
+            }
+            return a.distanceKm - b.distanceKm;
+          });
+
+          setCards(sorted);
+        } catch (e) {
+          setError(e instanceof Error ? e.message : "Erro ao buscar estabelecimentos");
+        }
+      });
+    },
+    [
+      day,
+      effectiveMaxPrice,
+      effectiveSport,
+      normalizeCards,
+      onlyFavorites,
+      props.viewer.isLoggedIn,
+      props.viewer.userId,
+      q,
+      sortBy,
+    ]
+  );
+
+  useEffect(() => {
+    if (props.initial.locationSource !== "query") return;
+    fetchNearby({ userLat: lat, userLng: lng, radiusKm: effectiveRadiusKm });
+  }, [props.initial.locationSource, fetchNearby, lat, lng, effectiveRadiusKm]);
+
+  useEffect(() => {
+    if (!hasSearched || !resultsRef.current) return;
+    resultsRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [hasSearched, cards.length]);
+
+  useEffect(() => {
+    if (!props.viewer.isLoggedIn) return;
+    if (!props.apiKey) return;
+    let cancelled = false;
+
+    loadGoogleMaps(props.apiKey)
+      .then(() => {
+        if (cancelled) return;
+        setMapReady(true);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setMapReady(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [props.apiKey, props.viewer.isLoggedIn]);
+
+  useEffect(() => {
+    if (!mapReady || !mapDivRef.current || !window.google?.maps) return;
+
+    if (!mapRef.current) {
+      mapRef.current = new window.google.maps.Map(mapDivRef.current, {
+        center: { lat, lng },
+        zoom: 12,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
+      });
+    } else {
+      mapRef.current.setCenter({ lat, lng });
+    }
+  }, [mapReady, lat, lng]);
+
+  const markers = useMemo<MarkerInfo[]>(() => {
+    return cards.map((c) => ({ id: c.estId, name: c.estName, lat: c.lat, lng: c.lng }));
+  }, [cards]);
+
+  useEffect(() => {
+    if (!mapReady || !mapRef.current || !window.google?.maps) return;
+
+    markersRef.current.forEach((marker) => marker.setMap(null));
+    markersRef.current.clear();
+
+    markers.forEach((m) => {
+      const marker = new window.google.maps.Marker({
+        map: mapRef.current!,
+        position: { lat: m.lat, lng: m.lng },
+        title: m.name,
+      });
+      markersRef.current.set(m.id, marker);
+    });
+  }, [mapReady, markers]);
+
+  useEffect(() => {
+    if (!mapReady || !window.google?.maps) return;
+    markersRef.current.forEach((marker, id) => {
+      marker.setAnimation(id === hoveredEstId ? window.google.maps.Animation.BOUNCE : null);
+    });
+  }, [hoveredEstId, mapReady]);
+
+  const handleToggleFavorite = useCallback(
+    (establishmentId: string) => {
+      if (!props.viewer.isLoggedIn) return;
+      startFavTransition(async () => {
+        try {
+          const res = await toggleFavoriteEstablishment({ establishmentId });
+          setCards((prev) => {
+            if (!res?.ok) return prev;
+            if (onlyFavorites && !res.isFavorite) {
+              return prev.filter((c) => c.estId !== establishmentId);
+            }
+            return prev.map((c) => (c.estId === establishmentId ? { ...c, isFavorite: res.isFavorite } : c));
+          });
+        } catch {
+          // ignore
+        }
+      });
+    },
+    [onlyFavorites, props.viewer.isLoggedIn]
+  );
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <CustomerHeader
@@ -128,7 +469,7 @@ const landingFeatures = [
             >
               <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-sm font-medium mb-6">
                 <span className="w-2 h-2 rounded-full bg-primary animate-pulse-glow" />
-                Quadras disponíveis agora
+                Quadras disponiveis agora
               </span>
             </motion.div>
 
@@ -144,9 +485,9 @@ const landingFeatures = [
                 <>
                   Sua quadra.
                   <br />
-                  <span className="gradient-text glow-text">Seu horário.</span>
+                  <span className="gradient-text glow-text">Seu horario.</span>
                   <br />
-                  Sem complicação.
+                  Sem complicacao.
                 </>
               )}
             </motion.h1>
@@ -219,7 +560,7 @@ const landingFeatures = [
               Encontre a quadra ideal
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              Use os filtros para encontrar o horário perfeito e agendar em segundos.
+              Use os filtros para encontrar o horario perfeito e agendar em segundos.
             </p>
           </motion.div>
 
@@ -228,14 +569,14 @@ const landingFeatures = [
               <div className="lg:col-span-5">
                 <PlacesLocationPicker
                   apiKey={props.apiKey}
-                  label="Sua localização"
+                  label="Sua localizacao"
                   labelStyle={{ marginBottom: 1 }}
                   variant="dark"
                   buttonPlacement="below"
                   initial={{ address: props.initial.address, lat: props.initial.lat, lng: props.initial.lng }}
-                  onChange={({ lat, lng }) => {
-                    setLat(lat);
-                    setLng(lng);
+                  onChange={({ lat: nextLat, lng: nextLng }) => {
+                    setLat(nextLat);
+                    setLng(nextLng);
                   }}
                 />
               </div>
@@ -281,7 +622,7 @@ const landingFeatures = [
               </div>
 
               <div className="lg:col-span-2">
-                <label className="block text-xs font-bold text-muted-foreground">Horário</label>
+                <label className="block text-xs font-bold text-muted-foreground">Horario</label>
                 <input
                   type="time"
                   step={1800}
@@ -303,7 +644,7 @@ const landingFeatures = [
               </div>
 
               <div className="lg:col-span-2">
-                <label className="block text-xs font-bold text-muted-foreground">Preço máx (R$/h)</label>
+                <label className="block text-xs font-bold text-muted-foreground">Preco max (R$/h)</label>
                 <input
                   type="number"
                   min={0}
@@ -333,13 +674,13 @@ const landingFeatures = [
                     onChange={(e) => setSortBy(e.target.value as "distance" | "rating")}
                     className="rounded-xl bg-secondary px-3 py-2 text-xs text-foreground outline-none focus:ring-2 focus:ring-ring"
                   >
-                    <option value="distance">Distância</option>
+                    <option value="distance">Distancia</option>
                     <option value="rating">Recomendados</option>
                   </select>
                 </label>
 
                 <p className="text-xs text-muted-foreground">
-                  Dica: digite a cidade/rua ou use o botão “Usar minha localização”.
+                  Dica: digite a cidade/rua ou use o botao "Usar minha localizacao".
                 </p>
               </div>
             </div>
@@ -375,7 +716,7 @@ const landingFeatures = [
 
               {!props.viewer.isLoggedIn ? (
                 <span className="text-xs text-muted-foreground">
-                  Faça login para ver preços, contatos e mapa.
+                  Faca login para ver precos, contatos e mapa.
                 </span>
               ) : null}
             </div>
@@ -447,7 +788,7 @@ const landingFeatures = [
                             ) : null}
                           </div>
                           <div className="mt-1 text-xs text-muted-foreground">
-                            {c.reviewsCount > 0 ? `${c.avgRating.toFixed(1)} ★ • ${c.reviewsCount} avaliações` : "Sem avaliações"}
+                            {c.reviewsCount > 0 ? `${c.avgRating.toFixed(1)} ★ • ${c.reviewsCount} avaliacoes` : "Sem avaliacoes"}
                           </div>
                           <p className={"mt-1 truncate text-xs text-muted-foreground " + blurClass}>
                             Quadra: <span className="font-semibold text-foreground">{c.highlightCourtName}</span>
@@ -456,8 +797,8 @@ const landingFeatures = [
 
                           <p className="mt-2 text-xs text-muted-foreground">
                             {c.requiresBookingConfirmation
-                              ? "Exige confirmação do horário pelo estabelecimento"
-                              : "NÃO exige confirmação de horário pelo estabelecimento"}
+                              ? "Exige confirmacao do horario pelo estabelecimento"
+                              : "Nao exige confirmacao de horario pelo estabelecimento"}
                           </p>
 
                           <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -472,13 +813,13 @@ const landingFeatures = [
                             </div>
                             <div className={blurClass}>WhatsApp: {c.whatsappNumber}</div>
                             {c.contactNumber ? <div className={blurClass}>Contato: {c.contactNumber}</div> : null}
-                            <div className={blurClass}>Endereço: {c.addressText}</div>
+                            <div className={blurClass}>Endereco: {c.addressText}</div>
                           </div>
 
                           {showPrivate ? (
                             <div className="mt-4 flex flex-wrap gap-2">
                               <span className="inline-flex items-center justify-center rounded-xl gradient-primary text-primary-foreground px-4 py-2 text-xs font-bold">
-                                Ver horários
+                                Ver horarios
                               </span>
                               <button
                                 type="button"
@@ -492,7 +833,7 @@ const landingFeatures = [
                               </button>
                             </div>
                           ) : (
-                            <div className="mt-4 text-xs text-muted-foreground">Entre para ver preço, contato e agendar.</div>
+                            <div className="mt-4 text-xs text-muted-foreground">Entre para ver preco, contato e agendar.</div>
                           )}
                         </div>
                       </Link>
@@ -529,7 +870,7 @@ const landingFeatures = [
         </section>
       ) : null}
 
-      {(props.showMarketingCardsOnLoggedOut || props.viewer.isLoggedIn) ? (
+      {props.showMarketingCardsOnLoggedOut || props.viewer.isLoggedIn ? (
         <section className="py-24 relative">
           <div className="container">
             <motion.div
@@ -542,10 +883,10 @@ const landingFeatures = [
                 Funcionalidades
               </span>
               <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">
-                Tudo que você precisa para jogar
+                Tudo que voce precisa para jogar
               </h2>
               <p className="text-muted-foreground max-w-xl mx-auto">
-                Do agendamento ao pagamento, tudo integrado para uma experiência perfeita — seja jogador ou dono de quadra.
+                Do agendamento ao pagamento, tudo integrado para uma experiencia perfeita.
               </p>
             </motion.div>
 
@@ -583,7 +924,7 @@ const landingFeatures = [
               Como funciona
             </span>
             <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">Simples como deve ser</h2>
-            <p className="text-muted-foreground max-w-lg mx-auto">Em 4 passos rápidos, você sai do sofá para a quadra.</p>
+            <p className="text-muted-foreground max-w-lg mx-auto">Em 4 passos rapidos, voce sai do sofa para a quadra.</p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -629,7 +970,7 @@ const landingFeatures = [
                 Pronto para <span className="gradient-text">entrar em quadra</span>?
               </h2>
               <p className="text-muted-foreground max-w-lg mx-auto mb-8 text-lg">
-                Junte-se a milhares de jogadores que já agendam suas quadras de forma rápida e segura com PlatzGo!
+                Junte-se a milhares de jogadores que ja agendam suas quadras de forma rapida e segura com PlatzGo!
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
@@ -674,7 +1015,7 @@ const landingFeatures = [
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li><Link href="#busca" className="hover:text-foreground transition-colors">Agendar quadra</Link></li>
                   <li><Link href="/dashboard" className="hover:text-foreground transition-colors">Painel do gestor</Link></li>
-                  <li><Link href="/" className="hover:text-foreground transition-colors">Preços</Link></li>
+                  <li><Link href="/" className="hover:text-foreground transition-colors">Precos</Link></li>
                 </ul>
               </div>
 
@@ -684,7 +1025,7 @@ const landingFeatures = [
                   <li>Futebol Society</li>
                   <li>Beach Tennis</li>
                   <li>Padel</li>
-                  <li>Tênis</li>
+                  <li>Tenis</li>
                 </ul>
               </div>
 
@@ -699,331 +1040,13 @@ const landingFeatures = [
             </div>
 
             <div className="border-t border-border pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-              <p>© {new Date().getFullYear()} PlatzGo! Todos os direitos reservados.</p>
+              <p>(c) {new Date().getFullYear()} PlatzGo! Todos os direitos reservados.</p>
               <div className="flex gap-6">
                 <Link href="/" className="hover:text-foreground transition-colors">Termos de uso</Link>
                 <Link href="/" className="hover:text-foreground transition-colors">Privacidade</Link>
               </div>
             </div>
           </div>
-        </footer>
-      ) : null}
-    </div>
-  );
-                  setLng(lng);
-                }}
-              />
-            </div>
-
-            <div className="lg:col-span-3">
-              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300">O que procura para seu jogo?</label>
-              <select
-                value={effectiveSport}
-                onChange={(e) => setSport(e.target.value as SportType | "ALL")}
-                disabled={sportSelectOptions.length === 0}
-                className="mt-2 w-full rounded-xl bg-zinc-100/90 px-4 py-3 text-sm text-black outline-none focus:ring-2 focus:ring-[#CCFF00]"
-              >
-                <option value="ALL">Qualquer modalidade</option>
-                {sportSelectOptions.map((o) => (
-                  <option key={o.sport_type} value={o.sport_type}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-              {sportSelectOptions.length === 0 ? (
-                <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">Nenhuma modalidade cadastrada pelo administrador ainda.</p>
-              ) : null}
-            </div>
-
-            <div className="lg:col-span-2">
-              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300">Buscar por nome</label>
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                className="mt-2 w-full rounded-xl bg-zinc-100/90 px-4 py-3 text-sm text-black outline-none focus:ring-2 focus:ring-[#CCFF00]"
-                placeholder="Ex: Arena Central"
-              />
-            </div>
-
-            <div className="lg:col-span-2">
-              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300">Quando?</label>
-              <input
-                type="date"
-                value={day}
-                onChange={(e) => setDay(e.target.value)}
-                className="mt-2 w-full rounded-xl bg-zinc-100/90 px-4 py-3 text-sm text-black outline-none focus:ring-2 focus:ring-[#CCFF00]"
-              />
-            </div>
-
-            <div className="lg:col-span-2">
-              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300">Horario</label>
-              <input
-                type="time"
-                step={1800}
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                className="mt-2 w-full rounded-xl bg-zinc-100/90 px-4 py-3 text-sm text-black outline-none focus:ring-2 focus:ring-[#CCFF00]"
-              />
-            </div>
-
-            <div className="lg:col-span-2">
-              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300">Raio (KM)</label>
-              <input
-                type="number"
-                value={radiusKm}
-                onChange={(e) => setRadiusKm(Number(e.target.value))}
-                min={0}
-                className="mt-2 w-full rounded-xl bg-zinc-100/90 px-4 py-3 text-sm text-black outline-none focus:ring-2 focus:ring-[#CCFF00]"
-              />
-            </div>
-
-            <div className="lg:col-span-2">
-              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300">Preço máx (R$/h)</label>
-              <input
-                type="number"
-                min={0}
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(Number(e.target.value))}
-                className="mt-2 w-full rounded-xl bg-zinc-100/90 px-4 py-3 text-sm text-black outline-none focus:ring-2 focus:ring-[#CCFF00]"
-              />
-            </div>
-
-            <div className="lg:col-span-12 flex flex-wrap items-center gap-4">
-              {props.viewer.isLoggedIn ? (
-                <label className="flex items-center gap-2 text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                  <input
-                    type="checkbox"
-                    checked={onlyFavorites}
-                    onChange={(e) => setOnlyFavorites(e.target.checked)}
-                    className="h-4 w-4 rounded border-white/30 text-[#CCFF00] focus:ring-[#CCFF00]"
-                  />
-                  Somente favoritos
-                </label>
-              ) : null}
-
-              <label className="flex items-center gap-2 text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                Ordenar por
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as "distance" | "rating")}
-                  className="rounded-xl bg-zinc-100/90 px-3 py-2 text-xs text-black outline-none focus:ring-2 focus:ring-[#CCFF00]"
-                >
-                  <option value="distance">Distância</option>
-                  <option value="rating">Recomendados</option>
-                </select>
-              </label>
-
-              <p className="mt-2 text-xs text-black dark:text-zinc-400">
-                Dica: digite a cidade/rua ou use o botão “Usar minha localização”.
-              </p>
-            </div>
-            </div>
-
-            {error ? <p className="mt-4 text-sm text-red-300">{error}</p> : null}
-
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              disabled={isPending}
-              onClick={() => {
-                setHasSearched(true);
-                try {
-                  window.localStorage.setItem("ph:lastSearchHref", searchHref);
-                } catch {
-                  // ignora
-                }
-                fetchNearby({ userLat: lat, userLng: lng, radiusKm: effectiveRadiusKm });
-              }}
-              className="inline-flex items-center justify-center rounded-full bg-[#CCFF00] px-6 py-3 text-sm font-bold text-black transition-all hover:scale-105 hover:shadow-[0_16px_40px_rgba(204,255,0,0.18)] disabled:opacity-60"
-            >
-              {isPending ? "Buscando..." : "Buscar quadras"}
-            </button>
-
-            {!props.viewer.isLoggedIn && props.showOwnerCtaOnLoggedOut ? (
-              <Link
-                href="/dashboard/admin"
-                className="ph-button-secondary-sm"
-              >
-                Sou dono de quadra
-              </Link>
-            ) : null}
-
-            {!props.viewer.isLoggedIn ? (
-              <span className="text-xs text-zinc-400">
-                Faça login para ver preços, contatos e mapa.
-              </span>
-            ) : null}
-            </div>
-          </div>
-        </section>
-
-        {!props.viewer.isLoggedIn && props.showMarketingCardsOnLoggedOut ? (
-          <section className="mt-14 grid gap-6 md:grid-cols-3">
-            {[
-              { t: "Para jogadores", d: "Encontre quadras perto de você e veja horários." },
-              { t: "Para arenas", d: "Gerencie quadras, preços e disponibilidade." },
-              { t: "Pagamentos (em breve)", d: "Checkout e repasse automatizado (roadmap)." },
-            ].map((c, idx) => (
-              <div
-                key={c.t}
-                className={
-                  "ph-panel-soft p-6 text-white ph-fade-up " +
-                  (idx === 1 ? "ph-delay-1" : idx === 2 ? "ph-delay-2" : "")
-                }
-              >
-                <p className="text-sm font-semibold">{c.t}</p>
-                <p className="mt-2 text-sm text-zinc-300">{c.d}</p>
-              </div>
-            ))}
-          </section>
-        ) : null}
-
-        {hasSearched ? (
-          <div ref={resultsRef} className="mt-10 grid gap-6 lg:grid-cols-12">
-            <section className="lg:col-span-8 space-y-4">
-              <div className="text-sm text-zinc-400">
-                {cards.length} estabelecimentos encontrados • {effectiveRadiusKm} km
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {cards.map((c) => {
-                  const timeParam = time ? `&time=${encodeURIComponent(time)}` : "";
-                  const dest = `/establishments/${c.estId}?day=${encodeURIComponent(day)}${timeParam}`;
-                  const href = props.viewer.isLoggedIn
-                    ? dest
-                    : {
-                        pathname: "/signin",
-                        query: { callbackUrl: dest },
-                      };
-
-                  const showPrivate = props.viewer.isLoggedIn;
-                  const blurClass = showPrivate ? "" : "blur-sm select-none";
-                  const coverUrl = c.courtPhotoUrl || c.estPhotoUrl;
-
-                  return (
-                    <Link
-                      key={c.estId}
-                      href={href}
-                      onMouseEnter={() => setHoveredEstId(c.estId)}
-                      className="group block overflow-hidden rounded-[28px] border border-white/10 bg-white/5 text-white shadow-[0_24px_60px_rgba(0,0,0,0.35)] transition-all hover:-translate-y-1 hover:bg-white/10"
-                    >
-                      <div className="h-36 w-full bg-white/5">
-                        {coverUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={coverUrl} alt={`Foto de ${c.estName}`} className="h-full w-full object-cover" />
-                        ) : null}
-                      </div>
-
-                      <div className="p-5">
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="truncate text-sm font-semibold">{c.estName}</p>
-                          {props.viewer.isLoggedIn ? (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleToggleFavorite(c.estId);
-                              }}
-                              className={
-                                "inline-flex h-7 w-7 items-center justify-center rounded-full border text-xs " +
-                                (c.isFavorite
-                                  ? "border-[#CCFF00] bg-[#CCFF00] text-black"
-                                  : "border-white/20 bg-white/10 text-white")
-                              }
-                              title={c.isFavorite ? "Remover favorito" : "Favoritar"}
-                              aria-label={c.isFavorite ? "Remover favorito" : "Favoritar"}
-                              disabled={isFavPending}
-                            >
-                              {c.isFavorite ? "★" : "☆"}
-                            </button>
-                          ) : null}
-                        </div>
-                        <div className="mt-1 text-xs text-zinc-300">
-                          {c.reviewsCount > 0 ? `${c.avgRating.toFixed(1)} ★ • ${c.reviewsCount} avaliações` : "Sem avaliações"}
-                        </div>
-                        <p className={"mt-1 truncate text-xs text-zinc-300 " + blurClass}>
-                          Quadra: <span className="font-semibold">{c.highlightCourtName}</span>
-                          {c.matchingCourtsCount > 1 ? ` • +${c.matchingCourtsCount - 1} quadra(s)` : ""}
-                        </p>
-
-                        <p className="mt-2 text-xs text-zinc-400">
-                          {c.requiresBookingConfirmation
-                            ? "Exige confirmação do horário pelo estabelecimento"
-                            : "NÃO exige confirmação de horário pelo estabelecimento"}
-                        </p>
-
-                        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-zinc-300">
-                          <span className={"rounded-full border border-white/10 bg-white/10 px-3 py-1 text-white/80 " + blurClass}>{c.highlightSportType}</span>
-                          <span className={blurClass}>• {formatBRLFromCents(c.highlightPricePerHourCents)}/h</span>
-                          <span className={blurClass}>• {c.distanceKm.toFixed(1)} km</span>
-                        </div>
-
-                        <div className="mt-3 space-y-1 text-xs text-zinc-300">
-                          <div>
-                            Funcionamento: {formatWeekdays(c.openWeekdays)} • {c.openingTime} - {c.closingTime}
-                          </div>
-                          <div className={blurClass}>WhatsApp: {c.whatsappNumber}</div>
-                          {c.contactNumber ? <div className={blurClass}>Contato: {c.contactNumber}</div> : null}
-                          <div className={blurClass}>Endereço: {c.addressText}</div>
-                        </div>
-
-                        {showPrivate ? (
-                          <div className="mt-4 flex flex-wrap gap-2">
-                            <span className="inline-flex items-center justify-center rounded-full bg-[#CCFF00] px-4 py-2 text-xs font-bold text-black">
-                              Ver horários
-                            </span>
-                            <button
-                              type="button"
-                              className="inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs text-white transition-all hover:bg-white/20"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                window.open(toWaMeLink(c.whatsappNumber), "_blank", "noopener,noreferrer");
-                              }}
-                            >
-                              WhatsApp
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="mt-4 text-xs text-zinc-400">Entre para ver preço, contato e agendar.</div>
-                        )}
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-
-              {cards.length === 0 ? (
-                <div className="ph-panel-soft p-6 text-white">
-                  <p className="text-sm text-zinc-300">Nenhum estabelecimento encontrado nesses filtros.</p>
-                </div>
-              ) : null}
-            </section>
-
-            {props.viewer.isLoggedIn ? (
-              <aside className="lg:col-span-4">
-                <div className="sticky top-6">
-                  {props.apiKey ? (
-                    <div className="ph-panel-soft p-2">
-                      <div ref={mapDivRef} className="h-[380px] lg:h-[520px] w-full rounded-[22px]" />
-                    </div>
-                  ) : (
-                    <div className="ph-panel-soft p-6 text-white">
-                      <p className="text-sm text-zinc-300">
-                        Defina <span className="font-mono">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</span> para habilitar o mapa.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </aside>
-            ) : null}
-          </div>
-        ) : null}
-      </main>
-
-      {props.showFooter ? (
-        <footer className="relative z-10 mt-auto border-t border-white/10 px-6 py-4">
-          <div className="mx-auto max-w-7xl text-xs text-zinc-500">© {new Date().getFullYear()} PlatzGo!</div>
         </footer>
       ) : null}
     </div>
