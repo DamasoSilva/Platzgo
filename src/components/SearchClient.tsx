@@ -48,6 +48,7 @@ type Props = {
     radiusKm: number;
     sport: SportType | "ALL";
     day: string;
+    dayFromQuery?: boolean;
     time?: string | null;
     q?: string;
     maxPrice?: number | null;
@@ -172,6 +173,7 @@ export function SearchClient(props: Props) {
   const [radiusKm, setRadiusKm] = useState(props.initial.radiusKm);
   const [sport, setSport] = useState<SportType | "ALL">(props.initial.sport);
   const [day, setDay] = useState(props.initial.day);
+  const [dayTouched, setDayTouched] = useState(Boolean(props.initial.dayFromQuery));
   const [time, setTime] = useState(props.initial.time ?? "");
   const [q, setQ] = useState(props.initial.q ?? "");
   const [maxPrice, setMaxPrice] = useState(props.initial.maxPrice ?? 0);
@@ -233,14 +235,14 @@ export function SearchClient(props: Props) {
     if (Number.isFinite(lng)) params.set("lng", String(lng));
     if (Number.isFinite(radiusKm) && radiusKm > 0) params.set("radiusKm", String(radiusKm));
     if (effectiveSport !== "ALL") params.set("sport", String(effectiveSport));
-    if (day) params.set("day", day);
+    if (dayTouched && day) params.set("day", day);
     if (time) params.set("time", time);
     if (q) params.set("q", q);
     if (Number.isFinite(maxPrice) && maxPrice > 0) params.set("maxPrice", String(maxPrice));
     if (onlyFavorites) params.set("onlyFavorites", "1");
     const qs = params.toString();
     return qs ? `/?${qs}` : "/";
-  }, [lat, lng, radiusKm, effectiveSport, day, time, q, maxPrice, onlyFavorites]);
+  }, [lat, lng, radiusKm, effectiveSport, day, dayTouched, time, q, maxPrice, onlyFavorites]);
 
   useEffect(() => {
     if (!props.viewer.isLoggedIn && onlyFavorites) {
@@ -297,7 +299,7 @@ export function SearchClient(props: Props) {
             viewerUserId: props.viewer.userId,
             sport: effectiveSport,
             maxPrice: effectiveMaxPrice,
-            day,
+            day: dayTouched ? day : undefined,
             q,
             onlyFavorites: props.viewer.isLoggedIn ? onlyFavorites : false,
           });
@@ -319,6 +321,7 @@ export function SearchClient(props: Props) {
     },
     [
       day,
+      dayTouched,
       effectiveMaxPrice,
       effectiveSport,
       normalizeCards,
@@ -616,7 +619,10 @@ export function SearchClient(props: Props) {
                 <input
                   type="date"
                   value={day}
-                  onChange={(e) => setDay(e.target.value)}
+                  onChange={(e) => {
+                    setDayTouched(true);
+                    setDay(e.target.value);
+                  }}
                   className="mt-2 w-full rounded-xl bg-secondary px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
@@ -735,8 +741,11 @@ export function SearchClient(props: Props) {
 
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {cards.map((c) => {
-                    const timeParam = time ? `&time=${encodeURIComponent(time)}` : "";
-                    const dest = `/establishments/${c.estId}?day=${encodeURIComponent(day)}${timeParam}`;
+                    const params = new URLSearchParams();
+                    if (dayTouched && day) params.set("day", day);
+                    if (time) params.set("time", time);
+                    const qs = params.toString();
+                    const dest = qs ? `/establishments/${c.estId}?${qs}` : `/establishments/${c.estId}`;
                     const href = props.viewer.isLoggedIn
                       ? dest
                       : {

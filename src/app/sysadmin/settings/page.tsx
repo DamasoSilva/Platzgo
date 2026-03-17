@@ -20,12 +20,15 @@ import {
 
 export default async function SysadminSettingsPage(props: {
   searchParams?:
-    | { ok?: string; err?: string; walletOk?: string; walletErr?: string; walletList?: string }
-    | Promise<{ ok?: string; err?: string; walletOk?: string; walletErr?: string; walletList?: string }>;
+    | { ok?: string; err?: string; walletOk?: string; walletErr?: string; walletList?: string; tab?: string }
+    | Promise<{ ok?: string; err?: string; walletOk?: string; walletErr?: string; walletList?: string; tab?: string }>;
 }) {
   await requireRoleOrRedirect("SYSADMIN", "/sysadmin/settings");
 
   const searchParams = props.searchParams ? await Promise.resolve(props.searchParams) : undefined;
+  const rawTab = (searchParams?.tab ?? "").toString();
+  const tab = rawTab === "payments" || rawTab === "notifications" || rawTab === "password" ? rawTab : "smtp";
+  const tabParam = `tab=${tab}`;
   const ok = searchParams?.ok === "1";
   const err = (searchParams?.err ?? "").trim();
   const walletOk = searchParams?.walletOk === "1";
@@ -74,7 +77,28 @@ export default async function SysadminSettingsPage(props: {
         </div>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="flex flex-wrap gap-2 border-b border-border pb-3">
+        {([
+          { key: "smtp", label: "SMTP" },
+          { key: "payments", label: "Pagamentos" },
+          { key: "notifications", label: "Notificações" },
+          { key: "password", label: "Senha" },
+        ] as const).map((item) => (
+          <Link
+            key={item.key}
+            href={`/sysadmin/settings?tab=${item.key}`}
+            className={
+              "rounded-xl px-4 py-2 text-sm font-medium transition-all " +
+              (tab === item.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")
+            }
+            aria-current={tab === item.key ? "page" : undefined}
+          >
+            {item.label}
+          </Link>
+        ))}
+      </div>
+
+      {tab === "smtp" ? (
         <div className="ph-card p-6">
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">SMTP (e-mail)</h2>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Salvo no banco (com fallback no .env).</p>
@@ -91,11 +115,11 @@ export default async function SysadminSettingsPage(props: {
                   user: String(formData.get("user") ?? ""),
                   pass: String(formData.get("pass") ?? ""),
                 });
-                redirect("/sysadmin/settings?ok=1");
+                redirect(`/sysadmin/settings?${tabParam}&ok=1`);
               } catch (e) {
                 if ((e as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) throw e;
                 const msg = e instanceof Error ? e.message : "Erro ao salvar";
-                redirect(`/sysadmin/settings?err=${encodeURIComponent(msg)}`);
+                redirect(`/sysadmin/settings?${tabParam}&err=${encodeURIComponent(msg)}`);
               }
             }}
           >
@@ -135,11 +159,11 @@ export default async function SysadminSettingsPage(props: {
                   "use server";
                   try {
                     await clearSmtpPassword();
-                    redirect("/sysadmin/settings?ok=1");
+                    redirect(`/sysadmin/settings?${tabParam}&ok=1`);
                   } catch (e) {
                     if ((e as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) throw e;
                     const msg = e instanceof Error ? e.message : "Erro ao limpar";
-                    redirect(`/sysadmin/settings?err=${encodeURIComponent(msg)}`);
+                    redirect(`/sysadmin/settings?${tabParam}&err=${encodeURIComponent(msg)}`);
                   }
                 }}
                 className="ph-button-secondary"
@@ -153,11 +177,11 @@ export default async function SysadminSettingsPage(props: {
                   "use server";
                   try {
                     await sendTestEmailToMe();
-                    redirect("/sysadmin/settings?ok=1");
+                    redirect(`/sysadmin/settings?${tabParam}&ok=1`);
                   } catch (e) {
                     if ((e as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) throw e;
                     const msg = e instanceof Error ? e.message : "Erro ao enviar teste";
-                    redirect(`/sysadmin/settings?err=${encodeURIComponent(msg)}`);
+                    redirect(`/sysadmin/settings?${tabParam}&err=${encodeURIComponent(msg)}`);
                   }
                 }}
                 className="ph-button-secondary"
@@ -168,7 +192,9 @@ export default async function SysadminSettingsPage(props: {
             </div>
           </form>
         </div>
+      ) : null}
 
+      {tab === "payments" ? (
         <div className="ph-card p-6">
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Pagamentos (gateways)</h2>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
@@ -195,11 +221,11 @@ export default async function SysadminSettingsPage(props: {
                   asaasSplitPercent: String(formData.get("asaasSplitPercent") ?? ""),
                   asaasTestCpfCnpj: String(formData.get("asaasTestCpfCnpj") ?? ""),
                 });
-                redirect("/sysadmin/settings?ok=1");
+                redirect(`/sysadmin/settings?${tabParam}&ok=1`);
               } catch (e) {
                 if ((e as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) throw e;
                 const msg = e instanceof Error ? e.message : "Erro ao salvar";
-                redirect(`/sysadmin/settings?err=${encodeURIComponent(msg)}`);
+                redirect(`/sysadmin/settings?${tabParam}&err=${encodeURIComponent(msg)}`);
               }
             }}
           >
@@ -307,11 +333,11 @@ export default async function SysadminSettingsPage(props: {
                           const label = res.wallets.length
                             ? `${res.wallets.length} encontrados: ${preview}${res.wallets.length > 5 ? " ..." : ""}`
                             : "nenhum wallet encontrado";
-                          redirect(`/sysadmin/settings?walletList=${encodeURIComponent(label)}`);
+                          redirect(`/sysadmin/settings?${tabParam}&walletList=${encodeURIComponent(label)}`);
                         } catch (e) {
                           if ((e as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) throw e;
                           const msg = e instanceof Error ? e.message : "Erro ao listar";
-                          redirect(`/sysadmin/settings?walletErr=${encodeURIComponent(msg)}`);
+                          redirect(`/sysadmin/settings?${tabParam}&walletErr=${encodeURIComponent(msg)}`);
                         }
                       }}
                       className="ph-button-secondary"
@@ -324,11 +350,11 @@ export default async function SysadminSettingsPage(props: {
                         "use server";
                         try {
                           await testAsaasSplitWallet();
-                          redirect("/sysadmin/settings?walletOk=1");
+                          redirect(`/sysadmin/settings?${tabParam}&walletOk=1`);
                         } catch (e) {
                           if ((e as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) throw e;
                           const msg = e instanceof Error ? e.message : "Erro ao testar";
-                          redirect(`/sysadmin/settings?walletErr=${encodeURIComponent(msg)}`);
+                          redirect(`/sysadmin/settings?${tabParam}&walletErr=${encodeURIComponent(msg)}`);
                         }
                       }}
                       className="ph-button-secondary"
@@ -403,11 +429,11 @@ export default async function SysadminSettingsPage(props: {
                   "use server";
                   try {
                     await clearPaymentSecretsForSysadmin();
-                    redirect("/sysadmin/settings?ok=1");
+                    redirect(`/sysadmin/settings?${tabParam}&ok=1`);
                   } catch (e) {
                     if ((e as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) throw e;
                     const msg = e instanceof Error ? e.message : "Erro ao limpar";
-                    redirect(`/sysadmin/settings?err=${encodeURIComponent(msg)}`);
+                    redirect(`/sysadmin/settings?${tabParam}&err=${encodeURIComponent(msg)}`);
                   }
                 }}
                 className="ph-button-secondary"
@@ -421,7 +447,9 @@ export default async function SysadminSettingsPage(props: {
             </div>
           </form>
         </div>
+      ) : null}
 
+      {tab === "notifications" ? (
         <div className="ph-card p-6">
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Notificações</h2>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
@@ -450,11 +478,11 @@ export default async function SysadminSettingsPage(props: {
                   smsQuietHoursEnd: toNumber("smsQuietHoursEnd"),
                 });
 
-                redirect("/sysadmin/settings?ok=1");
+                redirect(`/sysadmin/settings?${tabParam}&ok=1`);
               } catch (e) {
                 if ((e as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) throw e;
                 const msg = e instanceof Error ? e.message : "Erro ao salvar";
-                redirect(`/sysadmin/settings?err=${encodeURIComponent(msg)}`);
+                redirect(`/sysadmin/settings?${tabParam}&err=${encodeURIComponent(msg)}`);
               }
             }}
           >
@@ -578,7 +606,9 @@ export default async function SysadminSettingsPage(props: {
             <FormSubmitButton label="Salvar notificações" pendingLabel="Salvando..." className="ph-button" />
           </form>
         </div>
+      ) : null}
 
+      {tab === "password" ? (
         <div className="ph-card p-6">
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Senha do administrador</h2>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Troque a senha do seu usuário SYSADMIN.</p>
@@ -592,11 +622,11 @@ export default async function SysadminSettingsPage(props: {
                   currentPassword: String(formData.get("current") ?? ""),
                   newPassword: String(formData.get("next") ?? ""),
                 });
-                redirect("/sysadmin/settings?ok=1");
+                redirect(`/sysadmin/settings?${tabParam}&ok=1`);
               } catch (e) {
                 if ((e as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) throw e;
                 const msg = e instanceof Error ? e.message : "Erro ao trocar senha";
-                redirect(`/sysadmin/settings?err=${encodeURIComponent(msg)}`);
+                redirect(`/sysadmin/settings?${tabParam}&err=${encodeURIComponent(msg)}`);
               }
             }}
           >
@@ -614,11 +644,11 @@ export default async function SysadminSettingsPage(props: {
             <FormSubmitButton label="Salvar nova senha" pendingLabel="Salvando..." className="ph-button" />
 
             <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                Dica: você também pode usar o fluxo de Esqueci minha senha no login.
+              Dica: você também pode usar o fluxo de Esqueci minha senha no login.
             </p>
           </form>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }

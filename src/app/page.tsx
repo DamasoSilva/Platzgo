@@ -95,6 +95,7 @@ export default async function Home(props: {
   const lng = hasCoordsFromQuery ? lngFromQuery : hasCoordsFromUser ? userLng! : -46.633308;
   const radiusKm = parseNumber(searchParams?.radiusKm, 0);
   const sport = parseSport(searchParams?.sport);
+  const dayFromQuery = typeof searchParams?.day === "string" && searchParams.day.trim().length > 0;
   const day = parseDay(searchParams?.day);
   const time = parseTime(searchParams?.time);
   const maxPrice = parseNumber(searchParams?.maxPrice, 0);
@@ -120,6 +121,7 @@ export default async function Home(props: {
         radiusKm,
         sport,
         day,
+        dayFromQuery,
         time,
         q: searchParams?.q,
         maxPrice: maxPrice > 0 ? maxPrice : null,
