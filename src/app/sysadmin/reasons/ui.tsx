@@ -77,20 +77,20 @@ export function SysadminReasons() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Motivos de inativação</h1>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Motivos de inativação</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Gerencie a lista de motivos usados pelos donos ao inativar quadras.
         </p>
       </header>
 
       {message ? (
-        <div className="rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
+        <div className="rounded-2xl border border-border bg-card/70 p-4 text-sm text-muted-foreground">
           {message}
         </div>
       ) : null}
 
       <div className="ph-card p-6">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Novo motivo</h2>
+        <h2 className="text-lg font-semibold text-foreground">Novo motivo</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
           <input
             value={title}
@@ -105,19 +105,19 @@ export function SysadminReasons() {
       </div>
 
       <div className="ph-card p-6">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Lista</h2>
+        <h2 className="text-lg font-semibold text-foreground">Lista</h2>
         <div className="mt-4 space-y-2">
           {reasons.length === 0 ? (
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">Nenhum motivo cadastrado.</p>
+            <p className="text-sm text-muted-foreground">Nenhum motivo cadastrado.</p>
           ) : (
             reasons.map((r) => (
               <div
                 key={r.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border p-4"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">{r.title}</p>
-                  <p className="text-xs text-zinc-600 dark:text-zinc-400">{r.is_active ? "Ativo" : "Inativo"}</p>
+                  <p className="truncate text-sm font-semibold text-foreground">{r.title}</p>
+                  <p className="text-xs text-muted-foreground">{r.is_active ? "Ativo" : "Inativo"}</p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
@@ -125,7 +125,7 @@ export function SysadminReasons() {
                     type="button"
                     onClick={() => onToggle(r.id, !r.is_active)}
                     disabled={isPending}
-                    className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                    className="ph-button-secondary-sm"
                   >
                     {r.is_active ? "Desativar" : "Ativar"}
                   </button>
@@ -134,7 +134,7 @@ export function SysadminReasons() {
                     type="button"
                     onClick={() => onDelete(r.id)}
                     disabled={isPending}
-                    className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200"
+                    className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold text-red-700 hover:bg-red-100"
                   >
                     Excluir
                   </button>

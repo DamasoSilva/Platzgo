@@ -126,7 +126,7 @@ function MediaGrid(props: {
         return (
           <div
             key={url}
-            className="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-zinc-100/70 shadow-sm dark:bg-zinc-900/60"
+            className="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-secondary/40 shadow-sm"
             draggable={Boolean(props.onReorder)}
             onDragStart={() => {
               dragIndexRef.current = idx;
@@ -155,7 +155,7 @@ function MediaGrid(props: {
                 href={url}
                 target="_blank"
                 rel="noreferrer"
-                className="flex h-full w-full items-center justify-center bg-black/5 text-zinc-900 dark:bg-black/30 dark:text-zinc-100"
+                className="flex h-full w-full items-center justify-center bg-background/10 text-foreground"
                 title="Abrir vídeo em nova aba"
               >
                 <span className="flex items-center gap-2 text-sm font-semibold">
@@ -519,8 +519,8 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
     <div className="space-y-6">
       <header className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Quadras</h1>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Gerencie suas quadras em cards (editar, inativar e adicionar).</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Quadras</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Gerencie suas quadras em cards (editar, inativar e adicionar).</p>
         </div>
         <button type="button" className="ph-button" onClick={() => setCreating(true)} disabled={isPending}>
           Nova quadra
@@ -528,14 +528,14 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
       </header>
 
       {message ? (
-        <div className="rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
+        <div className="rounded-2xl border border-border bg-card/70 p-4 text-sm text-foreground">
           {message}
         </div>
       ) : null}
 
       {courts.length === 0 ? (
         <div className="ph-card p-6">
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">Nenhuma quadra cadastrada ainda.</p>
+          <p className="text-sm text-muted-foreground">Nenhuma quadra cadastrada ainda.</p>
           <div className="mt-4">
             <button type="button" className="ph-button" onClick={() => setCreating(true)}>
               Adicionar primeira quadra
@@ -561,13 +561,13 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
                       decoding="async"
                     />
                   ) : (
-                    <div className="flex h-16 w-24 shrink-0 items-center justify-center rounded-xl bg-zinc-100/70 text-[11px] font-semibold text-zinc-600 dark:bg-zinc-900/60 dark:text-zinc-300">
+                    <div className="flex h-16 w-24 shrink-0 items-center justify-center rounded-xl bg-secondary/60 text-[11px] font-semibold text-muted-foreground">
                       Sem foto
                     </div>
                   )}
                   <div className="min-w-0">
-                    <p className="truncate text-base font-semibold text-zinc-900 dark:text-zinc-50">{c.name}</p>
-                    <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                    <p className="truncate text-base font-semibold text-foreground">{c.name}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
                       {sportLabel(c.sport_type)} • {formatBRLFromCents(c.price_per_hour)}/h
                       {c.discount_percentage_over_90min ? ` • -${c.discount_percentage_over_90min}% (≥ 90min)` : ""}
                     </p>
@@ -576,8 +576,8 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
                 <span
                   className={
                     c.is_active
-                      ? "rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-900"
-                      : "rounded-full bg-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100"
+                      ? "rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-300"
+                      : "rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-muted-foreground"
                   }
                 >
                   {c.is_active ? "Ativa" : "Inativa"}
@@ -587,7 +587,7 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
               })()}
 
               {!c.is_active && c.inactive_reason?.title ? (
-                <p className="mt-3 text-xs text-zinc-600 dark:text-zinc-400">
+                <p className="mt-3 text-xs text-muted-foreground">
                   Motivo: <span className="font-semibold">{c.inactive_reason.title}</span>
                   {c.inactive_reason_note ? ` • ${c.inactive_reason_note}` : ""}
                 </p>
@@ -635,11 +635,11 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
       {creating ? (
         <div className="fixed inset-0 z-50">
           <button className="absolute inset-0 bg-black/60" onClick={() => setCreating(false)} type="button" />
-          <div className="absolute left-1/2 top-1/2 max-h-[calc(100vh-32px)] w-[min(720px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-white p-6 shadow-xl dark:bg-zinc-950">
+          <div className="absolute left-1/2 top-1/2 max-h-[calc(100vh-32px)] w-[min(720px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Nova quadra</h2>
-                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Até 2 fotos e 1 vídeo por quadra.</p>
+                <h2 className="text-lg font-semibold text-foreground">Nova quadra</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Até 2 fotos e 1 vídeo por quadra.</p>
               </div>
               <button type="button" className="ph-button-secondary" onClick={() => setCreating(false)}>
                 Fechar
@@ -648,12 +648,12 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Nome</label>
+                <label className="block text-xs font-medium text-muted-foreground">Nome</label>
                 <input className="ph-input mt-2" value={createForm.name} onChange={(e) => setCreateForm((s) => ({ ...s, name: e.target.value }))} />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Modalidade</label>
+                <label className="block text-xs font-medium text-muted-foreground">Modalidade</label>
                 <select
                   className="ph-select mt-2"
                   value={createSelectedSportType ?? ""}
@@ -673,7 +673,7 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Preço/h (R$)</label>
+                <label className="block text-xs font-medium text-muted-foreground">Preço/h (R$)</label>
                 <input
                   className="ph-input mt-2"
                   type="number"
@@ -689,7 +689,7 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Desconto (≥ 90min) %</label>
+                <label className="block text-xs font-medium text-muted-foreground">Desconto (≥ 90min) %</label>
                 <input
                   className="ph-input mt-2"
                   type="number"
@@ -701,7 +701,7 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Comodidades (separadas por vírgula)</label>
+                <label className="block text-xs font-medium text-muted-foreground">Comodidades (separadas por vírgula)</label>
                 <textarea
                   className="ph-input mt-2 min-h-[88px]"
                   value={createForm.amenitiesText}
@@ -712,10 +712,10 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Mensalidade (opcional)</label>
+                <label className="block text-xs font-medium text-muted-foreground">Mensalidade (opcional)</label>
                 <div className="mt-2 grid gap-3 sm:grid-cols-2">
                   <div>
-                    <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400">Valor mensal (R$)</label>
+                    <label className="block text-xs font-medium text-muted-foreground">Valor mensal (R$)</label>
                     <input
                       className="ph-input mt-2"
                       type="number"
@@ -732,7 +732,7 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400">Sobre (texto exibido ao cliente)</label>
+                    <label className="block text-xs font-medium text-muted-foreground">Sobre (texto exibido ao cliente)</label>
                     <textarea
                       className="ph-input mt-2 min-h-[88px]"
                       value={createForm.monthly_terms}
@@ -744,7 +744,7 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Fotos e vídeos</label>
+                <label className="block text-xs font-medium text-muted-foreground">Fotos e vídeos</label>
                 <div className="mt-2 flex items-center justify-between gap-3">
                   <UploadPickerButton
                     label={createForm.photo_urls.length ? "Adicionar mais arquivos" : "Adicionar arquivos"}
@@ -765,7 +765,7 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
                       }
                     }}
                   />
-                  <div className="text-xs text-zinc-600 dark:text-zinc-400">
+                  <div className="text-xs text-muted-foreground">
                     {createCounts.photos}/{COURT_MAX_PHOTOS} fotos · {createCounts.videos}/{COURT_MAX_VIDEOS} vídeo
                   </div>
                 </div>
@@ -793,11 +793,11 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
       {editingCourtId && editForm ? (
         <div className="fixed inset-0 z-50">
           <button className="absolute inset-0 bg-black/60" onClick={() => setEditingCourtId(null)} type="button" />
-          <div className="absolute left-1/2 top-1/2 max-h-[calc(100vh-32px)] w-[min(720px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-white p-6 shadow-xl dark:bg-zinc-950">
+          <div className="absolute left-1/2 top-1/2 max-h-[calc(100vh-32px)] w-[min(720px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Editar quadra</h2>
-                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Até 2 fotos e 1 vídeo por quadra.</p>
+                <h2 className="text-lg font-semibold text-foreground">Editar quadra</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Até 2 fotos e 1 vídeo por quadra.</p>
               </div>
               <button type="button" className="ph-button-secondary" onClick={() => setEditingCourtId(null)}>
                 Fechar
@@ -806,12 +806,12 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Nome</label>
+                <label className="block text-xs font-medium text-muted-foreground">Nome</label>
                 <input className="ph-input mt-2" value={editForm.name} onChange={(e) => setEditForm((s) => (s ? { ...s, name: e.target.value } : s))} />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Modalidade</label>
+                <label className="block text-xs font-medium text-muted-foreground">Modalidade</label>
                 <select
                   className="ph-select mt-2"
                   value={editForm.sport_type}
@@ -833,7 +833,7 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Preço/h (R$)</label>
+                <label className="block text-xs font-medium text-muted-foreground">Preço/h (R$)</label>
                 <input
                   className="ph-input mt-2"
                   type="number"
@@ -849,7 +849,7 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Desconto (≥ 90min) %</label>
+                <label className="block text-xs font-medium text-muted-foreground">Desconto (≥ 90min) %</label>
                 <input
                   className="ph-input mt-2"
                   type="number"
@@ -861,7 +861,7 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Comodidades (separadas por vírgula)</label>
+                <label className="block text-xs font-medium text-muted-foreground">Comodidades (separadas por vírgula)</label>
                 <textarea
                   className="ph-input mt-2 min-h-[88px]"
                   value={editForm.amenitiesText}
@@ -872,10 +872,10 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Mensalidade (opcional)</label>
+                <label className="block text-xs font-medium text-muted-foreground">Mensalidade (opcional)</label>
                 <div className="mt-2 grid gap-3 sm:grid-cols-2">
                   <div>
-                    <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400">Valor mensal (R$)</label>
+                    <label className="block text-xs font-medium text-muted-foreground">Valor mensal (R$)</label>
                     <input
                       className="ph-input mt-2"
                       type="number"
@@ -892,7 +892,7 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400">Sobre (texto exibido ao cliente)</label>
+                    <label className="block text-xs font-medium text-muted-foreground">Sobre (texto exibido ao cliente)</label>
                     <textarea
                       className="ph-input mt-2 min-h-[88px]"
                       value={editForm.monthly_terms}
@@ -904,7 +904,7 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Fotos e vídeos</label>
+                <label className="block text-xs font-medium text-muted-foreground">Fotos e vídeos</label>
                 <div className="mt-2 flex items-center justify-between gap-3">
                   <UploadPickerButton
                     label={editForm.photo_urls.length ? "Adicionar mais arquivos" : "Adicionar arquivos"}
@@ -925,7 +925,7 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
                       }
                     }}
                   />
-                  <div className="text-xs text-zinc-600 dark:text-zinc-400">
+                  <div className="text-xs text-muted-foreground">
                     {editCounts.photos}/{COURT_MAX_PHOTOS} fotos · {editCounts.videos}/{COURT_MAX_VIDEOS} vídeo
                   </div>
                 </div>
@@ -953,11 +953,11 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
       {deactivateCourtId ? (
         <div className="fixed inset-0 z-50">
           <button className="absolute inset-0 bg-black/60" onClick={() => setDeactivateCourtId(null)} type="button" />
-          <div className="absolute left-1/2 top-1/2 max-h-[calc(100vh-32px)] w-[min(560px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-white p-6 shadow-xl dark:bg-zinc-950">
+          <div className="absolute left-1/2 top-1/2 max-h-[calc(100vh-32px)] w-[min(560px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Inativar quadra</h2>
-                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Selecione um motivo e, se quiser, descreva.</p>
+                <h2 className="text-lg font-semibold text-foreground">Inativar quadra</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Selecione um motivo e, se quiser, descreva.</p>
               </div>
               <button type="button" className="ph-button-secondary" onClick={() => setDeactivateCourtId(null)}>
                 Fechar
@@ -966,7 +966,7 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
 
             <div className="mt-5 space-y-4">
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Motivo</label>
+                <label className="block text-xs font-medium text-muted-foreground">Motivo</label>
                 <select className="ph-select mt-2" value={deactivateReasonId} onChange={(e) => setDeactivateReasonId(e.target.value)}>
                   <option value="">Selecione...</option>
                   {reasons.map((r) => (
@@ -978,7 +978,7 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Observação (opcional)</label>
+                <label className="block text-xs font-medium text-muted-foreground">Observação (opcional)</label>
                 <textarea className="ph-textarea mt-2" rows={3} value={deactivateNote} onChange={(e) => setDeactivateNote(e.target.value)} />
               </div>
 

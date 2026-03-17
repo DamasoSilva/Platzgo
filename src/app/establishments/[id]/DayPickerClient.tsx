@@ -25,7 +25,7 @@ export function DayPickerClient(props: {
 
   return (
     <div className="rounded-3xl ph-surface p-5">
-      <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Data</label>
+      <label className="block text-xs font-medium text-muted-foreground">Data</label>
       <div className="mt-2 flex flex-wrap items-center gap-3">
         <input
           type="date"
@@ -42,7 +42,7 @@ export function DayPickerClient(props: {
           }}
           className="ph-input w-[220px]"
         />
-        <span className="text-xs text-zinc-600 dark:text-zinc-400">{isPending ? "Atualizando..." : ""}</span>
+        <span className="text-xs text-muted-foreground">{isPending ? "Atualizando..." : ""}</span>
       </div>
     </div>
   );

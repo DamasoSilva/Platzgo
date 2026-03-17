@@ -35,11 +35,11 @@ function formatMoney(cents?: number | null): string {
 }
 
 function statusBadge(status: PaymentStatus) {
-  if (status === PaymentStatus.PAID) return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-200";
-  if (status === PaymentStatus.AUTHORIZED) return "bg-sky-500/15 text-sky-700 dark:text-sky-200";
-  if (status === PaymentStatus.PENDING) return "bg-amber-500/15 text-amber-800 dark:text-amber-200";
-  if (status === PaymentStatus.REFUNDED) return "bg-zinc-500/15 text-zinc-700 dark:text-zinc-200";
-  return "bg-rose-500/15 text-rose-800 dark:text-rose-200";
+  if (status === PaymentStatus.PAID) return "bg-emerald-500/15 text-emerald-700";
+  if (status === PaymentStatus.AUTHORIZED) return "bg-sky-500/15 text-sky-700";
+  if (status === PaymentStatus.PENDING) return "bg-amber-500/15 text-amber-800";
+  if (status === PaymentStatus.REFUNDED) return "bg-secondary/70 text-muted-foreground";
+  return "bg-rose-500/15 text-rose-800";
 }
 
 function outcomeLabel(status: PaymentStatus) {
@@ -274,8 +274,8 @@ export default async function DashboardPaymentsPage(props: { searchParams?: Sear
       <div className="ph-card p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Pagamentos</h1>
-            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Pagamentos</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
               Acompanhamento das transacoes do seu estabelecimento.
             </p>
           </div>
@@ -286,17 +286,17 @@ export default async function DashboardPaymentsPage(props: { searchParams?: Sear
 
         <form className="mt-6 grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto_auto]" method="get">
           <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Administradora</label>
+            <label className="block text-xs font-medium text-muted-foreground">Administradora</label>
             <select name="provider" defaultValue={providerParam || "asaas"} className="ph-input mt-2">
               <option value="asaas">Asaas</option>
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Data inicial</label>
+            <label className="block text-xs font-medium text-muted-foreground">Data inicial</label>
             <input name="start" type="date" defaultValue={startParam} className="ph-input mt-2" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Data final</label>
+            <label className="block text-xs font-medium text-muted-foreground">Data final</label>
             <input name="end" type="date" defaultValue={endParam} className="ph-input mt-2" />
           </div>
           <button type="submit" className="ph-button h-11 self-end">Filtrar</button>
@@ -305,74 +305,74 @@ export default async function DashboardPaymentsPage(props: { searchParams?: Sear
           </Link>
         </form>
 
-        <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-zinc-600 dark:text-zinc-300">
-          <span className="rounded-full bg-zinc-100 px-3 py-1 dark:bg-zinc-900/60">
+        <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+          <span className="rounded-full bg-secondary/60 px-3 py-1">
             {payments.length} transacoes
           </span>
-          <span className="rounded-full bg-zinc-100 px-3 py-1 dark:bg-zinc-900/60">{rangeLabel}</span>
+          <span className="rounded-full bg-secondary/60 px-3 py-1">{rangeLabel}</span>
         </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="ph-card p-5">
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">Recebido (líquido)</p>
-          <p className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+          <p className="text-xs text-muted-foreground">Recebido (líquido)</p>
+          <p className="mt-2 text-2xl font-semibold text-foreground">
             {formatMoney(totals.netPaidCents)}
           </p>
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">Bruto: {formatMoney(totals.paidCents)}</p>
+          <p className="mt-2 text-xs text-muted-foreground">Bruto: {formatMoney(totals.paidCents)}</p>
           {totals.paidFeeCents > 0 ? (
-            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Taxa Asaas: {formatMoney(totals.paidFeeCents)}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Taxa Asaas: {formatMoney(totals.paidFeeCents)}</p>
           ) : null}
           {totals.paidAdminCommissionCents > 0 ? (
-            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="mt-1 text-xs text-muted-foreground">
               Comissão admin: {formatMoney(totals.paidAdminCommissionCents)}
             </p>
           ) : null}
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="mt-1 text-xs text-muted-foreground">
             Cálculo: (Bruto - Taxa Asaas) x (1 - Comissão admin)
           </p>
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{totals.paidCount} transacoes</p>
+          <p className="mt-1 text-xs text-muted-foreground">{totals.paidCount} transacoes</p>
         </div>
         <div className="ph-card p-5">
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">Reembolsado</p>
-          <p className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+          <p className="text-xs text-muted-foreground">Reembolsado</p>
+          <p className="mt-2 text-2xl font-semibold text-foreground">
             {formatMoney(totals.refundCents)}
           </p>
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{totals.refundCount} transacoes</p>
+          <p className="mt-2 text-xs text-muted-foreground">{totals.refundCount} transacoes</p>
         </div>
         <div className="ph-card p-5">
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">Pendente (líquido)</p>
-          <p className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+          <p className="text-xs text-muted-foreground">Pendente (líquido)</p>
+          <p className="mt-2 text-2xl font-semibold text-foreground">
             {formatMoney(totals.netPendingCents)}
           </p>
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">Bruto: {formatMoney(totals.pendingCents)}</p>
+          <p className="mt-2 text-xs text-muted-foreground">Bruto: {formatMoney(totals.pendingCents)}</p>
           {totals.pendingFeeCents > 0 ? (
-            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Taxa Asaas: {formatMoney(totals.pendingFeeCents)}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Taxa Asaas: {formatMoney(totals.pendingFeeCents)}</p>
           ) : null}
           {totals.pendingAdminCommissionCents > 0 ? (
-            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="mt-1 text-xs text-muted-foreground">
               Comissão admin: {formatMoney(totals.pendingAdminCommissionCents)}
             </p>
           ) : null}
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="mt-1 text-xs text-muted-foreground">
             Cálculo: (Bruto - Taxa Asaas) x (1 - Comissão admin)
           </p>
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{totals.pendingCount} transacoes</p>
+          <p className="mt-1 text-xs text-muted-foreground">{totals.pendingCount} transacoes</p>
         </div>
         <div className="ph-card p-5">
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">Erro</p>
-          <p className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+          <p className="text-xs text-muted-foreground">Erro</p>
+          <p className="mt-2 text-2xl font-semibold text-foreground">
             {formatMoney(totals.errorCents)}
           </p>
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{totals.errorCount} transacoes</p>
+          <p className="mt-2 text-xs text-muted-foreground">{totals.errorCount} transacoes</p>
         </div>
       </div>
 
       <div className="ph-card p-6">
-        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Transacoes</h2>
-        <div className="mt-3 overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+        <h2 className="text-sm font-semibold text-foreground">Transacoes</h2>
+        <div className="mt-3 overflow-hidden rounded-2xl border border-border">
           <table className="w-full text-left text-xs">
-            <thead className="bg-zinc-50 text-zinc-600 dark:bg-zinc-900/40 dark:text-zinc-300">
+            <thead className="bg-secondary/50 text-muted-foreground">
               <tr>
                 <th className="px-3 py-2">Data</th>
                 <th className="px-3 py-2">Provider</th>
@@ -390,10 +390,10 @@ export default async function DashboardPaymentsPage(props: { searchParams?: Sear
                 <th className="px-3 py-2">Transacao</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+            <tbody className="divide-y divide-border">
               {payments.length === 0 ? (
                 <tr>
-                  <td colSpan={14} className="px-3 py-4 text-center text-zinc-500">
+                  <td colSpan={14} className="px-3 py-4 text-center text-muted-foreground">
                     Nenhuma transacao encontrada.
                   </td>
                 </tr>
@@ -436,37 +436,37 @@ export default async function DashboardPaymentsPage(props: { searchParams?: Sear
                     "-";
 
                   return (
-                    <tr key={payment.id} className="bg-white dark:bg-zinc-950">
-                      <td className="px-3 py-2 text-zinc-900 dark:text-zinc-100">{formatDt(payment.createdAt)}</td>
-                      <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{payment.provider}</td>
-                      <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{outcomeLabel(payment.status)}</td>
+                    <tr key={payment.id} className="bg-card/70">
+                      <td className="px-3 py-2 text-foreground">{formatDt(payment.createdAt)}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{payment.provider}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{outcomeLabel(payment.status)}</td>
                       <td className="px-3 py-2">
                         <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusBadge(payment.status)}`}>
                           {payment.status}
                         </span>
                       </td>
-                      <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{formatMoney(payment.amount_cents)}</td>
-                      <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">
+                      <td className="px-3 py-2 text-muted-foreground">{formatMoney(payment.amount_cents)}</td>
+                      <td className="px-3 py-2 text-muted-foreground">
                         {netDisplay != null ? formatMoney(netDisplay) : "-"}
                       </td>
-                      <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">
+                      <td className="px-3 py-2 text-muted-foreground">
                         {feeCents != null ? formatMoney(feeCents) : "-"}
                       </td>
-                      <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">
+                      <td className="px-3 py-2 text-muted-foreground">
                         {adminCommissionCents != null
                           ? `${formatMoney(adminCommissionCents)}${adminPercentLabel ? ` (${adminPercentLabel})` : ""}`
                           : "-"}
                       </td>
-                      <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">
+                      <td className="px-3 py-2 text-muted-foreground">
                         {refundAmount != null ? formatMoney(refundAmount) : "-"}
                       </td>
-                      <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">
+                      <td className="px-3 py-2 text-muted-foreground">
                         {refundFee != null && refundFee > 0 ? formatMoney(refundFee) : "-"}
                       </td>
-                      <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{origin}</td>
-                      <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{customerLabel}</td>
-                      <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{detailLabel}</td>
-                      <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">
+                      <td className="px-3 py-2 text-muted-foreground">{origin}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{customerLabel}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{detailLabel}</td>
+                      <td className="px-3 py-2 text-muted-foreground">
                         {payment.provider_payment_id ?? "-"}
                       </td>
                     </tr>

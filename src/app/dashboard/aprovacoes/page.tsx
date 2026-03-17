@@ -172,8 +172,8 @@ export default async function ApprovalsPage({
       <div className="ph-card p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Aprovações</h1>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Agendamentos e mensalidades aguardando ação.</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Aprovações</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Agendamentos e mensalidades aguardando ação.</p>
           </div>
 
           <Link href="/dashboard" className="ph-button-secondary">
@@ -181,14 +181,14 @@ export default async function ApprovalsPage({
           </Link>
         </div>
 
-        <form method="get" className="mt-4 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+        <form method="get" className="mt-4 rounded-2xl border border-border bg-card/70 p-4">
           <div className="flex flex-wrap items-end gap-2">
             <div>
-              <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Tipo</label>
+              <label className="block text-[11px] font-semibold text-muted-foreground">Tipo</label>
               <select
                 name="kind"
                 defaultValue={kindParam}
-                className="mt-1 h-10 rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                className="ph-select mt-1 h-10"
               >
                 <option value="all">Tudo</option>
                 <option value="booking">Agendamentos</option>
@@ -197,11 +197,11 @@ export default async function ApprovalsPage({
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Quadra</label>
+              <label className="block text-[11px] font-semibold text-muted-foreground">Quadra</label>
               <select
                 name="courtId"
                 defaultValue={courtIdParam}
-                className="mt-1 h-10 rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                className="ph-select mt-1 h-10"
               >
                 <option value="">Todas</option>
                 {courts.map((c) => (
@@ -213,11 +213,11 @@ export default async function ApprovalsPage({
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Status (agend.)</label>
+              <label className="block text-[11px] font-semibold text-muted-foreground">Status (agend.)</label>
               <select
                 name="bookingStatus"
                 defaultValue={bookingStatusParam}
-                className="mt-1 h-10 rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                className="ph-select mt-1 h-10"
               >
                 <option value="PENDING">Pendente</option>
                 <option value="CONFIRMED">Confirmado</option>
@@ -227,11 +227,11 @@ export default async function ApprovalsPage({
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Status (mens.)</label>
+              <label className="block text-[11px] font-semibold text-muted-foreground">Status (mens.)</label>
               <select
                 name="passStatus"
                 defaultValue={passStatusParam}
-                className="mt-1 h-10 rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                className="ph-select mt-1 h-10"
               >
                 <option value="PENDING">Pendente</option>
                 <option value="ACTIVE">Ativa</option>
@@ -241,42 +241,42 @@ export default async function ApprovalsPage({
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">De</label>
+              <label className="block text-[11px] font-semibold text-muted-foreground">De</label>
               <input
                 type="date"
                 name="from"
                 defaultValue={from}
-                className="mt-1 h-10 rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                className="ph-input mt-1 h-10"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Até</label>
+              <label className="block text-[11px] font-semibold text-muted-foreground">Até</label>
               <input
                 type="date"
                 name="to"
                 defaultValue={to}
-                className="mt-1 h-10 rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                className="ph-input mt-1 h-10"
               />
             </div>
 
             <div className="min-w-[240px] flex-1">
-              <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Busca</label>
+              <label className="block text-[11px] font-semibold text-muted-foreground">Busca</label>
               <input
                 type="text"
                 name="q"
                 defaultValue={q}
                 placeholder="Nome, e-mail, quadra..."
-                className="mt-1 h-10 w-full rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                className="ph-input mt-1 h-10 w-full"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Limite</label>
+              <label className="block text-[11px] font-semibold text-muted-foreground">Limite</label>
               <select
                 name="take"
                 defaultValue={String(take)}
-                className="mt-1 h-10 rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                className="ph-select mt-1 h-10"
               >
                 <option value="20">20</option>
                 <option value="50">50</option>
@@ -294,18 +294,18 @@ export default async function ApprovalsPage({
           </div>
         </form>
 
-        <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300">
+        <div className="mt-4 rounded-2xl border border-border bg-card/70 p-4 text-sm text-muted-foreground">
           Mostrando <span className="font-semibold">{total}</span> item(ns).
         </div>
 
         <div className="mt-4 grid gap-6 lg:grid-cols-2">
-          <div className="ph-card p-6 border border-[#CCFF00]/25">
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Agendamentos</h2>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Solicitações de agendamento.</p>
+          <div className="ph-card p-6 border border-primary/25">
+            <h2 className="text-lg font-semibold text-foreground">Agendamentos</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Solicitações de agendamento.</p>
 
             <div className="mt-4 space-y-3">
               {bookings.length === 0 ? (
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">Nenhum agendamento para os filtros atuais.</p>
+                <p className="text-sm text-muted-foreground">Nenhum agendamento para os filtros atuais.</p>
               ) : (
                 bookings.map((b) => {
                   const customerName = b.customer?.name ?? b.customer_name ?? "Cliente";
@@ -319,21 +319,21 @@ export default async function ApprovalsPage({
                       className={
                         "rounded-2xl border p-4 " +
                         (isPending
-                          ? "border-[#CCFF00]/40 bg-[#CCFF00]/10 dark:border-[#CCFF00]/40 dark:bg-[#CCFF00]/10"
-                          : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950")
+                          ? "border-primary/40 bg-primary/10"
+                          : "border-border bg-card/70")
                       }
                     >
-                      <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{b.court.name}</p>
-                      <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
+                      <p className="text-sm font-semibold text-foreground">{b.court.name}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
                         {toYMD(b.start_time)} • {formatHHMM(b.start_time)}–{formatHHMM(b.end_time)}
                       </p>
-                      <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                      <p className="mt-1 text-xs text-muted-foreground">
                         {customerName}
                         {customerEmail ? ` • ${customerEmail}` : ""}
                         {customerPhone ? ` • ${customerPhone}` : ""}
                       </p>
-                      <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">Valor: {formatBRLFromCents(b.total_price_cents ?? 0)}</p>
-                      <p className="mt-1 text-[11px] text-zinc-500 dark:text-zinc-500">Criado em: {toYMD(b.createdAt)}</p>
+                      <p className="mt-2 text-xs text-muted-foreground">Valor: {formatBRLFromCents(b.total_price_cents ?? 0)}</p>
+                      <p className="mt-1 text-[11px] text-muted-foreground">Criado em: {toYMD(b.createdAt)}</p>
 
                       <div className="mt-4 flex flex-wrap items-center gap-2">
                         <Link
@@ -384,7 +384,7 @@ export default async function ApprovalsPage({
                           </>
                         ) : null}
 
-                        <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+                        <span className="text-xs font-semibold text-muted-foreground">
                           Status: {b.status === "PENDING" ? "Pendente" : b.status === "CONFIRMED" ? "Confirmado" : "Cancelado"}
                         </span>
                       </div>
@@ -395,13 +395,13 @@ export default async function ApprovalsPage({
             </div>
           </div>
 
-          <div className="ph-card p-6 border border-[#CCFF00]/25">
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Mensalidades</h2>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Solicitações de mensalidade.</p>
+          <div className="ph-card p-6 border border-primary/25">
+            <h2 className="text-lg font-semibold text-foreground">Mensalidades</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Solicitações de mensalidade.</p>
 
             <div className="mt-4 space-y-3">
               {passes.length === 0 ? (
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">Nenhuma mensalidade para os filtros atuais.</p>
+                <p className="text-sm text-muted-foreground">Nenhuma mensalidade para os filtros atuais.</p>
               ) : (
                 passes.map((p) => {
                   const isPending = p.status === "PENDING";
@@ -411,23 +411,23 @@ export default async function ApprovalsPage({
                       className={
                         "rounded-2xl border p-4 " +
                         (isPending
-                          ? "border-[#CCFF00]/40 bg-[#CCFF00]/10 dark:border-[#CCFF00]/40 dark:bg-[#CCFF00]/10"
-                          : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950")
+                          ? "border-primary/40 bg-primary/10"
+                          : "border-border bg-card/70")
                       }
                     >
-                      <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{p.court.name}</p>
-                      <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
+                      <p className="text-sm font-semibold text-foreground">{p.court.name}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
                         {p.month} • {formatBRLFromCents(p.price_cents)}
                       </p>
                       {typeof p.weekday === "number" && p.start_time && p.end_time ? (
-                        <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                        <p className="mt-1 text-xs text-muted-foreground">
                           {"Dom Seg Ter Qua Qui Sex Sáb".split(" ")[p.weekday]} • {p.start_time}–{p.end_time}
                         </p>
                       ) : null}
-                      <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                      <p className="mt-1 text-xs text-muted-foreground">
                         {p.customer?.name ?? "Cliente"} • {p.customer?.email ?? ""}
                       </p>
-                      <p className="mt-1 text-[11px] text-zinc-500 dark:text-zinc-500">Criado em: {toYMD(p.createdAt)}</p>
+                      <p className="mt-1 text-[11px] text-muted-foreground">Criado em: {toYMD(p.createdAt)}</p>
 
                       <div className="mt-4 flex flex-wrap items-center gap-2">
                         {isPending ? (
@@ -460,7 +460,7 @@ export default async function ApprovalsPage({
                           </>
                         ) : null}
 
-                        <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+                        <span className="text-xs font-semibold text-muted-foreground">
                           Status: {p.status === "PENDING" ? "Pendente" : p.status === "ACTIVE" ? "Ativa" : "Cancelada"}
                         </span>
                       </div>

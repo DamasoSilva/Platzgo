@@ -320,14 +320,14 @@ export default async function DashboardHomePage({
       <div className="ph-card p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Resumo</h1>
-            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">Período: {rangeLabel}</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Resumo</h1>
+            <p className="mt-2 text-sm text-muted-foreground">Período: {rangeLabel}</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <Link
               href={showNotifications ? dashboardBaseHref : openNotificationsHref}
-              className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900"
+              className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card/60 text-foreground transition-colors hover:bg-card"
               aria-label={showNotifications ? "Fechar notificações" : "Abrir notificações"}
               title={showNotifications ? "Fechar notificações" : "Abrir notificações"}
             >
@@ -351,7 +351,7 @@ export default async function DashboardHomePage({
               <select
                 name="courtId"
                 defaultValue={selectedCourtId ?? ""}
-                className="h-10 rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                className="h-10 rounded-xl border border-border bg-secondary/70 px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
               >
                 <option value="">Todas as quadras</option>
                 {courts.map((c) => (
@@ -364,7 +364,7 @@ export default async function DashboardHomePage({
                 type="date"
                 name="date"
                 defaultValue={toYMD(base)}
-                className="h-10 rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                className="h-10 rounded-xl border border-border bg-secondary/70 px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
               />
               <button type="submit" className="ph-button-secondary h-10 px-4 py-0">
                 Filtrar
@@ -374,11 +374,11 @@ export default async function DashboardHomePage({
         </div>
 
         {showNotifications ? (
-          <div className="mt-5 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+          <div className="mt-5 rounded-2xl border border-border bg-card/60 p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Notificações</h2>
-                <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Atualizações recentes.</p>
+                <h2 className="text-sm font-semibold text-foreground">Notificações</h2>
+                <p className="mt-1 text-xs text-muted-foreground">Atualizações recentes.</p>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
@@ -411,18 +411,18 @@ export default async function DashboardHomePage({
                     className={
                       "rounded-2xl border p-4 " +
                       (n.readAt
-                        ? "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
-                        : "border-[#CCFF00]/40 bg-[#CCFF00]/10 dark:border-[#CCFF00]/40 dark:bg-[#CCFF00]/10")
+                        ? "border-border bg-card/70"
+                        : "border-primary/30 bg-primary/10")
                     }
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          {!n.readAt ? <span className="inline-flex h-2 w-2 rounded-full bg-[#CCFF00]" /> : null}
-                          <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">{n.title}</p>
+                          {!n.readAt ? <span className="inline-flex h-2 w-2 rounded-full bg-primary" /> : null}
+                          <p className="truncate text-sm font-semibold text-foreground">{n.title}</p>
                         </div>
-                        <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{n.body}</p>
-                        <p className="mt-2 text-[11px] text-zinc-500 dark:text-zinc-500">{n.createdAt.toLocaleString("pt-BR")}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{n.body}</p>
+                        <p className="mt-2 text-[11px] text-muted-foreground">{n.createdAt.toLocaleString("pt-BR")}</p>
                       </div>
                       {n.bookingId ? (
                         <div className="flex shrink-0 items-center gap-2">
@@ -459,21 +459,21 @@ export default async function DashboardHomePage({
                 ))}
               </div>
             ) : (
-              <p className="mt-4 text-sm text-zinc-600 dark:text-zinc-400">Nenhuma notificação recente.</p>
+              <p className="mt-4 text-sm text-muted-foreground">Nenhuma notificação recente.</p>
             )}
           </div>
         ) : null}
 
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-            <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Receita confirmada</p>
-            <p className="mt-1 text-lg font-bold text-zinc-900 dark:text-zinc-50">{formatBRLFromCents(revenueCents)}</p>
-            <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{confirmedCount} agendamento(s)</p>
+          <div className="ph-card p-4">
+            <p className="text-xs font-semibold text-muted-foreground">Receita confirmada</p>
+            <p className="mt-1 text-lg font-bold text-foreground">{formatBRLFromCents(revenueCents)}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{confirmedCount} agendamento(s)</p>
           </div>
-          <div className="rounded-2xl border border-[#CCFF00]/40 bg-[#CCFF00]/10 p-4 dark:border-[#CCFF00]/40 dark:bg-[#CCFF00]/10">
-            <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-50">Aprovações pendentes</p>
-            <p className="mt-1 text-lg font-black text-zinc-900 dark:text-zinc-50">{pendingBookings.length + pendingMonthlyPasses.length}</p>
-            <p className="mt-1 text-xs text-zinc-700 dark:text-zinc-300">
+          <div className="rounded-2xl border border-primary/30 bg-primary/10 p-4">
+            <p className="text-xs font-semibold text-foreground">Aprovações pendentes</p>
+            <p className="mt-1 text-lg font-black text-foreground">{pendingBookings.length + pendingMonthlyPasses.length}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
               {pendingBookings.length} agendamento(s) • {pendingMonthlyPasses.length} mensalidade(s)
             </p>
             <div className="mt-3">
@@ -482,10 +482,10 @@ export default async function DashboardHomePage({
               </Link>
             </div>
           </div>
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-            <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Cancelamentos no período</p>
-            <p className="mt-1 text-lg font-bold text-zinc-900 dark:text-zinc-50">{cancelledBookings.length}</p>
-            <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">(baseado no horário do agendamento)</p>
+          <div className="ph-card p-4">
+            <p className="text-xs font-semibold text-muted-foreground">Cancelamentos no período</p>
+            <p className="mt-1 text-lg font-bold text-foreground">{cancelledBookings.length}</p>
+            <p className="mt-1 text-xs text-muted-foreground">(baseado no horário do agendamento)</p>
           </div>
         </div>
 
@@ -495,11 +495,11 @@ export default async function DashboardHomePage({
           </Link>
         </div>
 
-        <div className="mt-8 border-t border-zinc-200 pt-6 dark:border-zinc-800">
+        <div className="mt-8 border-t border-border pt-6">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Agenda do dia</h2>
-              <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{dayYmd} ({formatHHMM(dayStart)}–{formatHHMM(dayEnd)})</p>
+              <h2 className="text-lg font-semibold text-foreground">Agenda do dia</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{dayYmd} ({formatHHMM(dayStart)}–{formatHHMM(dayEnd)})</p>
             </div>
             <Link
               href={`/dashboard/agenda?${new URLSearchParams({
@@ -517,33 +517,33 @@ export default async function DashboardHomePage({
             {agendaByCourt.map(({ court, confirmed, pending, confirmedCents, pendingCents }) => (
               <div
                 key={court.id}
-                className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
+                className="ph-card p-4"
               >
-                <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{court.name}</p>
-                <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                <p className="text-sm font-semibold text-foreground">{court.name}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
                   Confirmados: {confirmed.length} • Pendente: {pending.length}
                 </p>
-                <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">Confirmado: {formatBRLFromCents(confirmedCents)}</p>
-                <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">A receber (se confirmar): {formatBRLFromCents(pendingCents)}</p>
+                <p className="mt-2 text-xs text-muted-foreground">Confirmado: {formatBRLFromCents(confirmedCents)}</p>
+                <p className="mt-1 text-xs text-muted-foreground">A receber (se confirmar): {formatBRLFromCents(pendingCents)}</p>
               </div>
             ))}
           </div>
 
           {agendaByCourt.map(({ court, bookings, blocks }) => (
-            <div key={court.id} className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-              <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{court.name}</p>
+            <div key={court.id} className="ph-card p-4">
+              <p className="text-sm font-semibold text-foreground">{court.name}</p>
 
               {bookings.length === 0 && blocks.length === 0 ? (
-                <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">Sem eventos neste dia.</p>
+                <p className="mt-2 text-sm text-muted-foreground">Sem eventos neste dia.</p>
               ) : (
                 <div className="mt-3 space-y-2">
                   {blocks.map((b) => (
-                    <div key={b.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-zinc-100 px-3 py-2 text-sm text-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
+                    <div key={b.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-secondary/60 px-3 py-2 text-sm text-foreground">
                       <span>
                         Bloqueio • {formatHHMM(b.start_time)}–{formatHHMM(b.end_time)}
                         {b.note ? ` • ${b.note}` : ""}
                       </span>
-                      <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Indisponível</span>
+                      <span className="text-xs font-semibold text-muted-foreground">Indisponível</span>
                     </div>
                   ))}
 
@@ -551,7 +551,7 @@ export default async function DashboardHomePage({
                     const customerName = b.customer?.name ?? b.customer_name ?? "Cliente";
                     const customerEmail = b.customer?.email ?? b.customer_email ?? "";
                     return (
-                      <div key={b.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm dark:bg-zinc-900 dark:text-zinc-100">
+                      <div key={b.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-secondary/40 px-3 py-2 text-sm text-foreground">
                         <span>
                           {formatHHMM(b.start_time)}–{formatHHMM(b.end_time)} • {customerName}
                           {customerEmail ? ` (${customerEmail})` : ""}
@@ -571,9 +571,9 @@ export default async function DashboardHomePage({
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="ph-card p-6 border border-[#CCFF00]/30">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Aprovações pendentes</h2>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Agendamentos e mensalidades aguardando ação.</p>
+        <div className="ph-card p-6 border border-primary/30">
+          <h2 className="text-lg font-semibold text-foreground">Aprovações pendentes</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Agendamentos e mensalidades aguardando ação.</p>
 
           <div className="mt-4 flex flex-wrap gap-2">
             <Link href="/dashboard/aprovacoes" className="ph-button">
@@ -586,21 +586,21 @@ export default async function DashboardHomePage({
 
           <div className="mt-4 space-y-3">
             {pendingBookings.length === 0 ? (
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">Nenhum agendamento pendente no período.</p>
+              <p className="text-sm text-muted-foreground">Nenhum agendamento pendente no período.</p>
             ) : (
               pendingBookings.map((b) => {
                 const customerName = b.customer?.name ?? b.customer_name ?? "Cliente";
                 const customerEmail = b.customer?.email ?? b.customer_email ?? "";
                 return (
-                  <div key={b.id} className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{b.court.name}</p>
-                    <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
+                  <div key={b.id} className="rounded-2xl border border-border bg-card/70 p-4">
+                    <p className="text-sm font-semibold text-foreground">{b.court.name}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
                       {toYMD(b.start_time)} • {formatHHMM(b.start_time)}–{formatHHMM(b.end_time)}
                     </p>
-                    <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       {customerName}{customerEmail ? ` • ${customerEmail}` : ""}
                     </p>
-                    <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">Valor: {formatBRLFromCents(b.total_price_cents ?? 0)}</p>
+                    <p className="mt-2 text-xs text-muted-foreground">Valor: {formatBRLFromCents(b.total_price_cents ?? 0)}</p>
                     <p className="mt-2 text-xs font-semibold text-amber-500">Pendente</p>
 
                     <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -650,20 +650,20 @@ export default async function DashboardHomePage({
 
             {pendingMonthlyPasses.length ? (
               <div className="pt-2">
-                <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Mensalidades pendentes</p>
+                <p className="text-sm font-semibold text-foreground">Mensalidades pendentes</p>
                 <div className="mt-3 space-y-3">
                   {pendingMonthlyPasses.map((p) => (
-                    <div key={p.id} className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-                      <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{p.court.name}</p>
-                      <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
+                    <div key={p.id} className="rounded-2xl border border-border bg-card/70 p-4">
+                      <p className="text-sm font-semibold text-foreground">{p.court.name}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
                         {p.month} • {formatBRLFromCents(p.price_cents)}
                       </p>
                       {typeof p.weekday === "number" && p.start_time && p.end_time ? (
-                        <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                        <p className="mt-1 text-xs text-muted-foreground">
                           {"Dom Seg Ter Qua Qui Sex Sáb".split(" ")[p.weekday]} • {p.start_time}–{p.end_time}
                         </p>
                       ) : null}
-                      <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                      <p className="mt-1 text-xs text-muted-foreground">
                         {p.customer?.name ?? "Cliente"} • {p.customer?.email ?? ""}
                       </p>
                       <p className="mt-2 text-xs font-semibold text-amber-500">Pendente</p>
@@ -701,37 +701,37 @@ export default async function DashboardHomePage({
           </div>
         </div>
 
-        <div className="ph-card p-6 border border-[#CCFF00]/20">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Informativos</h2>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Cancelamentos e novas solicitações no período.</p>
+        <div className="ph-card p-6">
+          <h2 className="text-lg font-semibold text-foreground">Informativos</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Cancelamentos e novas solicitações no período.</p>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-              <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Novas solicitações</p>
-              <p className="mt-1 text-lg font-bold text-zinc-900 dark:text-zinc-50">{newBookings.length}</p>
+            <div className="ph-card p-4">
+              <p className="text-xs font-semibold text-muted-foreground">Novas solicitações</p>
+              <p className="mt-1 text-lg font-bold text-foreground">{newBookings.length}</p>
             </div>
-            <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-              <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Cancelamentos</p>
-              <p className="mt-1 text-lg font-bold text-zinc-900 dark:text-zinc-50">{cancelledBookings.length}</p>
+            <div className="ph-card p-4">
+              <p className="text-xs font-semibold text-muted-foreground">Cancelamentos</p>
+              <p className="mt-1 text-lg font-bold text-foreground">{cancelledBookings.length}</p>
             </div>
           </div>
 
           <div className="mt-4">
-            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Novas solicitações</p>
+            <p className="text-sm font-semibold text-foreground">Novas solicitações</p>
             <div className="mt-3 space-y-2">
               {newBookings.length === 0 ? (
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">Nenhuma nova solicitação no período.</p>
+                <p className="text-sm text-muted-foreground">Nenhuma nova solicitação no período.</p>
               ) : (
                 newBookings.map((b) => {
                   const customerName = b.customer?.name ?? b.customer_name ?? "Cliente";
                   const customerEmail = b.customer?.email ?? b.customer_email ?? "";
                   return (
-                    <div key={b.id} className="rounded-2xl border border-zinc-200 bg-white p-3 text-sm text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100">
+                    <div key={b.id} className="rounded-2xl border border-border bg-card/70 p-3 text-sm text-foreground">
                       <p className="font-semibold">{b.court.name}</p>
-                      <p className="text-zinc-700 dark:text-zinc-300">
+                      <p className="text-muted-foreground">
                         {toYMD(b.start_time)} • {formatHHMM(b.start_time)}–{formatHHMM(b.end_time)}
                       </p>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                      <p className="text-xs text-muted-foreground">
                         {customerName}{customerEmail ? ` • ${customerEmail}` : ""} • criado em {toYMD(b.createdAt)}
                       </p>
                     </div>
@@ -742,21 +742,21 @@ export default async function DashboardHomePage({
           </div>
 
           <div className="mt-6">
-            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Cancelamentos</p>
+            <p className="text-sm font-semibold text-foreground">Cancelamentos</p>
             <div className="mt-3 space-y-2">
               {cancelledBookings.length === 0 ? (
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">Nenhum cancelamento no período.</p>
+                <p className="text-sm text-muted-foreground">Nenhum cancelamento no período.</p>
               ) : (
                 cancelledBookings.map((b) => {
                   const customerName = b.customer?.name ?? b.customer_name ?? "Cliente";
                   const customerEmail = b.customer?.email ?? b.customer_email ?? "";
                   return (
-                    <div key={b.id} className="rounded-2xl border border-zinc-200 bg-white p-3 text-sm text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100">
+                    <div key={b.id} className="rounded-2xl border border-border bg-card/70 p-3 text-sm text-foreground">
                       <p className="font-semibold">{b.court.name}</p>
-                      <p className="text-zinc-700 dark:text-zinc-300">
+                      <p className="text-muted-foreground">
                         {toYMD(b.start_time)} • {formatHHMM(b.start_time)}–{formatHHMM(b.end_time)}
                       </p>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                      <p className="text-xs text-muted-foreground">
                         {customerName}{customerEmail ? ` • ${customerEmail}` : ""}
                       </p>
                     </div>

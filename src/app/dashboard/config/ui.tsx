@@ -163,7 +163,7 @@ function MediaGrid(props: { urls: string[]; onRemove?: (url: string) => void; on
         return (
           <div
             key={url}
-            className="group relative overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950"
+            className="group relative overflow-hidden rounded-2xl border border-border bg-card"
             draggable={Boolean(props.onReorder)}
             onDragStart={() => {
               dragIndexRef.current = idx;
@@ -192,7 +192,7 @@ function MediaGrid(props: { urls: string[]; onRemove?: (url: string) => void; on
                 href={url}
                 target="_blank"
                 rel="noreferrer"
-                className="flex h-28 w-full items-center justify-center bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100"
+                className="flex h-28 w-full items-center justify-center bg-muted text-foreground"
                 title="Abrir vídeo em nova aba"
               >
                 <span className="flex items-center gap-2 text-sm font-semibold">
@@ -612,27 +612,27 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Configurações do Dono</h1>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Dias/horários e cadastro de quadras.</p>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Configurações do Dono</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Dias/horários e cadastro de quadras.</p>
       </header>
 
       {message ? (
-        <div className="rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
+        <div className="rounded-2xl border border-border bg-card p-4 text-sm text-foreground">
           {message}
         </div>
       ) : null}
 
       {!props.establishment ? (
         <div className="ph-card p-6">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Complete seu cadastro</h2>
-          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+          <h2 className="text-lg font-semibold text-foreground">Complete seu cadastro</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
             Antes de acessar as outras telas do dashboard, cadastre sua arena.
           </p>
 
           <div className="mt-6 grid gap-6 lg:grid-cols-12">
             <div className="lg:col-span-7 space-y-4">
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Nome da Arena</label>
+                <label className="block text-xs font-medium text-muted-foreground">Nome da Arena</label>
                 <input
                   value={setup.arena_name}
                   onChange={(e) => setSetup((s) => ({ ...s, arena_name: e.target.value }))}
@@ -660,7 +660,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Fotos e vídeos da Arena</label>
+                <label className="block text-xs font-medium text-muted-foreground">Fotos e vídeos da Arena</label>
                 <div className="mt-2 flex items-center justify-between gap-3">
                   <UploadPickerButton
                     label={setup.photo_urls.length ? "Adicionar mais arquivos" : "Adicionar arquivos"}
@@ -689,7 +689,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
                       }
                     }}
                   />
-                  <div className="text-xs text-zinc-600 dark:text-zinc-400">
+                  <div className="text-xs text-muted-foreground">
                     {setupCounts.photos}/{PROFILE_MAX_PHOTOS} fotos · {setupCounts.videos}/{PROFILE_MAX_VIDEOS} vídeos
                   </div>
                 </div>
@@ -710,7 +710,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
 
             <div className="lg:col-span-5 space-y-4">
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Dias de funcionamento</label>
+                <label className="block text-xs font-medium text-muted-foreground">Dias de funcionamento</label>
                 <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
                   {weekdayLabels.map((label, day) => {
                     const active = setup.open_weekdays.includes(day);
@@ -722,7 +722,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
                         className={
                           active
                             ? "rounded-full bg-[#CCFF00] px-4 py-2 text-sm font-bold text-black"
-                            : "rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                            : "rounded-full border border-border bg-card px-4 py-2 text-sm text-foreground"
                         }
                       >
                         {label}
@@ -734,7 +734,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Abertura</label>
+                  <label className="block text-xs font-medium text-muted-foreground">Abertura</label>
                   <input
                     value={setup.opening_time}
                     onChange={(e) => setSetup((s) => ({ ...s, opening_time: e.target.value }))}
@@ -743,7 +743,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Fechamento</label>
+                  <label className="block text-xs font-medium text-muted-foreground">Fechamento</label>
                   <input
                     value={setup.closing_time}
                     onChange={(e) => setSetup((s) => ({ ...s, closing_time: e.target.value }))}
@@ -762,11 +762,11 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
       ) : (
       <div className="grid gap-6 lg:grid-cols-12">
         <section className="lg:col-span-7 ph-card p-6">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Estabelecimento</h2>
+          <h2 className="text-lg font-semibold text-foreground">Estabelecimento</h2>
 
           <div className="mt-5 space-y-4">
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Nome</label>
+              <label className="block text-xs font-medium text-muted-foreground">Nome</label>
               <input value={form.name} onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))} className="ph-input mt-2" />
             </div>
 
@@ -788,7 +788,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Fotos e vídeos da arena</label>
+              <label className="block text-xs font-medium text-muted-foreground">Fotos e vídeos da arena</label>
               <div className="mt-2 flex items-center justify-between gap-3">
                 <UploadPickerButton
                   label={form.photo_urls.length ? "Adicionar mais arquivos" : "Adicionar arquivos"}
@@ -817,7 +817,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
                     }
                   }}
                 />
-                <div className="text-xs text-zinc-600 dark:text-zinc-400">
+                <div className="text-xs text-muted-foreground">
                   {formCounts.photos}/{PROFILE_MAX_PHOTOS} fotos · {formCounts.videos}/{PROFILE_MAX_VIDEOS} vídeos
                 </div>
               </div>
@@ -829,7 +829,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Dias de funcionamento</label>
+              <label className="block text-xs font-medium text-muted-foreground">Dias de funcionamento</label>
               <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {weekdayLabels.map((label, day) => {
                   const active = form.open_weekdays.includes(day);
@@ -841,7 +841,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
                       className={
                         active
                           ? "rounded-full bg-[#CCFF00] px-4 py-2 text-sm font-bold text-black"
-                          : "rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                          : "rounded-full border border-border bg-card px-4 py-2 text-sm text-foreground"
                       }
                     >
                       {label}
@@ -853,7 +853,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Abertura</label>
+                <label className="block text-xs font-medium text-muted-foreground">Abertura</label>
                 <input
                   value={form.opening_time}
                   onChange={(e) => setForm((s) => ({ ...s, opening_time: e.target.value }))}
@@ -862,7 +862,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Fechamento</label>
+                <label className="block text-xs font-medium text-muted-foreground">Fechamento</label>
                 <input
                   value={form.closing_time}
                   onChange={(e) => setForm((s) => ({ ...s, closing_time: e.target.value }))}
@@ -879,38 +879,38 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
         </section>
 
         <section className="lg:col-span-5 ph-card p-6">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Quadras</h2>
+          <h2 className="text-lg font-semibold text-foreground">Quadras</h2>
 
           <div className="mt-5 space-y-4">
             {mustCreateFirstCourt ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-900">
                 Para liberar o dashboard, crie sua <span className="font-semibold">primeira quadra</span> abaixo.
               </div>
             ) : null}
 
             {courts.length === 0 ? (
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">Nenhuma quadra cadastrada ainda.</p>
+              <p className="text-sm text-muted-foreground">Nenhuma quadra cadastrada ainda.</p>
             ) : (
               <div className="space-y-2">
                 {courts.map((c) => (
-                  <div key={c.id} className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+                  <div key={c.id} className="rounded-2xl border border-border p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                        <p className="truncate text-sm font-semibold text-foreground">
                           {c.name}{" "}
                           {!c.is_active ? (
-                            <span className="ml-2 rounded-full bg-zinc-200 px-2 py-0.5 text-[10px] font-semibold text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">
+                            <span className="ml-2 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold text-foreground">
                               Inativa
                             </span>
                           ) : null}
                         </p>
-                        <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                        <p className="text-xs text-muted-foreground">
                           {sportLabel(c.sport_type)} • {formatBRLFromCents(c.price_per_hour)}/h • Desconto (≥ 90min): {c.discount_percentage_over_90min ?? 0}%
                         </p>
 
                         {!c.is_active ? (
-                          <div className="mt-2 rounded-2xl bg-zinc-50 p-3 text-xs text-zinc-700 dark:bg-zinc-950 dark:text-zinc-300">
-                            <p className="font-semibold text-zinc-900 dark:text-zinc-100">Motivo</p>
+                          <div className="mt-2 rounded-2xl bg-muted p-3 text-xs text-muted-foreground">
+                            <p className="font-semibold text-foreground">Motivo</p>
                             <p className="mt-1">
                               {c.inactive_reason?.title ?? "(motivo não encontrado)"}
                               {c.inactive_reason_note ? ` — ${c.inactive_reason_note}` : ""}
@@ -923,7 +923,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
                         <button
                           type="button"
                           onClick={() => startEditCourt(c.id)}
-                          className="text-xs font-semibold text-zinc-900 underline dark:text-zinc-100"
+                          className="text-xs font-semibold text-foreground underline"
                         >
                           Editar
                         </button>
@@ -936,7 +936,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
                               setDeactivateReasonId("");
                               setDeactivateNote("");
                             }}
-                            className="text-xs font-semibold text-amber-700 underline dark:text-amber-300"
+                            className="text-xs font-semibold text-amber-700 underline"
                           >
                             Inativar
                           </button>
@@ -944,7 +944,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
                           <button
                             type="button"
                             onClick={() => onReactivateCourt(c.id)}
-                            className="text-xs font-semibold text-emerald-700 underline dark:text-emerald-300"
+                            className="text-xs font-semibold text-emerald-700 underline"
                           >
                             Reativar
                           </button>
@@ -953,7 +953,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
                         <button
                           type="button"
                           onClick={() => onDeleteCourt(c.id)}
-                          className="text-xs font-semibold text-red-700 underline dark:text-red-300"
+                          className="text-xs font-semibold text-red-700 underline"
                         >
                           Excluir
                         </button>
@@ -961,9 +961,9 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
                     </div>
 
                     {editingCourtId === c.id && editing ? (
-                      <div className="mt-4 space-y-3 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+                      <div className="mt-4 space-y-3 rounded-2xl border border-border p-4">
                         <div>
-                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Nome</label>
+                          <label className="block text-xs font-medium text-muted-foreground">Nome</label>
                           <input
                             value={editing.name}
                             onChange={(e) => setEditing((s) => (s ? { ...s, name: e.target.value } : s))}
@@ -971,7 +971,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Modalidade</label>
+                          <label className="block text-xs font-medium text-muted-foreground">Modalidade</label>
                           <select
                             value={editing.sport_type}
                             onChange={(e) =>
@@ -987,7 +987,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
                           </select>
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Valor base (R$/hora)</label>
+                          <label className="block text-xs font-medium text-muted-foreground">Valor base (R$/hora)</label>
                           <input
                             value={editing.price_per_hour_text}
                             onChange={(e) =>
@@ -998,7 +998,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Desconto (≥ 90min) %</label>
+                          <label className="block text-xs font-medium text-muted-foreground">Desconto (≥ 90min) %</label>
                           <input
                             type="number"
                             value={editing.discount_percentage_over_90min}
@@ -1011,7 +1011,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Fotos e vídeos</label>
+                          <label className="block text-xs font-medium text-muted-foreground">Fotos e vídeos</label>
                           <div className="mt-2 flex items-center justify-between gap-3">
                             <UploadPickerButton
                               label={editing.photo_urls.length ? "Adicionar mais arquivos" : "Adicionar arquivos"}
@@ -1040,7 +1040,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
                                 }
                               }}
                             />
-                            <div className="text-xs text-zinc-600 dark:text-zinc-400">
+                            <div className="text-xs text-muted-foreground">
                               {editingCounts.photos}/{COURT_MAX_PHOTOS} fotos · {editingCounts.videos}/{COURT_MAX_VIDEOS} vídeo
                             </div>
                           </div>
@@ -1072,9 +1072,9 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
                     ) : null}
 
                     {deactivatingCourtId === c.id ? (
-                      <div className="mt-4 space-y-3 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+                      <div className="mt-4 space-y-3 rounded-2xl border border-border p-4">
                         <div>
-                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Motivo da inativação</label>
+                          <label className="block text-xs font-medium text-muted-foreground">Motivo da inativação</label>
                           <select
                             value={deactivateReasonId}
                             onChange={(e) => setDeactivateReasonId(e.target.value)}
@@ -1093,7 +1093,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
                         </div>
 
                         <div>
-                          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Observação (opcional)</label>
+                          <label className="block text-xs font-medium text-muted-foreground">Observação (opcional)</label>
                           <textarea
                             value={deactivateNote}
                             onChange={(e) => setDeactivateNote(e.target.value)}
@@ -1130,13 +1130,13 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
               </div>
             )}
 
-            <div className="h-px bg-zinc-200 dark:bg-zinc-800" />
+            <div className="h-px bg-border" />
 
             <div>
-              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Nova quadra</h3>
+              <h3 className="text-sm font-semibold text-foreground">Nova quadra</h3>
               <div className="mt-3 space-y-3">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Nome</label>
+                  <label className="block text-xs font-medium text-muted-foreground">Nome</label>
                   <input
                     value={newCourt.name}
                     onChange={(e) => setNewCourt((s) => ({ ...s, name: e.target.value }))}
@@ -1146,7 +1146,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Modalidade</label>
+                  <label className="block text-xs font-medium text-muted-foreground">Modalidade</label>
                   <select
                     value={newCourt.sport_type}
                     onChange={(e) => setNewCourt((s) => ({ ...s, sport_type: e.target.value as SportType }))}
@@ -1161,7 +1161,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Valor base (R$/hora)</label>
+                  <label className="block text-xs font-medium text-muted-foreground">Valor base (R$/hora)</label>
                   <input
                     value={newCourt.price_per_hour_text}
                     onChange={(e) => setNewCourt((s) => ({ ...s, price_per_hour_text: e.target.value }))}
@@ -1172,7 +1172,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Desconto (≥ 90min) %</label>
+                  <label className="block text-xs font-medium text-muted-foreground">Desconto (≥ 90min) %</label>
                   <input
                     type="number"
                     value={newCourt.discount_percentage_over_90min}
@@ -1184,7 +1184,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Fotos e vídeos da quadra</label>
+                  <label className="block text-xs font-medium text-muted-foreground">Fotos e vídeos da quadra</label>
                   <div className="mt-2 flex items-center justify-between gap-3">
                     <UploadPickerButton
                       label={newCourt.photo_urls.length ? "Adicionar mais arquivos" : "Adicionar arquivos"}
@@ -1213,7 +1213,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
                         }
                       }}
                     />
-                    <div className="text-xs text-zinc-600 dark:text-zinc-400">
+                    <div className="text-xs text-muted-foreground">
                       {newCourtCounts.photos}/{COURT_MAX_PHOTOS} fotos · {newCourtCounts.videos}/{COURT_MAX_VIDEOS} vídeo
                     </div>
                   </div>

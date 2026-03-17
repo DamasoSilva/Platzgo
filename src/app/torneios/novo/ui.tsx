@@ -134,10 +134,10 @@ export function InternalTournamentCreateClient() {
     <div className="mx-auto max-w-6xl">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             Criar torneio interno
           </h1>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="mt-1 text-sm text-muted-foreground">
             Convide amigos, monte os times e organize a agenda.
           </p>
         </div>
@@ -147,7 +147,7 @@ export function InternalTournamentCreateClient() {
       </div>
 
       {error ? (
-        <div className="mt-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-200">
+        <div className="mt-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-900">
           {error}
         </div>
       ) : null}
@@ -155,13 +155,13 @@ export function InternalTournamentCreateClient() {
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">
           <section className="ph-card p-6">
-            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Detalhes do torneio</h2>
+            <h2 className="text-sm font-semibold text-foreground">Detalhes do torneio</h2>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+              <label className="text-xs font-semibold text-muted-foreground">
                 Nome do torneio
                 <input value={name} onChange={(e) => setName(e.target.value)} className="ph-input mt-2" disabled={isPending} />
               </label>
-              <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+              <label className="text-xs font-semibold text-muted-foreground">
                 Modalidade
                 <select value={sport} onChange={(e) => setSport(e.target.value)} className="ph-select mt-2" disabled={isPending}>
                   <option value="FUTSAL">Futsal</option>
@@ -170,7 +170,7 @@ export function InternalTournamentCreateClient() {
                   <option value="PADEL">Padel</option>
                 </select>
               </label>
-              <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+              <label className="text-xs font-semibold text-muted-foreground">
                 Data
                 <input
                   type="date"
@@ -180,7 +180,7 @@ export function InternalTournamentCreateClient() {
                   disabled={isPending}
                 />
               </label>
-              <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+              <label className="text-xs font-semibold text-muted-foreground">
                 Jogadores por time
                 <input
                   type="number"
@@ -193,7 +193,7 @@ export function InternalTournamentCreateClient() {
                 />
               </label>
             </div>
-            <label className="mt-4 block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+            <label className="mt-4 block text-xs font-semibold text-muted-foreground">
               Regras basicas
               <textarea
                 value={rules}
@@ -208,16 +208,16 @@ export function InternalTournamentCreateClient() {
 
           <section className="ph-card p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Times e jogadores</h2>
+              <h2 className="text-sm font-semibold text-foreground">Times e jogadores</h2>
               <button type="button" className="ph-button-secondary-sm" onClick={addTeam}>
                 Adicionar time
               </button>
             </div>
-            <p className="mt-2 text-xs text-zinc-500">Recomendado: {teamSize} jogadores por time.</p>
+            <p className="mt-2 text-xs text-muted-foreground">Recomendado: {teamSize} jogadores por time.</p>
 
             <div className="mt-4 space-y-4">
               {teams.map((team) => (
-                <div key={team.id} className="rounded-3xl border border-zinc-200 bg-white/70 p-5 dark:border-zinc-800 dark:bg-zinc-950/50">
+                <div key={team.id} className="rounded-3xl border border-border bg-card/80 p-5">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <input
                       value={team.name}
@@ -265,13 +265,13 @@ export function InternalTournamentCreateClient() {
         </div>
 
         <aside className="space-y-6">
-          <section className="rounded-3xl border border-zinc-200 bg-white/80 p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/60">
-            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Convites</h3>
-            <p className="mt-2 text-xs text-zinc-500">Envie convite por link, email ou WhatsApp.</p>
+          <section className="rounded-3xl border border-border bg-card/80 p-5 shadow-sm">
+            <h3 className="text-sm font-semibold text-foreground">Convites</h3>
+            <p className="mt-2 text-xs text-muted-foreground">Envie convite por link, email ou WhatsApp.</p>
 
-            <div className="mt-3 rounded-2xl border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/70 dark:text-zinc-200">
+            <div className="mt-3 rounded-2xl border border-border bg-muted p-3 text-xs text-muted-foreground">
               Link do convite
-              <p className="mt-2 break-all text-[11px] text-zinc-500">{inviteLink}</p>
+              <p className="mt-2 break-all text-[11px] text-muted-foreground">{inviteLink}</p>
             </div>
 
             <div className="mt-4 space-y-3">
@@ -292,8 +292,8 @@ export function InternalTournamentCreateClient() {
             </button>
           </section>
 
-          <section className="rounded-3xl border border-zinc-200 bg-white/80 p-5 text-sm text-zinc-600 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/60 dark:text-zinc-300">
-            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Resumo</h3>
+          <section className="rounded-3xl border border-border bg-card/80 p-5 text-sm text-muted-foreground shadow-sm">
+            <h3 className="text-sm font-semibold text-foreground">Resumo</h3>
             <div className="mt-3 space-y-2">
               <p>
                 <span className="font-semibold">Times:</span> {teams.length}

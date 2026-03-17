@@ -308,8 +308,8 @@ export default async function DashboardFinanceiroPage({
       <div className="ph-card p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Financeiro</h1>
-            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Financeiro</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
               Resumo do período selecionado com receita, ocupação e exportação.
             </p>
           </div>
@@ -318,15 +318,15 @@ export default async function DashboardFinanceiroPage({
 
         <form method="get" action="/dashboard/financeiro" className="mt-5 grid gap-4 sm:grid-cols-4">
           <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Início</label>
+            <label className="block text-xs font-medium text-muted-foreground">Início</label>
             <input type="date" name="start" defaultValue={startValue} className="ph-input mt-2" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Fim</label>
+            <label className="block text-xs font-medium text-muted-foreground">Fim</label>
             <input type="date" name="end" defaultValue={endValue} className="ph-input mt-2" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Quadra</label>
+            <label className="block text-xs font-medium text-muted-foreground">Quadra</label>
             <select name="courtId" defaultValue={selectedCourtId} className="ph-select mt-2">
               <option value="all">Todas</option>
               {courts.map((c) => (
@@ -342,44 +342,44 @@ export default async function DashboardFinanceiroPage({
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="ph-card p-5">
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">Receita total (líquido)</p>
-          <p className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">{formatBRLFromCents(totalNetRevenue)}</p>
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">Bruto: {formatBRLFromCents(totalRevenue)}</p>
+          <p className="text-xs text-muted-foreground">Receita total (líquido)</p>
+          <p className="mt-2 text-2xl font-semibold text-foreground">{formatBRLFromCents(totalNetRevenue)}</p>
+          <p className="mt-2 text-xs text-muted-foreground">Bruto: {formatBRLFromCents(totalRevenue)}</p>
           {confirmedBreakdown.feeCents > 0 ? (
-            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="mt-1 text-xs text-muted-foreground">
               Taxa Asaas: {formatBRLFromCents(confirmedBreakdown.feeCents)}
             </p>
           ) : null}
           {confirmedBreakdown.adminCommissionCents > 0 ? (
-            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="mt-1 text-xs text-muted-foreground">
               Comissão admin: {formatBRLFromCents(confirmedBreakdown.adminCommissionCents)}
             </p>
           ) : null}
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="mt-1 text-xs text-muted-foreground">
             Cálculo: (Bruto - Taxa Asaas) x (1 - Comissão admin)
           </p>
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="mt-1 text-xs text-muted-foreground">
             Confirmados (líquido): {formatBRLFromCents(confirmedNetRevenue)} • Mensalidades: {formatBRLFromCents(monthlyRevenue)} • Multas: {formatBRLFromCents(cancelFeeRevenue)}
           </p>
         </div>
 
         <div className="ph-card p-5">
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">Ticket médio</p>
-          <p className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">{formatBRLFromCents(avgTicket)}</p>
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">Agendamentos confirmados: {confirmedCount}</p>
+          <p className="text-xs text-muted-foreground">Ticket médio</p>
+          <p className="mt-2 text-2xl font-semibold text-foreground">{formatBRLFromCents(avgTicket)}</p>
+          <p className="mt-2 text-xs text-muted-foreground">Agendamentos confirmados: {confirmedCount}</p>
         </div>
 
         <div className="ph-card p-5">
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">Ocupação</p>
-          <p className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">{occupancy.toFixed(1)}%</p>
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="text-xs text-muted-foreground">Ocupação</p>
+          <p className="mt-2 text-2xl font-semibold text-foreground">{occupancy.toFixed(1)}%</p>
+          <p className="mt-2 text-xs text-muted-foreground">
             Minutos reservados: {bookedMinutes} • Capacidade: {totalAvailableMinutes}
           </p>
         </div>
 
         <div className="ph-card p-5">
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">Status no período</p>
-          <div className="mt-2 grid gap-1 text-sm text-zinc-700 dark:text-zinc-300">
+          <p className="text-xs text-muted-foreground">Status no período</p>
+          <div className="mt-2 grid gap-1 text-sm text-muted-foreground">
             <span>Confirmados: {confirmedCount}</span>
             <span>Pendentes: {pendingCount}</span>
             <span>Cancelados: {cancelledAgg._count.id ?? 0}</span>

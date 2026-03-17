@@ -51,7 +51,7 @@ function statusLabel(status: string) {
 function statusClass(status: string) {
   if (status === "OPEN") return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300";
   if (status === "RUNNING") return "bg-amber-500/15 text-amber-700 dark:text-amber-300";
-  if (status === "FINISHED") return "bg-zinc-500/15 text-zinc-700 dark:text-zinc-300";
+  if (status === "FINISHED") return "bg-secondary text-muted-foreground";
   if (status === "CANCELLED") return "bg-rose-500/15 text-rose-700 dark:text-rose-300";
   return "bg-sky-500/15 text-sky-700 dark:text-sky-300";
 }
@@ -133,8 +133,8 @@ export function TournamentsListClient(props: Props) {
     <div className="mx-auto max-w-6xl">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Torneios</h1>
-          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Torneios</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
             Encontre campeonatos abertos e organize seus torneios internos com convites.
           </p>
         </div>
@@ -148,7 +148,7 @@ export function TournamentsListClient(props: Props) {
       <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
         <div className="rounded-3xl ph-surface p-5">
           <div className="grid gap-4 md:grid-cols-2">
-            <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+            <label className="text-xs font-semibold text-muted-foreground">
               Buscar
               <input
                 value={query}
@@ -158,7 +158,7 @@ export function TournamentsListClient(props: Props) {
               />
             </label>
 
-            <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+            <label className="text-xs font-semibold text-muted-foreground">
               Modalidade
               <select value={sport} onChange={(event) => setSport(event.target.value)} className="ph-select mt-2">
                 {sportOptions.map((option) => (
@@ -169,7 +169,7 @@ export function TournamentsListClient(props: Props) {
               </select>
             </label>
 
-            <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+            <label className="text-xs font-semibold text-muted-foreground">
               Categoria
               <select value={category} onChange={(event) => setCategory(event.target.value)} className="ph-select mt-2">
                 {categoryOptions.map((option) => (
@@ -180,7 +180,7 @@ export function TournamentsListClient(props: Props) {
               </select>
             </label>
 
-            <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+            <label className="text-xs font-semibold text-muted-foreground">
               Status
               <select value={status} onChange={(event) => setStatus(event.target.value as StatusFilter)} className="ph-select mt-2">
                 <option value="ANY">Todos</option>
@@ -190,7 +190,7 @@ export function TournamentsListClient(props: Props) {
               </select>
             </label>
 
-            <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+            <label className="text-xs font-semibold text-muted-foreground">
               Taxa
               <select value={fee} onChange={(event) => setFee(event.target.value as FeeFilter)} className="ph-select mt-2">
                 <option value="ANY">Qualquer</option>
@@ -202,9 +202,9 @@ export function TournamentsListClient(props: Props) {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-zinc-200 bg-white/70 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] dark:border-zinc-800 dark:bg-zinc-900/70">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Resumo</p>
-          <div className="mt-4 space-y-3 text-sm text-zinc-700 dark:text-zinc-300">
+        <div className="rounded-3xl border border-border bg-card/80 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Resumo</p>
+          <div className="mt-4 space-y-3 text-sm text-muted-foreground">
             <div className="flex items-center justify-between">
               <span>Publicos</span>
               <span className="font-semibold">{publicTournaments.length}</span>
@@ -222,7 +222,7 @@ export function TournamentsListClient(props: Props) {
               <span className="font-semibold">{internalTournaments.length}</span>
             </div>
           </div>
-          <p className="mt-4 text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="mt-4 text-xs text-muted-foreground">
             Torneios internos sao privados e usam convites para liberar os times.
           </p>
         </div>
@@ -230,8 +230,8 @@ export function TournamentsListClient(props: Props) {
 
       <div className="mt-8">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Torneios publicos</h2>
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">{filteredPublic.length} resultados</span>
+          <h2 className="text-lg font-semibold text-foreground">Torneios publicos</h2>
+          <span className="text-xs text-muted-foreground">{filteredPublic.length} resultados</span>
         </div>
 
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
@@ -243,52 +243,52 @@ export function TournamentsListClient(props: Props) {
                     <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass(tournament.status)}`}>
                       {statusLabel(tournament.status)}
                     </span>
-                    <span className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">
+                    <span className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
                       {formatSportLabel(tournament.sport_type)}
                     </span>
                   </div>
-                  <h3 className="mt-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{tournament.name}</h3>
-                  <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                  <h3 className="mt-3 text-lg font-semibold text-foreground">{tournament.name}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
                     {tournament.city || ""} {tournament.location_name ? `· ${tournament.location_name}` : ""}
                   </p>
                 </div>
-                <div className="rounded-2xl bg-zinc-900/5 px-4 py-2 text-xs font-semibold text-zinc-700 dark:bg-white/10 dark:text-zinc-200">
+                <div className="rounded-2xl bg-secondary px-4 py-2 text-xs font-semibold text-foreground">
                   {formatDateRange(tournament.start_date, tournament.end_date)}
                 </div>
               </div>
 
-              <div className="mt-4 grid gap-3 text-sm text-zinc-600 dark:text-zinc-300 md:grid-cols-2">
+              <div className="mt-4 grid gap-3 text-sm text-muted-foreground md:grid-cols-2">
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-zinc-400">Taxa</p>
-                  <p className="font-semibold text-zinc-900 dark:text-zinc-50">{formatFee(tournament.entry_fee_cents)}</p>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Taxa</p>
+                  <p className="font-semibold text-foreground">{formatFee(tournament.entry_fee_cents)}</p>
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-zinc-400">Jogadores</p>
-                  <p className="font-semibold text-zinc-900 dark:text-zinc-50">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Jogadores</p>
+                  <p className="font-semibold text-foreground">
                     {tournament.team_size_min}-{tournament.team_size_max} por time
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-zinc-400">Formato</p>
-                  <p className="font-semibold text-zinc-900 dark:text-zinc-50">{formatFormatLabel(tournament.format)}</p>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Formato</p>
+                  <p className="font-semibold text-foreground">{formatFormatLabel(tournament.format)}</p>
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-zinc-400">Vagas</p>
-                  <p className="font-semibold text-zinc-900 dark:text-zinc-50">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Vagas</p>
+                  <p className="font-semibold text-foreground">
                     {tournament.registered_teams}/{tournament.max_teams} times
                   </p>
                 </div>
               </div>
 
               {tournament.description ? (
-                <p className="mt-4 text-sm text-zinc-600 dark:text-zinc-400">{tournament.description}</p>
+                <p className="mt-4 text-sm text-muted-foreground">{tournament.description}</p>
               ) : null}
 
               <div className="mt-5 flex flex-wrap gap-2">
                 {tournament.categories.map((cat) => (
                   <span
                     key={cat}
-                    className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+                    className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground"
                   >
                     {cat}
                   </span>
@@ -321,7 +321,7 @@ export function TournamentsListClient(props: Props) {
 
       <div className="mt-10">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Torneios internos</h2>
+          <h2 className="text-lg font-semibold text-foreground">Torneios internos</h2>
           {showInternalCta ? (
             <Link href="/torneios/novo" className="ph-button-secondary-sm">
               Criar interno
@@ -333,36 +333,36 @@ export function TournamentsListClient(props: Props) {
           ) : null}
         </div>
 
-        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="mt-2 text-sm text-muted-foreground">
           Convites privados para grupos de amigos. O organizador controla times, jogadores e agenda.
         </p>
 
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           {internalTournaments.map((tournament) => (
-            <div key={tournament.id} className="rounded-3xl border border-zinc-200 bg-white/70 p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/70">
+            <div key={tournament.id} className="rounded-3xl border border-border bg-card/80 p-5 shadow-sm">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <span className="rounded-full bg-sky-500/15 px-3 py-1 text-xs font-semibold text-sky-700 dark:text-sky-300">
                     Privado
                   </span>
-                  <h3 className="mt-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{tournament.name}</h3>
-                  <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                  <h3 className="mt-3 text-lg font-semibold text-foreground">{tournament.name}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
                     {tournament.city || ""} {tournament.location_name ? `· ${tournament.location_name}` : ""}
                   </p>
                 </div>
-                <div className="rounded-2xl bg-zinc-900/5 px-4 py-2 text-xs font-semibold text-zinc-700 dark:bg-white/10 dark:text-zinc-200">
+                <div className="rounded-2xl bg-secondary px-4 py-2 text-xs font-semibold text-foreground">
                   {formatDateRange(tournament.start_date, tournament.end_date)}
                 </div>
               </div>
 
-              <div className="mt-4 grid gap-3 text-sm text-zinc-600 dark:text-zinc-300 md:grid-cols-2">
+              <div className="mt-4 grid gap-3 text-sm text-muted-foreground md:grid-cols-2">
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-zinc-400">Organizador</p>
-                  <p className="font-semibold text-zinc-900 dark:text-zinc-50">{tournament.organizer_name ?? "-"}</p>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Organizador</p>
+                  <p className="font-semibold text-foreground">{tournament.organizer_name ?? "-"}</p>
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-zinc-400">Times</p>
-                  <p className="font-semibold text-zinc-900 dark:text-zinc-50">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Times</p>
+                  <p className="font-semibold text-foreground">
                     {tournament.registered_teams}/{tournament.max_teams}
                   </p>
                 </div>
@@ -372,7 +372,7 @@ export function TournamentsListClient(props: Props) {
                 {tournament.categories.map((item) => (
                   <span
                     key={item}
-                    className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+                    className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground"
                   >
                     {item}
                   </span>

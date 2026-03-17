@@ -127,8 +127,8 @@ export default async function SysadminUsersPage(props: {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Usuários cadastrados</h1>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Usuários cadastrados</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             Gerencie usuários por estabelecimento e realize inativações quando necessário.
           </p>
         </div>
@@ -146,23 +146,23 @@ export default async function SysadminUsersPage(props: {
       {err ? <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">{err}</div> : null}
 
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Estabelecimentos</h2>
+        <h2 className="text-lg font-semibold text-foreground">Estabelecimentos</h2>
 
         {establishments.length ? (
           <div className="space-y-4">
             {establishments.map((est) => (
-              <div key={est.id} className="rounded-2xl border border-zinc-200 bg-white/70 p-4 dark:border-zinc-800 dark:bg-zinc-950">
+              <div key={est.id} className="rounded-2xl border border-border bg-card/70 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{est.name}</p>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                    <p className="text-sm font-semibold text-foreground">{est.name}</p>
+                    <p className="text-xs text-muted-foreground">
                       Dono: {est.owner?.name ?? "—"} {est.owner?.email ? `(${est.owner.email})` : ""}
                     </p>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                    <p className="text-xs text-muted-foreground">
                       WhatsApp: {est.owner?.whatsapp_number ?? "—"}
                     </p>
                     {!est.owner?.is_active ? (
-                      <p className="text-xs font-semibold text-red-700 dark:text-red-200">
+                      <p className="text-xs font-semibold text-red-700">
                         Inativo: {est.owner?.inactive_reason ?? "motivo não informado"}
                       </p>
                     ) : null}
@@ -193,23 +193,23 @@ export default async function SysadminUsersPage(props: {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">Nenhum estabelecimento cadastrado.</p>
+          <p className="text-sm text-muted-foreground">Nenhum estabelecimento cadastrado.</p>
         )}
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Clientes</h2>
+        <h2 className="text-lg font-semibold text-foreground">Clientes</h2>
         {customers.length ? (
           <div className="space-y-3">
             {customers.map((u) => (
-              <div key={u.id} className="rounded-2xl border border-zinc-200 bg-white/70 p-4 dark:border-zinc-800 dark:bg-zinc-950">
+              <div key={u.id} className="rounded-2xl border border-border bg-card/70 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{u.name ?? "Sem nome"}</p>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400">{u.email}</p>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400">WhatsApp: {u.whatsapp_number ?? "—"}</p>
+                    <p className="text-sm font-semibold text-foreground">{u.name ?? "Sem nome"}</p>
+                    <p className="text-xs text-muted-foreground">{u.email}</p>
+                    <p className="text-xs text-muted-foreground">WhatsApp: {u.whatsapp_number ?? "—"}</p>
                     {!u.is_active ? (
-                      <p className="text-xs font-semibold text-red-700 dark:text-red-200">
+                      <p className="text-xs font-semibold text-red-700">
                         Inativo: {u.inactive_reason ?? "motivo não informado"}
                       </p>
                     ) : null}
@@ -238,22 +238,22 @@ export default async function SysadminUsersPage(props: {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">Nenhum cliente cadastrado.</p>
+          <p className="text-sm text-muted-foreground">Nenhum cliente cadastrado.</p>
         )}
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Sysadmins</h2>
+        <h2 className="text-lg font-semibold text-foreground">Sysadmins</h2>
         {sysadmins.length ? (
           <div className="space-y-3">
             {sysadmins.map((u) => (
-              <div key={u.id} className="rounded-2xl border border-zinc-200 bg-white/70 p-4 dark:border-zinc-800 dark:bg-zinc-950">
+              <div key={u.id} className="rounded-2xl border border-border bg-card/70 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{u.name ?? "Sem nome"}</p>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400">{u.email}</p>
+                    <p className="text-sm font-semibold text-foreground">{u.name ?? "Sem nome"}</p>
+                    <p className="text-xs text-muted-foreground">{u.email}</p>
                     {!u.is_active ? (
-                      <p className="text-xs font-semibold text-red-700 dark:text-red-200">
+                      <p className="text-xs font-semibold text-red-700">
                         Inativo: {u.inactive_reason ?? "motivo não informado"}
                       </p>
                     ) : null}
@@ -282,7 +282,7 @@ export default async function SysadminUsersPage(props: {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">Nenhum sysadmin cadastrado.</p>
+          <p className="text-sm text-muted-foreground">Nenhum sysadmin cadastrado.</p>
         )}
       </div>
     </div>

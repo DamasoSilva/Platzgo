@@ -119,8 +119,8 @@ export function SysadminSearchOptions() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Opções de quadras (modalidades)</h1>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Opções de quadras (modalidades)</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Gerencie as modalidades exibidas na busca pública e no cadastro de quadras do dono.
         </p>
 
@@ -141,7 +141,7 @@ export function SysadminSearchOptions() {
                 }
               });
             }}
-            className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200"
+            className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60"
           >
             Limpar lista
           </button>
@@ -149,14 +149,14 @@ export function SysadminSearchOptions() {
       </header>
 
       {message ? (
-        <div className="rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
+        <div className="rounded-2xl border border-border bg-card/70 p-4 text-sm text-muted-foreground">
           {message}
         </div>
       ) : null}
 
       <div className="ph-card p-6">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Nova opção</h2>
-        <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+        <h2 className="text-lg font-semibold text-foreground">Nova opção</h2>
+        <p className="mt-1 text-xs text-muted-foreground">
           Cadastro unitário (1 a 1). Depois você pode <strong>Renomear</strong> e <strong>Inativar</strong> na lista.
         </p>
 
@@ -180,20 +180,20 @@ export function SysadminSearchOptions() {
           </button>
         </div>
         {availableTypes.length === 0 ? (
-          <p className="mt-3 text-xs text-zinc-600 dark:text-zinc-400">Todas as modalidades do sistema já possuem opção cadastrada.</p>
+          <p className="mt-3 text-xs text-muted-foreground">Todas as modalidades do sistema já possuem opção cadastrada.</p>
         ) : null}
       </div>
 
       <div className="ph-card p-6">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Lista</h2>
+        <h2 className="text-lg font-semibold text-foreground">Lista</h2>
         <div className="mt-4 space-y-2">
           {rows.length === 0 ? (
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">Nenhuma opção cadastrada.</p>
+            <p className="text-sm text-muted-foreground">Nenhuma opção cadastrada.</p>
           ) : (
             rows.map((r) => (
               <div
                 key={r.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border p-4"
               >
                 <div className="min-w-0">
                   {editingId === r.id ? (
@@ -222,15 +222,15 @@ export function SysadminSearchOptions() {
                         type="button"
                         onClick={cancelRename}
                         disabled={isPending}
-                        className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                        className="ph-button-secondary-sm"
                       >
                         Cancelar
                       </button>
                     </div>
                   ) : (
-                    <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">{r.label}</p>
+                    <p className="truncate text-sm font-semibold text-foreground">{r.label}</p>
                   )}
-                  <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                  <p className="text-xs text-muted-foreground">
                     ID {r.public_id} • {formatSportLabel(r.sport_type)} • {r.is_active ? "Ativo" : "Inativo"}
                   </p>
                 </div>
@@ -240,7 +240,7 @@ export function SysadminSearchOptions() {
                     type="button"
                     onClick={() => onToggle(r.id, !r.is_active)}
                     disabled={isPending}
-                    className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                    className="ph-button-secondary-sm"
                   >
                     {r.is_active ? "Desativar" : "Ativar"}
                   </button>
@@ -249,7 +249,7 @@ export function SysadminSearchOptions() {
                     type="button"
                     onClick={() => startRename(r.id, r.label)}
                     disabled={isPending}
-                    className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                    className="ph-button-secondary-sm"
                   >
                     Renomear
                   </button>
@@ -258,7 +258,7 @@ export function SysadminSearchOptions() {
                     type="button"
                     onClick={() => onDelete(r.id)}
                     disabled={isPending}
-                    className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200"
+                    className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold text-red-700 hover:bg-red-100"
                   >
                     Excluir
                   </button>

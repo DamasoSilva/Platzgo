@@ -90,11 +90,11 @@ export function DashboardTournamentDetailClient(props: Props) {
     <div className="mx-auto w-full max-w-6xl px-6 pb-12">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Torneio</p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Torneio</p>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
             {tournament.name}
           </h1>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="mt-1 text-sm text-muted-foreground">
             {formatSportLabel(tournament.sport_type)} · {tournament.city ?? "-"}
           </p>
         </div>
@@ -127,7 +127,7 @@ export function DashboardTournamentDetailClient(props: Props) {
             className={
               tab === item.key
                 ? "ph-button-secondary-sm"
-                : "rounded-full border border-zinc-200 px-4 py-2 text-xs dark:border-zinc-700"
+                : "rounded-full border border-border px-4 py-2 text-xs text-muted-foreground hover:text-foreground"
             }
             onClick={() => setTab(item.key)}
           >
@@ -138,21 +138,21 @@ export function DashboardTournamentDetailClient(props: Props) {
 
       {tab === "overview" ? (
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          <div className="rounded-3xl border border-zinc-200 bg-white/80 p-5 text-sm text-zinc-600 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/60 dark:text-zinc-300">
-            <p className="text-xs uppercase tracking-wide text-zinc-400">Status</p>
-            <p className="mt-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{statusLabel(currentStatus)}</p>
+          <div className="rounded-3xl border border-border bg-card/70 p-5 text-sm text-muted-foreground shadow-sm">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Status</p>
+            <p className="mt-2 text-lg font-semibold text-foreground">{statusLabel(currentStatus)}</p>
             <p className="mt-2">Formato: {formatFormatLabel(tournament.format)}</p>
           </div>
-          <div className="rounded-3xl border border-zinc-200 bg-white/80 p-5 text-sm text-zinc-600 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/60 dark:text-zinc-300">
-            <p className="text-xs uppercase tracking-wide text-zinc-400">Times</p>
-            <p className="mt-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+          <div className="rounded-3xl border border-border bg-card/70 p-5 text-sm text-muted-foreground shadow-sm">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Times</p>
+            <p className="mt-2 text-lg font-semibold text-foreground">
               {tournament.registered_teams}/{tournament.max_teams}
             </p>
             <p className="mt-2">Jogadores por time: {tournament.team_size_min}-{tournament.team_size_max}</p>
           </div>
-          <div className="rounded-3xl border border-zinc-200 bg-white/80 p-5 text-sm text-zinc-600 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/60 dark:text-zinc-300">
-            <p className="text-xs uppercase tracking-wide text-zinc-400">Taxa</p>
-            <p className="mt-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{feeLabel}</p>
+          <div className="rounded-3xl border border-border bg-card/70 p-5 text-sm text-muted-foreground shadow-sm">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Taxa</p>
+            <p className="mt-2 text-lg font-semibold text-foreground">{feeLabel}</p>
             <p className="mt-2">Pagamento via Asaas</p>
           </div>
         </div>
@@ -161,7 +161,7 @@ export function DashboardTournamentDetailClient(props: Props) {
       {tab === "registrations" ? (
         <div className="mt-6 rounded-3xl ph-surface p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Inscricoes</h2>
+            <h2 className="text-sm font-semibold text-foreground">Inscricoes</h2>
             <button
               type="button"
               className="ph-button-secondary-sm"
@@ -181,14 +181,14 @@ export function DashboardTournamentDetailClient(props: Props) {
             {registrations.map((item) => (
               <div
                 key={item.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-200 bg-white/70 px-4 py-3 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-200"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card/70 px-4 py-3 text-sm text-muted-foreground"
               >
                 <div>
-                  <p className="font-semibold text-zinc-900 dark:text-zinc-50">{item.team_name}</p>
-                  <p className="text-xs text-zinc-500">Capitao: {item.captain_name}</p>
+                  <p className="font-semibold text-foreground">{item.team_name}</p>
+                  <p className="text-xs text-muted-foreground">Capitao: {item.captain_name}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="rounded-full bg-zinc-900/5 px-3 py-1 text-xs text-zinc-600 dark:bg-white/10 dark:text-zinc-300">
+                  <span className="rounded-full bg-secondary/60 px-3 py-1 text-xs text-muted-foreground">
                     {item.status}
                   </span>
                   <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs text-emerald-700 dark:text-emerald-300">
@@ -213,7 +213,7 @@ export function DashboardTournamentDetailClient(props: Props) {
                 </div>
               </div>
             ))}
-            {!registrations.length ? <p className="text-xs text-zinc-500">Nenhuma inscricao no momento.</p> : null}
+            {!registrations.length ? <p className="text-xs text-muted-foreground">Nenhuma inscricao no momento.</p> : null}
           </div>
         </div>
       ) : null}
@@ -221,7 +221,7 @@ export function DashboardTournamentDetailClient(props: Props) {
       {tab === "schedule" ? (
         <div className="mt-6 rounded-3xl ph-surface p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Agenda</h2>
+            <h2 className="text-sm font-semibold text-foreground">Agenda</h2>
             <button type="button" className="ph-button-secondary-sm" disabled={isPending}>
               Distribuir jogos
             </button>
@@ -230,31 +230,31 @@ export function DashboardTournamentDetailClient(props: Props) {
             {schedule.map((item) => (
               <div
                 key={item.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-200 bg-white/70 px-4 py-3 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-200"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card/70 px-4 py-3 text-sm text-muted-foreground"
               >
                 <div>
-                  <p className="font-semibold text-zinc-900 dark:text-zinc-50">
+                  <p className="font-semibold text-foreground">
                     {item.team_a} x {item.team_b}
                   </p>
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs text-muted-foreground">
                     {item.court_name} {item.group_label ? `· ${item.group_label}` : ""}
                   </p>
                 </div>
-                <span className="rounded-full bg-zinc-900/5 px-3 py-1 text-xs text-zinc-600 dark:bg-white/10 dark:text-zinc-300">
+                <span className="rounded-full bg-secondary/60 px-3 py-1 text-xs text-muted-foreground">
                   {new Date(item.start_time).toLocaleDateString("pt-BR")} ·
                   {new Date(item.start_time).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                 </span>
               </div>
             ))}
-            {!schedule.length ? <p className="text-xs text-zinc-500">Agenda ainda nao publicada.</p> : null}
+            {!schedule.length ? <p className="text-xs text-muted-foreground">Agenda ainda nao publicada.</p> : null}
           </div>
         </div>
       ) : null}
 
       {tab === "results" ? (
         <div className="mt-6 rounded-3xl ph-surface p-6">
-          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Resultados</h2>
-          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
+          <h2 className="text-sm font-semibold text-foreground">Resultados</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
             Registre placares, estatisticas e publique a tabela.
           </p>
           <button type="button" className="ph-button-secondary-sm mt-4">
@@ -265,23 +265,23 @@ export function DashboardTournamentDetailClient(props: Props) {
 
       {tab === "finance" ? (
         <div className="mt-6 rounded-3xl ph-surface p-6">
-          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Financeiro</h2>
+          <h2 className="text-sm font-semibold text-foreground">Financeiro</h2>
           <div className="mt-3 grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border border-zinc-200 bg-white/70 p-4 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-200">
-              <p className="text-xs uppercase tracking-wide text-zinc-400">Recebido (líquido)</p>
-              <p className="mt-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+            <div className="rounded-2xl border border-border bg-card/70 p-4 text-sm text-muted-foreground">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Recebido (líquido)</p>
+              <p className="mt-2 text-lg font-semibold text-foreground">
                 {formatBRLFromCents(tournament.finance.received_cents)}
               </p>
-              <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+              <p className="mt-2 text-xs text-muted-foreground">
                 Bruto: {formatBRLFromCents(tournament.finance.received_gross_cents)}
               </p>
             </div>
-            <div className="rounded-2xl border border-zinc-200 bg-white/70 p-4 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-200">
-              <p className="text-xs uppercase tracking-wide text-zinc-400">Pendente (líquido)</p>
-              <p className="mt-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+            <div className="rounded-2xl border border-border bg-card/70 p-4 text-sm text-muted-foreground">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Pendente (líquido)</p>
+              <p className="mt-2 text-lg font-semibold text-foreground">
                 {formatBRLFromCents(tournament.finance.pending_cents)}
               </p>
-              <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+              <p className="mt-2 text-xs text-muted-foreground">
                 Bruto: {formatBRLFromCents(tournament.finance.pending_gross_cents)}
               </p>
             </div>

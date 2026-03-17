@@ -123,8 +123,8 @@ export default async function DashboardNotificationsPage({
       <div className="ph-card p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Histórico de notificações</h1>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Inclui notificações excluídas.</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Histórico de notificações</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Inclui notificações excluídas.</p>
           </div>
 
           <Link href="/dashboard" className="ph-button-secondary">
@@ -132,14 +132,14 @@ export default async function DashboardNotificationsPage({
           </Link>
         </div>
 
-        <form method="get" className="mt-4 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+        <form method="get" className="mt-4 rounded-2xl border border-border bg-card/70 p-4">
           <div className="flex flex-wrap items-end gap-2">
             <div>
-              <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Status</label>
+              <label className="block text-[11px] font-semibold text-muted-foreground">Status</label>
               <select
                 name="status"
                 defaultValue={status}
-                className="mt-1 h-10 rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                className="ph-select mt-1 h-10"
               >
                 <option value="all">Todas</option>
                 <option value="active">Ativas</option>
@@ -148,11 +148,11 @@ export default async function DashboardNotificationsPage({
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Leitura</label>
+              <label className="block text-[11px] font-semibold text-muted-foreground">Leitura</label>
               <select
                 name="read"
                 defaultValue={read}
-                className="mt-1 h-10 rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                className="ph-select mt-1 h-10"
               >
                 <option value="all">Todas</option>
                 <option value="unread">Não lidas</option>
@@ -161,11 +161,11 @@ export default async function DashboardNotificationsPage({
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Tipo</label>
+              <label className="block text-[11px] font-semibold text-muted-foreground">Tipo</label>
               <select
                 name="type"
                 defaultValue={typeParam}
-                className="mt-1 h-10 rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                className="ph-select mt-1 h-10"
               >
                 <option value="all">Todos</option>
                 {Object.values(NotificationType).map((t) => (
@@ -177,53 +177,53 @@ export default async function DashboardNotificationsPage({
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">De</label>
+              <label className="block text-[11px] font-semibold text-muted-foreground">De</label>
               <input
                 type="date"
                 name="from"
                 defaultValue={from}
-                className="mt-1 h-10 rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                className="ph-input mt-1 h-10"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Até</label>
+              <label className="block text-[11px] font-semibold text-muted-foreground">Até</label>
               <input
                 type="date"
                 name="to"
                 defaultValue={to}
-                className="mt-1 h-10 rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                className="ph-input mt-1 h-10"
               />
             </div>
 
             <div className="min-w-[240px] flex-1">
-              <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Busca</label>
+              <label className="block text-[11px] font-semibold text-muted-foreground">Busca</label>
               <input
                 type="text"
                 name="q"
                 defaultValue={q}
                 placeholder="Título ou mensagem"
-                className="mt-1 h-10 w-full rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                className="ph-input mt-1 h-10 w-full"
               />
             </div>
 
             <div className="min-w-[220px] flex-1">
-              <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Booking ID</label>
+              <label className="block text-[11px] font-semibold text-muted-foreground">Booking ID</label>
               <input
                 type="text"
                 name="bookingId"
                 defaultValue={bookingId}
                 placeholder="Opcional"
-                className="mt-1 h-10 w-full rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                className="ph-input mt-1 h-10 w-full"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Limite</label>
+              <label className="block text-[11px] font-semibold text-muted-foreground">Limite</label>
               <select
                 name="take"
                 defaultValue={String(take)}
-                className="mt-1 h-10 rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                className="ph-select mt-1 h-10"
               >
                 <option value="50">50</option>
                 <option value="100">100</option>
@@ -242,11 +242,11 @@ export default async function DashboardNotificationsPage({
         </form>
 
         <div className="mt-4 space-y-3">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300">
+          <div className="rounded-2xl border border-border bg-card/70 p-4 text-sm text-muted-foreground">
             <p>
               Mostrando <span className="font-semibold">{notifications.length}</span> notificação(ões).
             </p>
-            <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Filtros: {filterSummary.join(" • ")}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Filtros: {filterSummary.join(" • ")}</p>
           </div>
 
           {notifications.map((n) => (
@@ -255,20 +255,20 @@ export default async function DashboardNotificationsPage({
               className={
                 "rounded-2xl border p-4 " +
                 (n.deletedAt
-                  ? "border-zinc-200 bg-zinc-50 opacity-80 dark:border-zinc-800 dark:bg-zinc-950"
+                  ? "border-border bg-secondary/50 opacity-80"
                   : n.readAt
-                    ? "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950"
-                    : "border-[#CCFF00]/40 bg-[#CCFF00]/10 dark:border-[#CCFF00]/40 dark:bg-[#CCFF00]/10")
+                    ? "border-border bg-card/70"
+                    : "border-primary/40 bg-primary/10")
               }
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                  <p className="truncate text-sm font-semibold text-foreground">
                     {n.title}
                     {n.deletedAt ? " (excluída)" : ""}
                   </p>
-                  <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{n.body}</p>
-                  <p className="mt-2 text-[11px] text-zinc-500 dark:text-zinc-500">{formatDateTimeBR(n.createdAt)}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{n.body}</p>
+                  <p className="mt-2 text-[11px] text-muted-foreground">{formatDateTimeBR(n.createdAt)}</p>
                 </div>
 
                 <div className="flex shrink-0 items-center gap-2">
@@ -316,8 +316,8 @@ export default async function DashboardNotificationsPage({
           ))}
 
           {notifications.length === 0 ? (
-            <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">Nenhuma notificação ainda.</p>
+            <div className="rounded-2xl border border-border bg-card/70 p-4">
+              <p className="text-sm text-muted-foreground">Nenhuma notificação ainda.</p>
             </div>
           ) : null}
         </div>

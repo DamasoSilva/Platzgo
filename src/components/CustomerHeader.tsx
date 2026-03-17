@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { getSession, signOut } from "next-auth/react";
 import type { Role } from "@/generated/prisma/enums";
 import { Menu, X } from "lucide-react";
@@ -41,7 +41,6 @@ export function CustomerHeader(props: Props) {
   const isLoggedIn = Boolean(props.viewer?.isLoggedIn);
   const role = props.viewer?.role ?? null;
   const router = useRouter();
-  const pathname = usePathname();
 
   // Protecao contra BFCache (voltar do navegador apos logout).
   // Se a rota for protegida e nao houver mais sessao, força login.
@@ -86,8 +85,6 @@ export function CustomerHeader(props: Props) {
           : "/");
 
   const homeHref = baseHomeHref;
-  const showHomeButton = pathname !== homeHref;
-
   function getLastSearchHref(): string | null {
     if (!isLoggedIn) return null;
     if (props.homeHref) return null;
@@ -120,22 +117,15 @@ export function CustomerHeader(props: Props) {
 
   const pill = "text-sm text-muted-foreground hover:text-foreground transition-colors";
   const menuItem = "block px-4 py-3 text-sm text-foreground hover:bg-secondary/60 transition-colors";
-  const homeLabel = role === "CUSTOMER" ? "Agende Ja" : "Inicio";
 
-  const baseLinks = [
+  const links = [
     { label: "Inicio", href: "/" },
     { label: "Agendar", href: "/#busca" },
     { label: "Como funciona", href: "/#como-funciona" },
     { label: "Contato", href: "/#contato" },
   ];
-  const appLinks = [
-    { label: "Torneios", href: "/torneios" },
-    { label: "Sorteio de times", href: "/sorteio-times" },
-  ];
-  if (isLoggedIn && role === "CUSTOMER") {
-    appLinks.push({ label: "Meus agendamentos", href: "/meus-agendamentos" });
-  }
-  const links = [...baseLinks, ...appLinks];
+  const ctaHref = "/#busca";
+  const ctaLabel = "Agendar agora";
 
   const headerClass =
     variant === "light"
@@ -165,15 +155,12 @@ export function CustomerHeader(props: Props) {
         <div className="flex items-center gap-3">
           {props.rightSlot ? <div className="hidden items-center gap-3 sm:flex">{props.rightSlot}</div> : null}
 
-          {showHomeButton ? (
-            <Link
-              href={homeHref}
-              onClick={onHomeClick}
-              className="hidden sm:inline-flex gradient-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity"
-            >
-              {homeLabel}
-            </Link>
-          ) : null}
+          <Link
+            href={ctaHref}
+            className="hidden sm:inline-flex gradient-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity"
+          >
+            {ctaLabel}
+          </Link>
 
           {!isLoggedIn ? (
             <Link
@@ -238,10 +225,10 @@ export function CustomerHeader(props: Props) {
 
           <button
             type="button"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border md:hidden"
+            className="md:hidden text-foreground"
             onClick={() => setMenuOpen((s) => !s)}
           >
-            {menuOpen ? <X size={20} /> : <Menu size={20} />}
+            {menuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </nav>

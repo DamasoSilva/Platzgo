@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 import { motion } from "framer-motion";
 import {
   ArrowRight,
+  BarChart3,
   Calendar,
   CalendarCheck,
   Clock,
@@ -110,40 +111,40 @@ const landingFeatures = [
     description: "Confira avaliacoes de outros jogadores antes de reservar.",
   },
   {
-    icon: Shield,
-    title: "Seguranca total",
-    description: "Ambiente protegido com confirmacoes e dados criptografados.",
+    icon: Users,
+    title: "Monte seu time",
+    description: "Convide amigos e organize partidas com facilidade.",
   },
   {
-    icon: Users,
-    title: "Comunidade ativa",
-    description: "Conecte-se a milhares de jogadores e quadras ativas.",
+    icon: BarChart3,
+    title: "Painel do gestor",
+    description: "Gerencie reservas, receita e clientes em um so lugar.",
   },
 ];
 
 const landingSteps = [
   {
-    step: 1,
-    title: "Busque sua quadra",
-    description: "Use filtros por localizacao, horario e modalidade.",
+    step: "01",
+    title: "Encontre",
+    description: "Busque quadras proximas a voce por esporte, localizacao ou horario.",
     icon: Search,
   },
   {
-    step: 2,
-    title: "Escolha o horario",
-    description: "Veja disponibilidade em tempo real e selecione o melhor horario.",
+    step: "02",
+    title: "Reserve",
+    description: "Escolha o horario ideal e confirme sua reserva em poucos cliques.",
     icon: CalendarCheck,
   },
   {
-    step: 3,
-    title: "Pague com seguranca",
-    description: "Finalize o pagamento em segundos e receba confirmacao.",
+    step: "03",
+    title: "Pague",
+    description: "Realize o pagamento de forma segura via Pix, cartao ou boleto.",
     icon: CreditCard,
   },
   {
-    step: 4,
-    title: "Entre em quadra",
-    description: "Chegue e jogue. O agendamento ja esta garantido.",
+    step: "04",
+    title: "Jogue",
+    description: "Compareca no horario, aproveite o jogo e avalie a experiencia.",
     icon: Trophy,
   },
 ];
@@ -166,7 +167,7 @@ export function SearchClient(props: Props) {
   const heroTitle = props.hero?.title ?? "Sua quadra. Seu horario. Sem complicacao.";
   const heroDescription =
     props.hero?.description ??
-    "Encontre quadras perto de voce, veja disponibilidade em tempo real e finalize seu agendamento em segundos.";
+    "Agende quadras de futebol, padel, tenis e muito mais em segundos. Sem ligacoes, sem espera - tudo online e na palma da mao.";
 
   const [lat, setLat] = useState(props.initial.lat);
   const [lng, setLng] = useState(props.initial.lng);
@@ -518,7 +519,7 @@ export function SearchClient(props: Props) {
                 <ArrowRight size={18} />
               </Link>
               <Link
-                href="/dashboard/admin"
+                href="/dashboard"
                 className="border border-border bg-card/50 text-foreground font-medium text-base px-8 py-4 rounded-xl inline-flex items-center justify-center gap-2 hover:bg-card transition-colors"
               >
                 Sou dono de quadra
@@ -713,7 +714,7 @@ export function SearchClient(props: Props) {
 
               {!props.viewer.isLoggedIn && props.showOwnerCtaOnLoggedOut ? (
                 <Link
-                  href="/dashboard/admin"
+                  href="/dashboard"
                   className="border border-border bg-card/50 text-foreground font-medium text-base px-8 py-4 rounded-xl inline-flex items-center justify-center gap-2 hover:bg-card transition-colors"
                 >
                   Sou dono de quadra
@@ -895,7 +896,7 @@ export function SearchClient(props: Props) {
                 Tudo que voce precisa para jogar
               </h2>
               <p className="text-muted-foreground max-w-xl mx-auto">
-                Do agendamento ao pagamento, tudo integrado para uma experiencia perfeita.
+                Do agendamento ao pagamento, tudo integrado para uma experiencia perfeita - seja jogador ou dono de quadra.
               </p>
             </motion.div>
 
@@ -990,7 +991,7 @@ export function SearchClient(props: Props) {
                   <ArrowRight size={18} />
                 </Link>
                 <Link
-                  href="/dashboard/admin"
+                  href="/dashboard"
                   className="border border-primary/30 bg-primary/5 text-foreground font-medium text-base px-8 py-4 rounded-xl inline-flex items-center justify-center gap-2 hover:bg-primary/10 transition-colors"
                 >
                   Cadastrar minha quadra

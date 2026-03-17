@@ -149,8 +149,8 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
     <div className="mx-auto w-full max-w-6xl px-6 pb-12">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Novo torneio</h1>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Novo torneio</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             Preencha as informacoes para abrir as inscricoes.
           </p>
         </div>
@@ -165,7 +165,7 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
       </div>
 
       {error ? (
-        <div className="mt-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-200">
+        <div className="mt-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
           {error}
         </div>
       ) : null}
@@ -173,9 +173,9 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">
           <section className="ph-card p-6">
-            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Dados principais</h2>
+            <h2 className="text-sm font-semibold text-foreground">Dados principais</h2>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+              <label className="text-xs font-semibold text-muted-foreground">
                 Nome do torneio
                 <input
                   className="ph-input mt-2"
@@ -185,7 +185,7 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
                   disabled={isPending}
                 />
               </label>
-              <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+              <label className="text-xs font-semibold text-muted-foreground">
                 Modalidade
                 <select
                   className="ph-select mt-2"
@@ -201,7 +201,7 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
                   ))}
                 </select>
               </label>
-              <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+              <label className="text-xs font-semibold text-muted-foreground">
                 Data inicio
                 <input
                   type="date"
@@ -211,7 +211,7 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
                   disabled={isPending}
                 />
               </label>
-              <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+              <label className="text-xs font-semibold text-muted-foreground">
                 Data fim
                 <input
                   type="date"
@@ -221,7 +221,7 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
                   disabled={isPending}
                 />
               </label>
-              <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+              <label className="text-xs font-semibold text-muted-foreground">
                 Limite de times
                 <input
                   type="number"
@@ -233,7 +233,7 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
                   disabled={isPending}
                 />
               </label>
-              <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+              <label className="text-xs font-semibold text-muted-foreground">
                 Taxa de inscricao (centavos)
                 <input
                   type="number"
@@ -246,7 +246,7 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
                 />
               </label>
             </div>
-            <label className="mt-4 block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+            <label className="mt-4 block text-xs font-semibold text-muted-foreground">
               Descricao
               <textarea
                 className="ph-textarea mt-2"
@@ -260,9 +260,9 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
           </section>
 
           <section className="ph-card p-6">
-            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Formato e regras</h2>
+            <h2 className="text-sm font-semibold text-foreground">Formato e regras</h2>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+              <label className="text-xs font-semibold text-muted-foreground">
                 Formato
                 <select className="ph-select mt-2" value={format} onChange={(e) => setFormat(e.target.value)} disabled={isPending}>
                   <option value="GROUPS_KO">Grupos + mata-mata</option>
@@ -271,7 +271,7 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
                   <option value="DOUBLE_ELIM">Eliminatoria dupla</option>
                 </select>
               </label>
-              <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+              <label className="text-xs font-semibold text-muted-foreground">
                 Jogadores por time (min)
                 <input
                   type="number"
@@ -283,7 +283,7 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
                   disabled={isPending}
                 />
               </label>
-              <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+              <label className="text-xs font-semibold text-muted-foreground">
                 Jogadores por time (max)
                 <input
                   type="number"
@@ -296,7 +296,7 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
                 />
               </label>
             </div>
-            <label className="mt-4 block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+            <label className="mt-4 block text-xs font-semibold text-muted-foreground">
               Regras principais
               <textarea
                 className="ph-textarea mt-2"
@@ -310,14 +310,14 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
           </section>
 
           <section className="ph-card p-6">
-            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Categorias e Níveis</h2>
-            <p className="mt-1 text-xs text-zinc-500">Essas opcoes aparecem na inscricao do time.</p>
+            <h2 className="text-sm font-semibold text-foreground">Categorias e Níveis</h2>
+            <p className="mt-1 text-xs text-muted-foreground">Essas opcoes aparecem na inscricao do time.</p>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <div>
-                <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Categorias</p>
+                <p className="text-xs font-semibold text-muted-foreground">Categorias</p>
                 <div className="mt-3 grid gap-2">
                   {DEFAULT_CATEGORIES.map((cat) => (
-                    <label key={cat} className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-300">
+                    <label key={cat} className="flex items-center gap-2 text-xs text-muted-foreground">
                       <input
                         type="radio"
                         name="tournament-category"
@@ -333,10 +333,10 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
               </div>
 
               <div>
-                <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Níveis</p>
+                <p className="text-xs font-semibold text-muted-foreground">Níveis</p>
                 <div className="mt-3 grid gap-2">
                   {DEFAULT_LEVELS.map((levelItem) => (
-                    <label key={levelItem} className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-300">
+                    <label key={levelItem} className="flex items-center gap-2 text-xs text-muted-foreground">
                       <input
                         type="radio"
                         name="tournament-level"
@@ -355,9 +355,9 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
         </div>
 
         <aside className="space-y-6">
-          <section className="rounded-3xl border border-zinc-200 bg-white/80 p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/60">
+          <section className="rounded-3xl border border-border bg-card/70 p-5 shadow-sm">
             <div className="flex items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Ajuda</h3>
+              <h3 className="text-sm font-semibold text-foreground">Ajuda</h3>
               <button
                 type="button"
                 className="ph-button-secondary-xs"
@@ -366,24 +366,24 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
                 Ver detalhes
               </button>
             </div>
-            <p className="mt-2 text-xs text-zinc-500">
+            <p className="mt-2 text-xs text-muted-foreground">
               Entenda os formatos e siga o passo a passo para abrir inscricoes com seguranca.
             </p>
           </section>
 
-          <section className="rounded-3xl border border-zinc-200 bg-white/80 p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/60">
-            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Pagamento (Asaas)</h3>
-            <p className="mt-2 text-xs text-zinc-500">
+          <section className="rounded-3xl border border-border bg-card/70 p-5 shadow-sm">
+            <h3 className="text-sm font-semibold text-foreground">Pagamento (Asaas)</h3>
+            <p className="mt-2 text-xs text-muted-foreground">
               O payload do PIX sera gerado na inscricao do time.
             </p>
-            <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/70 dark:text-zinc-200">
+            <div className="mt-4 rounded-2xl border border-border bg-secondary/60 p-4 text-xs text-muted-foreground">
               <p>Taxa ativa: PIX</p>
               <p className="mt-2">Minimo recomendado: R$ 5,00</p>
             </div>
           </section>
 
-          <section className="rounded-3xl border border-zinc-200 bg-white/80 p-5 text-sm text-zinc-600 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/60 dark:text-zinc-300">
-            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Checklist</h3>
+          <section className="rounded-3xl border border-border bg-card/70 p-5 text-sm text-muted-foreground shadow-sm">
+            <h3 className="text-sm font-semibold text-foreground">Checklist</h3>
             <ul className="mt-3 space-y-2 text-xs">
               <li>Definir datas e formato</li>
               <li>Configurar limite de times</li>
@@ -403,16 +403,16 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
           onClick={() => setHelpOpen(false)}
         >
           <div
-            className="w-full max-w-2xl rounded-3xl border border-zinc-200 bg-white p-6 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950"
+            className="w-full max-w-2xl rounded-3xl border border-border bg-card p-6 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
             ref={helpModalRef}
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 id="tournament-help-title" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+                <h3 id="tournament-help-title" className="text-lg font-semibold text-foreground">
                   Ajuda do torneio
                 </h3>
-                <p className="mt-1 text-xs text-zinc-500">
+                <p className="mt-1 text-xs text-muted-foreground">
                   Veja os formatos e o fluxo sugerido para publicar o torneio.
                 </p>
               </div>
@@ -426,9 +426,9 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
               </button>
             </div>
 
-            <div className="mt-4 space-y-4 text-sm text-zinc-600 dark:text-zinc-300">
+            <div className="mt-4 space-y-4 text-sm text-muted-foreground">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Formatos</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Formatos</p>
                 <ul className="mt-2 space-y-2">
                   <li>
                     <span className="font-semibold">Grupos + mata-mata:</span> fase de grupos e os melhores avancam para eliminatorias.
@@ -445,7 +445,7 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
                 </ul>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">Passo a passo</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Passo a passo</p>
                 <ol className="mt-2 list-decimal space-y-2 pl-4">
                   <li>Defina nome, modalidade e datas.</li>
                   <li>Configure limite de times, taxa e tamanho dos elencos.</li>
@@ -453,7 +453,7 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
                   <li>Adicione categorias e níveis para filtrar inscritos.</li>
                   <li>Salve como rascunho, revise e publique para abrir inscricoes.</li>
                 </ol>
-                <p className="mt-3 text-[11px] text-zinc-500">
+                <p className="mt-3 text-[11px] text-muted-foreground">
                   Depois de publicar, use o painel do torneio para gerar chaveamento e agenda.
                 </p>
               </div>

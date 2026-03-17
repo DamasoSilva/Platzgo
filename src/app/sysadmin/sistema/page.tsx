@@ -45,10 +45,10 @@ function formatMinutesSince(d: Date | null | undefined): string {
 }
 
 function badgeClass(status: OutboundEmailStatus) {
-  if (status === OutboundEmailStatus.SENT) return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-200";
-  if (status === OutboundEmailStatus.PENDING) return "bg-amber-500/15 text-amber-800 dark:text-amber-200";
-  if (status === OutboundEmailStatus.SENDING) return "bg-sky-500/15 text-sky-800 dark:text-sky-200";
-  return "bg-rose-500/15 text-rose-800 dark:text-rose-200";
+  if (status === OutboundEmailStatus.SENT) return "bg-emerald-500/15 text-emerald-700";
+  if (status === OutboundEmailStatus.PENDING) return "bg-amber-500/15 text-amber-800";
+  if (status === OutboundEmailStatus.SENDING) return "bg-sky-500/15 text-sky-800";
+  return "bg-rose-500/15 text-rose-800";
 }
 
 export default async function SysadminSistemaPage() {
@@ -144,8 +144,8 @@ export default async function SysadminSistemaPage() {
       <div className="ph-card p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Sistema</h1>
-            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Sistema</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
               Saúde do sistema e fila de e-mails.
             </p>
           </div>
@@ -163,28 +163,28 @@ export default async function SysadminSistemaPage() {
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-            <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">SMTP</p>
-            <p className="mt-1 text-lg font-bold text-zinc-900 dark:text-zinc-50">{smtpOk ? "OK" : "Não configurado"}</p>
-            <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Precisa de SMTP_* para enviar.</p>
+          <div className="rounded-2xl border border-border bg-card/70 p-4">
+            <p className="text-xs font-semibold text-muted-foreground">SMTP</p>
+            <p className="mt-1 text-lg font-bold text-foreground">{smtpOk ? "OK" : "Não configurado"}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Precisa de SMTP_* para enviar.</p>
           </div>
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-            <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Endpoint interno</p>
-            <p className="mt-1 text-lg font-bold text-zinc-900 dark:text-zinc-50">{queueSecretOk ? "Protegido" : "Sem secret"}</p>
-            <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">EMAIL_QUEUE_SECRET</p>
+          <div className="rounded-2xl border border-border bg-card/70 p-4">
+            <p className="text-xs font-semibold text-muted-foreground">Endpoint interno</p>
+            <p className="mt-1 text-lg font-bold text-foreground">{queueSecretOk ? "Protegido" : "Sem secret"}</p>
+            <p className="mt-1 text-xs text-muted-foreground">EMAIL_QUEUE_SECRET</p>
           </div>
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-            <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Fila de e-mails</p>
-            <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+          <div className="rounded-2xl border border-border bg-card/70 p-4">
+            <p className="text-xs font-semibold text-muted-foreground">Fila de e-mails</p>
+            <p className="mt-1 text-sm font-semibold text-foreground">
               PENDING: {countByStatus(OutboundEmailStatus.PENDING)} • SENDING: {countByStatus(OutboundEmailStatus.SENDING)}
             </p>
-            <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+            <p className="mt-1 text-sm font-semibold text-foreground">
               FAILED: {countByStatus(OutboundEmailStatus.FAILED)} • SENT: {countByStatus(OutboundEmailStatus.SENT)}
             </p>
-            <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
+            <p className="mt-2 text-xs text-muted-foreground">
               Prontos para envio agora: {dueNowCount} • Último envio: {latestSent?.sentAt ? formatMinutesSince(latestSent.sentAt) : "—"}
             </p>
-            <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+            <p className="mt-1 text-xs text-muted-foreground">
               Mais antigo (due): {oldestDue?.createdAt ? formatMinutesSince(oldestDue.createdAt) : "—"}
             </p>
           </div>
@@ -192,10 +192,10 @@ export default async function SysadminSistemaPage() {
       </div>
 
       <div className="ph-card p-6">
-        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Últimos e-mails</h2>
-        <div className="mt-3 overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+        <h2 className="text-sm font-semibold text-foreground">Últimos e-mails</h2>
+        <div className="mt-3 overflow-hidden rounded-2xl border border-border">
           <table className="w-full text-left text-xs">
-            <thead className="bg-zinc-50 text-zinc-600 dark:bg-zinc-900/40 dark:text-zinc-300">
+            <thead className="bg-secondary/50 text-muted-foreground">
               <tr>
                 <th className="px-3 py-2">Para</th>
                 <th className="px-3 py-2">Assunto</th>
@@ -206,28 +206,28 @@ export default async function SysadminSistemaPage() {
                 <th className="px-3 py-2">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+            <tbody className="divide-y divide-border">
               {latestTyped.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-3 py-4 text-center text-zinc-500">
+                  <td colSpan={7} className="px-3 py-4 text-center text-muted-foreground">
                     Nenhum e-mail encontrado.
                   </td>
                 </tr>
               ) : (
                 latestTyped.map((row) => (
-                  <tr key={row.id} className="bg-white dark:bg-zinc-950">
-                    <td className="px-3 py-2 text-zinc-900 dark:text-zinc-100">{row.to}</td>
-                    <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{row.subject}</td>
+                  <tr key={row.id} className="bg-card/70">
+                    <td className="px-3 py-2 text-foreground">{row.to}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{row.subject}</td>
                     <td className="px-3 py-2">
                       <span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${badgeClass(row.status)}`}>
                         {row.status}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">
+                    <td className="px-3 py-2 text-muted-foreground">
                       {row.attempts}/{row.maxAttempts}
                     </td>
-                    <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{formatDt(row.nextAttemptAt)}</td>
-                    <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{formatDt(row.createdAt)}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{formatDt(row.nextAttemptAt)}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{formatDt(row.createdAt)}</td>
                     <td className="px-3 py-2">
                       <form action={retryOutboundEmail}>
                         <input type="hidden" name="id" value={row.id} />
@@ -243,10 +243,10 @@ export default async function SysadminSistemaPage() {
       </div>
 
       <div className="ph-card p-6">
-        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Logs de acesso</h2>
-        <div className="mt-3 overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+        <h2 className="text-sm font-semibold text-foreground">Logs de acesso</h2>
+        <div className="mt-3 overflow-hidden rounded-2xl border border-border">
           <table className="w-full text-left text-xs">
-            <thead className="bg-zinc-50 text-zinc-600 dark:bg-zinc-900/40 dark:text-zinc-300">
+            <thead className="bg-secondary/50 text-muted-foreground">
               <tr>
                 <th className="px-3 py-2">Quando</th>
                 <th className="px-3 py-2">Método</th>
@@ -256,24 +256,24 @@ export default async function SysadminSistemaPage() {
                 <th className="px-3 py-2">IP</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+            <tbody className="divide-y divide-border">
               {accessLogsTyped.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-3 py-4 text-center text-zinc-500">
+                  <td colSpan={6} className="px-3 py-4 text-center text-muted-foreground">
                     Nenhum log registrado.
                   </td>
                 </tr>
               ) : (
                 accessLogsTyped.map((row) => (
-                  <tr key={row.id} className="bg-white dark:bg-zinc-950">
-                    <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{formatDt(row.createdAt)}</td>
-                    <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{row.method}</td>
-                    <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{row.path}</td>
-                    <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">
+                  <tr key={row.id} className="bg-card/70">
+                    <td className="px-3 py-2 text-muted-foreground">{formatDt(row.createdAt)}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{row.method}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{row.path}</td>
+                    <td className="px-3 py-2 text-muted-foreground">
                       {row.user?.name ?? row.user?.email ?? "—"}
                     </td>
-                    <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{row.court?.name ?? "—"}</td>
-                    <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{row.ip ?? "—"}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{row.court?.name ?? "—"}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{row.ip ?? "—"}</td>
                   </tr>
                 ))
               )}

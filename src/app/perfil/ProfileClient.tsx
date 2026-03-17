@@ -123,8 +123,8 @@ export function ProfileClient(props: Props) {
       <div className="mx-auto max-w-4xl px-6 pb-12">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Meu perfil</h1>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Gerencie seus dados de cadastro.</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Meu perfil</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Gerencie seus dados de cadastro.</p>
           </div>
         </div>
 
@@ -133,8 +133,8 @@ export function ProfileClient(props: Props) {
             className={
               "mt-6 rounded-2xl border p-4 text-sm " +
               (message.type === "success"
-                ? "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-100"
-                : "border-red-200 bg-red-50 text-red-900 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-100")
+                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-900"
+                : "border-destructive/30 bg-destructive/10 text-destructive")
             }
           >
             {message.text}
@@ -143,10 +143,10 @@ export function ProfileClient(props: Props) {
 
         <div className="mt-6 grid gap-6 lg:grid-cols-12">
           <div className="lg:col-span-4">
-            <div className="rounded-3xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-              <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Foto de perfil</p>
+            <div className="rounded-3xl border border-border bg-card p-6">
+              <p className="text-sm font-semibold text-foreground">Foto de perfil</p>
               <div className="mt-4 flex items-center gap-4">
-                <div className="h-20 w-20 overflow-hidden rounded-full border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-800">
+                <div className="h-20 w-20 overflow-hidden rounded-full border border-border bg-muted">
                   {image ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={image} alt="" className="h-full w-full object-cover" />
@@ -167,32 +167,32 @@ export function ProfileClient(props: Props) {
                     />
                     Alterar foto
                   </label>
-                  <p className="text-xs text-zinc-600 dark:text-zinc-400">PNG/JPG/WebP • até 3MB</p>
+                  <p className="text-xs text-muted-foreground">PNG/JPG/WebP • até 3MB</p>
                 </div>
               </div>
             </div>
           </div>
 
           <div className="lg:col-span-8">
-            <div className="rounded-3xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="rounded-3xl border border-border bg-card p-6">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Nome</label>
+                  <label className="block text-xs font-medium text-muted-foreground">Nome</label>
                   <input className="ph-input mt-2" value={name} onChange={(e) => setName(e.target.value)} />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Email</label>
+                  <label className="block text-xs font-medium text-muted-foreground">Email</label>
                   <input className="ph-input mt-2" value={props.initial.email} disabled />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Telefone/WhatsApp</label>
+                  <label className="block text-xs font-medium text-muted-foreground">Telefone/WhatsApp</label>
                   <input className="ph-input mt-2" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">CPF/CNPJ</label>
+                  <label className="block text-xs font-medium text-muted-foreground">CPF/CNPJ</label>
                   <input
                     className="ph-input mt-2"
                     value={cpfCnpj}
@@ -201,7 +201,7 @@ export function ProfileClient(props: Props) {
                     inputMode="numeric"
                     maxLength={14}
                   />
-                  <p className="mt-1 text-[11px] text-zinc-500 dark:text-zinc-400">
+                  <p className="mt-1 text-[11px] text-muted-foreground">
                     Obrigatorio para pagamentos online.
                   </p>
                 </div>

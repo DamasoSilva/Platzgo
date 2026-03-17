@@ -38,8 +38,8 @@ export default async function SysadminApprovalsPage(props: {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Aprovação de estabelecimentos</h1>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Cadastros pendentes de validação pelo SYSADMIN.</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Aprovação de estabelecimentos</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Cadastros pendentes de validação pelo SYSADMIN.</p>
         </div>
         <Link className="ph-button-secondary" href="/sysadmin">
           Voltar
@@ -68,20 +68,20 @@ export default async function SysadminApprovalsPage(props: {
       {err ? <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">{err}</div> : null}
 
       <div className="ph-card p-6">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Pendentes</h2>
+        <h2 className="text-lg font-semibold text-foreground">Pendentes</h2>
 
         {pending.length ? (
           <div className="mt-4 space-y-4">
             {pending.map((est) => (
-              <div key={est.id} className="rounded-2xl border border-zinc-200 bg-white/70 p-4 dark:border-zinc-800 dark:bg-zinc-950">
+              <div key={est.id} className="rounded-2xl border border-border bg-card/70 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{est.name}</p>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                    <p className="text-sm font-semibold text-foreground">{est.name}</p>
+                    <p className="text-xs text-muted-foreground">
                       Dono: {est.owner?.name ?? "—"} {est.owner?.email ? `(${est.owner.email})` : ""}
                     </p>
-                    <details className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
-                      <summary className="cursor-pointer font-semibold text-zinc-800 dark:text-zinc-200">
+                    <details className="mt-2 text-xs text-muted-foreground">
+                      <summary className="cursor-pointer font-semibold text-foreground">
                         Ver detalhes
                       </summary>
                       <div className="mt-2 space-y-1">
@@ -138,7 +138,7 @@ export default async function SysadminApprovalsPage(props: {
             ))}
           </div>
         ) : (
-          <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">Nenhum cadastro pendente.</p>
+          <p className="mt-3 text-sm text-muted-foreground">Nenhum cadastro pendente.</p>
         )}
       </div>
     </div>

@@ -152,36 +152,36 @@ export function TournamentRegistrationClient(props: Props) {
     <div className="mx-auto max-w-5xl">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             Inscricao do time
           </h1>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="mt-1 text-sm text-muted-foreground">
             {tournament.name} · {(tournament.location_name ?? tournament.city ?? "-")}
           </p>
         </div>
-        <div className="rounded-2xl border border-zinc-200 bg-white/70 px-4 py-2 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/70 dark:text-zinc-300">
-          Taxa: <span className="font-semibold text-zinc-900 dark:text-zinc-100">{feeLabel}</span>
+        <div className="rounded-2xl border border-border bg-card/80 px-4 py-2 text-xs text-muted-foreground">
+          Taxa: <span className="font-semibold text-foreground">{feeLabel}</span>
         </div>
       </div>
 
       <div className="mt-6 rounded-3xl ph-surface p-6">
-        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
-          <span className={step === 0 ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-500"}>1. Time</span>
+        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-muted-foreground">
+          <span className={step === 0 ? "text-foreground" : "text-muted-foreground"}>1. Time</span>
           <span>•</span>
-          <span className={step === 1 ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-500"}>2. Jogadores</span>
+          <span className={step === 1 ? "text-foreground" : "text-muted-foreground"}>2. Jogadores</span>
           <span>•</span>
-          <span className={step === 2 ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-500"}>3. Pagamento</span>
+          <span className={step === 2 ? "text-foreground" : "text-muted-foreground"}>3. Pagamento</span>
         </div>
 
         {error ? (
-          <div className="mt-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-200">
+          <div className="mt-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-900">
             {error}
           </div>
         ) : null}
 
         {step === 0 ? (
           <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+            <label className="text-xs font-semibold text-muted-foreground">
               Nome do time
               <input
                 value={teamName}
@@ -191,7 +191,7 @@ export function TournamentRegistrationClient(props: Props) {
               />
             </label>
 
-            <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+            <label className="text-xs font-semibold text-muted-foreground">
               Categoria
               <select
                 value={category}
@@ -208,7 +208,7 @@ export function TournamentRegistrationClient(props: Props) {
             </label>
 
             {tournament.levels.length ? (
-              <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+              <label className="text-xs font-semibold text-muted-foreground">
                 Nivel
                 <select
                   value={level}
@@ -225,7 +225,7 @@ export function TournamentRegistrationClient(props: Props) {
               </label>
             ) : null}
 
-            <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+            <label className="text-xs font-semibold text-muted-foreground">
               Jogadores por time
               <input
                 type="number"
@@ -236,13 +236,13 @@ export function TournamentRegistrationClient(props: Props) {
                 className="ph-input mt-2"
                 disabled={isLocked}
               />
-              <span className="mt-1 block text-[11px] text-zinc-500">
+              <span className="mt-1 block text-[11px] text-muted-foreground">
                 Minimo {tournament.team_size_min} · Maximo {tournament.team_size_max}
               </span>
             </label>
 
-            <div className="rounded-2xl border border-zinc-200 bg-white/70 p-4 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/70">
-              <p className="font-semibold text-zinc-900 dark:text-zinc-100">Requisitos do torneio</p>
+            <div className="rounded-2xl border border-border bg-card/80 p-4 text-xs text-muted-foreground">
+              <p className="font-semibold text-foreground">Requisitos do torneio</p>
               <p className="mt-2">Todos os jogadores devem informar nome completo e documento.</p>
               <p className="mt-2">O pagamento confirma a inscricao do time.</p>
             </div>
@@ -252,14 +252,14 @@ export function TournamentRegistrationClient(props: Props) {
         {step === 1 ? (
           <div className="mt-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Jogadores</h2>
-              <span className="text-xs text-zinc-500">{players.length} / {teamSize}</span>
+              <h2 className="text-sm font-semibold text-foreground">Jogadores</h2>
+              <span className="text-xs text-muted-foreground">{players.length} / {teamSize}</span>
             </div>
 
             <div className="mt-4 grid gap-3">
               {players.map((player, index) => (
-                <div key={player.id} className="rounded-2xl border border-zinc-200 bg-white/70 p-4 dark:border-zinc-800 dark:bg-zinc-900/70">
-                  <p className="text-xs font-semibold text-zinc-500">Jogador {index + 1}</p>
+                <div key={player.id} className="rounded-2xl border border-border bg-card/80 p-4">
+                  <p className="text-xs font-semibold text-muted-foreground">Jogador {index + 1}</p>
                   <div className="mt-3 grid gap-3 md:grid-cols-2">
                     <input
                       className="ph-input"
@@ -284,9 +284,9 @@ export function TournamentRegistrationClient(props: Props) {
 
         {step === 2 ? (
           <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="rounded-3xl border border-zinc-200 bg-white/80 p-5 dark:border-zinc-800 dark:bg-zinc-950/60">
-              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Pagamento via PIX (Asaas)</h2>
-              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
+            <div className="rounded-3xl border border-border bg-card/80 p-5">
+              <h2 className="text-sm font-semibold text-foreground">Pagamento via PIX (Asaas)</h2>
+              <p className="mt-2 text-sm text-muted-foreground">
                 {isFree ? "Inscricao gratuita. Confirme o cadastro do time." : "Gere o payload para liberar o cadastro do time."}
               </p>
 
@@ -306,24 +306,24 @@ export function TournamentRegistrationClient(props: Props) {
                 ) : null}
               </div>
 
-              {pixCopied ? <p className="mt-3 text-xs text-zinc-500">{pixCopied}</p> : null}
+              {pixCopied ? <p className="mt-3 text-xs text-muted-foreground">{pixCopied}</p> : null}
 
               {pixPayload ? (
-                <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-xs text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900/70 dark:text-zinc-200">
+                <div className="mt-4 rounded-2xl border border-border bg-muted p-4 text-xs text-muted-foreground">
                   <p className="font-semibold">Payload</p>
                   <p className="mt-2 break-all">{pixPayload}</p>
                   {pixExpiresAt ? (
-                    <p className="mt-2 text-[11px] text-zinc-500">Expira em: {pixExpiresAt}</p>
+                    <p className="mt-2 text-[11px] text-muted-foreground">Expira em: {pixExpiresAt}</p>
                   ) : null}
                   {pixCheckoutUrl ? (
-                    <p className="mt-2 text-[11px] text-zinc-500">Checkout: {pixCheckoutUrl}</p>
+                    <p className="mt-2 text-[11px] text-muted-foreground">Checkout: {pixCheckoutUrl}</p>
                   ) : null}
                 </div>
               ) : null}
 
               {pixPayload ? (
                 pixQrBase64 ? (
-                  <div className="mt-4 flex justify-center rounded-2xl border border-dashed border-zinc-300 bg-white/70 p-6 dark:border-zinc-700 dark:bg-zinc-900/50">
+                  <div className="mt-4 flex justify-center rounded-2xl border border-dashed border-border bg-card/80 p-6">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={`data:image/png;base64,${pixQrBase64}`}
@@ -332,15 +332,15 @@ export function TournamentRegistrationClient(props: Props) {
                     />
                   </div>
                 ) : (
-                  <div className="mt-4 rounded-2xl border border-dashed border-zinc-300 bg-white/70 p-6 text-center text-xs text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900/50">
+                  <div className="mt-4 rounded-2xl border border-dashed border-border bg-card/80 p-6 text-center text-xs text-muted-foreground">
                     QR Code gerado (preview)
                   </div>
                 )
               ) : null}
             </div>
 
-            <div className="rounded-3xl border border-zinc-200 bg-white/80 p-5 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950/60 dark:text-zinc-300">
-              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Resumo do time</h3>
+            <div className="rounded-3xl border border-border bg-card/80 p-5 text-sm text-muted-foreground">
+              <h3 className="text-sm font-semibold text-foreground">Resumo do time</h3>
               <div className="mt-3 space-y-2">
                 <p>
                   <span className="font-semibold">Time:</span> {teamName || "-"}
@@ -371,7 +371,7 @@ export function TournamentRegistrationClient(props: Props) {
               </button>
 
               {isConfirmed ? (
-                <div className="mt-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-800 dark:text-emerald-200">
+                <div className="mt-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-900">
                   Inscricao confirmada. O time sera liberado apos validacao do pagamento.
                 </div>
               ) : null}

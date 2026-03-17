@@ -41,8 +41,8 @@ export function DashboardTournamentsClient(props: { tournaments: DashboardTourna
     <div className="mx-auto w-full max-w-6xl px-6 pb-12">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Torneios</h1>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Torneios</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             Organize inscricoes, chaveamento e resultados.
           </p>
         </div>
@@ -53,7 +53,7 @@ export function DashboardTournamentsClient(props: { tournaments: DashboardTourna
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
         <div className="rounded-3xl ph-surface p-5">
-          <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+          <label className="text-xs font-semibold text-muted-foreground">
             Status
             <select value={status} onChange={(e) => setStatus(e.target.value as StatusFilter)} className="ph-select mt-2">
               <option value="ALL">Todos</option>
@@ -65,9 +65,9 @@ export function DashboardTournamentsClient(props: { tournaments: DashboardTourna
           </label>
         </div>
 
-        <div className="rounded-3xl border border-zinc-200 bg-white/70 p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/70">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Resumo</p>
-          <div className="mt-4 space-y-3 text-sm text-zinc-700 dark:text-zinc-300">
+        <div className="rounded-3xl border border-border bg-card/70 p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Resumo</p>
+          <div className="mt-4 space-y-3 text-sm text-muted-foreground">
             <div className="flex items-center justify-between">
               <span>Total</span>
               <span className="font-semibold">{adminTournaments.length}</span>
@@ -89,29 +89,29 @@ export function DashboardTournamentsClient(props: { tournaments: DashboardTourna
           <div key={tournament.id} className="ph-card p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <span className="rounded-full bg-zinc-900/5 px-3 py-1 text-xs text-zinc-600 dark:bg-white/10 dark:text-zinc-300">
+                <span className="rounded-full bg-secondary/60 px-3 py-1 text-xs text-muted-foreground">
                   {statusLabel(tournament.status)}
                 </span>
-                <h3 className="mt-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{tournament.name}</h3>
-                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                <h3 className="mt-3 text-lg font-semibold text-foreground">{tournament.name}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
                   {formatSportLabel(tournament.sport_type)} · {tournament.city ?? "-"}
                 </p>
               </div>
-              <div className="rounded-2xl border border-zinc-200 bg-white/60 px-3 py-2 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950/50">
+              <div className="rounded-2xl border border-border bg-card/60 px-3 py-2 text-xs text-muted-foreground">
                 {tournament.registered_teams}/{tournament.max_teams} times
               </div>
             </div>
 
-            <div className="mt-4 grid gap-3 text-sm text-zinc-600 dark:text-zinc-300 md:grid-cols-2">
+            <div className="mt-4 grid gap-3 text-sm text-muted-foreground md:grid-cols-2">
               <div>
-                <p className="text-xs uppercase tracking-wide text-zinc-400">Taxa</p>
-                <p className="font-semibold text-zinc-900 dark:text-zinc-50">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Taxa</p>
+                <p className="font-semibold text-foreground">
                   {tournament.entry_fee_cents ? formatBRLFromCents(tournament.entry_fee_cents) : "Gratuito"}
                 </p>
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-zinc-400">Formato</p>
-                <p className="font-semibold text-zinc-900 dark:text-zinc-50">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Formato</p>
+                <p className="font-semibold text-foreground">
                   {tournament.format === "GROUPS_KO"
                     ? "Grupos + mata-mata"
                     : tournament.format === "LEAGUE"

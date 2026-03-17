@@ -370,32 +370,32 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
         <div className="ph-card p-5">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Mensalidades pendentes</h2>
-              <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Solicitações aguardando confirmação.</p>
+              <h2 className="text-sm font-semibold text-foreground">Mensalidades pendentes</h2>
+              <p className="mt-1 text-xs text-muted-foreground">Solicitações aguardando confirmação.</p>
             </div>
-            <div className="text-xs text-zinc-600 dark:text-zinc-400">Total: {props.data.monthlyPasses.length}</div>
+            <div className="text-xs text-muted-foreground">Total: {props.data.monthlyPasses.length}</div>
           </div>
 
           <div className="mt-4 grid gap-3">
             {props.data.monthlyPasses.map((p) => (
               <div
                 key={p.id}
-                className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-3 rounded-2xl border border-border bg-card/70 p-4 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
-                  <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                  <div className="text-sm font-semibold text-foreground">
                     {p.customer.name ?? p.customer.email} • {p.month}{isAllCourts ? ` • ${p.court.name}` : ""}
                   </div>
-                  <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                  <div className="mt-1 text-xs text-muted-foreground">
                     Valor mensal: R$ {(p.price_cents / 100).toFixed(2).replace(".", ",")}
                   </div>
                   {typeof p.weekday === "number" && p.start_time && p.end_time ? (
-                    <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                    <div className="mt-1 text-xs text-muted-foreground">
                       {WEEKDAY_LABELS[p.weekday]} • {p.start_time}–{p.end_time}
                     </div>
                   ) : null}
                   {p.terms_snapshot ? (
-                    <div className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">{p.terms_snapshot}</div>
+                    <div className="mt-2 text-xs text-muted-foreground">{p.terms_snapshot}</div>
                   ) : null}
                 </div>
 
@@ -415,13 +415,13 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
 
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Agenda</h1>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Semana (Dom–Sáb): {weekLabel}</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Agenda</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Semana (Dom–Sáb): {weekLabel}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">Data inicio</label>
+            <label className="text-xs font-semibold text-muted-foreground">Data inicio</label>
             <input
               type="date"
               className="ph-input h-10"
@@ -443,7 +443,7 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
                 }
               }}
             />
-            <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">Data fim</label>
+            <label className="text-xs font-semibold text-muted-foreground">Data fim</label>
             <input
               type="date"
               className="ph-input h-10"
@@ -530,7 +530,7 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
       <div className="ph-card p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <label className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Quadra</label>
+            <label className="text-sm font-medium text-foreground">Quadra</label>
             <select className="ph-select" value={props.data.selectedCourtId} onChange={(e) => setCourt(e.target.value)}>
               <option value="all">Todas</option>
               {props.data.courts.map((c) => (
@@ -541,23 +541,23 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
             </select>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+            <div className="inline-flex overflow-hidden rounded-xl border border-border bg-card/60">
               <button
                 type="button"
-                className={viewMode === "week" ? "px-3 py-2 text-xs font-semibold text-zinc-900 dark:text-zinc-50" : "px-3 py-2 text-xs font-semibold text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-50"}
+                className={viewMode === "week" ? "px-3 py-2 text-xs font-semibold text-foreground" : "px-3 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground"}
                 onClick={() => setViewMode("week")}
               >
                 Semana
               </button>
-              <div className="w-px bg-zinc-200 dark:bg-zinc-800" />
+              <div className="w-px bg-border" />
               <button
                 type="button"
                 className={
                   agendaMode
-                    ? "px-3 py-2 text-xs font-semibold text-zinc-400 cursor-not-allowed"
+                    ? "px-3 py-2 text-xs font-semibold text-muted-foreground/60 cursor-not-allowed"
                     : viewMode === "day"
-                      ? "px-3 py-2 text-xs font-semibold text-zinc-900 dark:text-zinc-50"
-                      : "px-3 py-2 text-xs font-semibold text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-50"
+                      ? "px-3 py-2 text-xs font-semibold text-foreground"
+                      : "px-3 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground"
                 }
                 onClick={() => {
                   if (agendaMode) return;
@@ -578,16 +578,16 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
               </select>
             ) : null}
 
-            <div className="text-xs text-zinc-600 dark:text-zinc-400">
+            <div className="text-xs text-muted-foreground">
               Horário: {props.data.establishment.opening_time}–{props.data.establishment.closing_time}
             </div>
           </div>
         </div>
 
-        {message ? <p className="mt-4 text-sm text-zinc-800 dark:text-zinc-200">{message}</p> : null}
+        {message ? <p className="mt-4 text-sm text-foreground">{message}</p> : null}
 
         {!canRenderGrid ? (
-          <p className="mt-4 text-sm text-zinc-600 dark:text-zinc-400">Configure corretamente abertura/fechamento em “Meu espaço”.</p>
+          <p className="mt-4 text-sm text-muted-foreground">Configure corretamente abertura/fechamento em “Meu espaço”.</p>
         ) : isAllCourts || agendaMode ? (
           <div className="mt-5 max-h-[70vh] overflow-auto pr-2">
             <div className="space-y-4">
@@ -614,10 +614,10 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
                 const hasAny = dayBlocks.length || dayBookings.length;
 
                 return (
-                  <div key={d.ymd} className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+                  <div key={d.ymd} className="rounded-2xl border border-border bg-card/70 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                        {d.label} <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">({formatDMY(d.ymd)})</span>
+                      <div className="text-sm font-semibold text-foreground">
+                        {d.label} <span className="text-xs font-medium text-muted-foreground">({formatDMY(d.ymd)})</span>
                       </div>
                       <button
                         type="button"
@@ -633,7 +633,7 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
                     </div>
 
                     {!hasAny ? (
-                      <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">Sem eventos.</p>
+                      <p className="mt-3 text-sm text-muted-foreground">Sem eventos.</p>
                     ) : (
                       <div className="mt-4 space-y-4">
                         {props.data.courts.map((court) => {
@@ -642,8 +642,8 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
                           if (!courtBlocks.length && !courtBookings.length) return null;
 
                           return (
-                            <div key={court.id} className="rounded-2xl bg-zinc-50 p-3 dark:bg-zinc-900/40">
-                              <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{court.name}</div>
+                            <div key={court.id} className="rounded-2xl bg-secondary/40 p-3">
+                              <div className="text-sm font-semibold text-foreground">{court.name}</div>
 
                               <div className="mt-2 space-y-2">
                                 {courtBlocks.map((blk) => {
@@ -652,7 +652,7 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
                                   const sLabel = new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" }).format(s);
                                   const eLabel = new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" }).format(e);
                                   return (
-                                    <div key={blk.id} className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
+                                    <div key={blk.id} className="rounded-xl border border-border bg-card/70 px-3 py-2 text-sm text-foreground">
                                       Bloqueio • {sLabel}–{eLabel}
                                       {blk.note ? ` • ${blk.note}` : ""}
                                     </div>
@@ -679,11 +679,11 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
                                       data-booking-id={b.id}
                                       onClick={() => setDetailsBookingId(b.id)}
                                       className={
-                                        "w-full rounded-xl border px-3 py-2 text-left text-sm " +
+                                        "w-full rounded-xl border px-3 py-2 text-left text-sm transition-colors " +
                                         (b.status === BookingStatus.PENDING
-                                          ? "border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200 dark:hover:bg-amber-950/50"
-                                          : "border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900/40") +
-                                        (props.data.focusBookingId === b.id ? " ring-4 ring-[#CCFF00]/70 ring-offset-2 ring-offset-white dark:ring-offset-zinc-950" : "")
+                                          ? "border-amber-500/30 bg-amber-500/15 text-amber-200 hover:bg-amber-500/25"
+                                          : "border-border bg-card/70 text-foreground hover:bg-card") +
+                                        (props.data.focusBookingId === b.id ? " ring-4 ring-primary/70 ring-offset-2 ring-offset-background" : "")
                                       }
                                     >
                                       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -713,9 +713,9 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
           <div className="mt-5 max-h-[70vh] overflow-auto pr-2">
             <div className={gridMinWidthClass}>
               {/* Header (sticky) */}
-              <div className="sticky top-0 z-20 pb-2 pt-1 backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-zinc-950/40">
+              <div className="sticky top-0 z-20 pb-2 pt-1 backdrop-blur supports-[backdrop-filter]:bg-background/80">
                 <div className={`grid ${gridColsClass} gap-1.5`}>
-                  <div className="sticky left-0 z-30 rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950" />
+                  <div className="sticky left-0 z-30 rounded-xl border border-border bg-card p-3" />
                   {visibleDays.map((d) => (
                     <button
                       key={d.ymd}
@@ -726,8 +726,8 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
                       }}
                       className={
                         isOpenWeekday(d.weekday)
-                          ? "rounded-xl border border-zinc-200 bg-white p-3 text-left text-sm font-semibold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-zinc-900/40"
-                          : "rounded-xl border border-red-200 bg-red-50 p-3 text-left text-sm font-semibold text-red-700 hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200 dark:hover:bg-red-950/60"
+                          ? "rounded-xl border border-border bg-card p-3 text-left text-sm font-semibold text-foreground hover:bg-card/80"
+                          : "rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-left text-sm font-semibold text-destructive hover:bg-destructive/20"
                       }
                       title="Ver apenas este dia"
                     >
@@ -735,8 +735,8 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
                       <span
                         className={
                           isOpenWeekday(d.weekday)
-                            ? "text-xs font-medium text-zinc-500 dark:text-zinc-400"
-                            : "text-xs font-medium text-red-600 dark:text-red-200"
+                            ? "text-xs font-medium text-muted-foreground"
+                            : "text-xs font-medium text-destructive"
                         }
                       >
                         ({formatDMY(d.ymd)})
@@ -750,7 +750,7 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
               {/* Grid */}
               <div className={`grid ${gridColsClass} gap-1.5 pb-2`}>
                 {/* Times (sticky) */}
-                <div className="sticky left-0 z-10 rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+                <div className="sticky left-0 z-10 rounded-xl border border-border bg-card">
                   <div
                     className="grid"
                     style={{ gridTemplateRows: `repeat(${slots.length}, 40px)` }}
@@ -758,7 +758,7 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
                     {slots.map((t) => (
                       <div
                         key={t}
-                        className="flex items-center justify-end border-b border-zinc-100 pr-2 text-xs font-medium text-zinc-600 last:border-b-0 dark:border-zinc-900 dark:text-zinc-400"
+                        className="flex items-center justify-end border-b border-border/60 pr-2 text-xs font-medium text-muted-foreground last:border-b-0"
                       >
                         {minutesToTime(t)}
                       </div>
@@ -775,14 +775,14 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
                       key={d.ymd}
                       className={
                         isOpenWeekday(d.weekday)
-                          ? "relative grid overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950"
-                          : "relative grid overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900"
+                          ? "relative grid overflow-hidden rounded-xl border border-border bg-card"
+                          : "relative grid overflow-hidden rounded-xl border border-border bg-secondary/60"
                       }
                       style={{ gridTemplateRows: `repeat(${slots.length}, 40px)` }}
                     >
                       {/* Row lines */}
                       {slots.map((t) => (
-                        <div key={t} className="border-b border-zinc-100 dark:border-zinc-900" />
+                        <div key={t} className="border-b border-border/60" />
                       ))}
 
                       {/* Blocks */}
@@ -799,7 +799,7 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
                         return (
                           <div
                             key={b.id}
-                            className="mx-2 my-1 rounded-xl bg-zinc-800 px-3 py-2 text-xs font-semibold text-white shadow"
+                            className="mx-2 my-1 rounded-xl bg-secondary px-3 py-2 text-xs font-semibold text-foreground shadow"
                             style={{
                               gridRow: `${clamp(startIdx + 1, 1, slots.length)} / span ${clamp(span, 1, slots.length)}`,
                               alignSelf: "stretch",
@@ -809,7 +809,7 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
                               <span className="truncate">Bloqueado</span>
                               <button
                                 type="button"
-                                className="rounded-full bg-white/10 px-2 py-1 text-[11px] font-bold"
+                                className="rounded-full bg-foreground/10 px-2 py-1 text-[11px] font-bold"
                                 disabled={isPending}
                                 onClick={() => {
                                   startTransition(async () => {
@@ -874,7 +874,7 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
                             className={
                               `mx-1 my-1 max-w-full overflow-hidden rounded-xl ${color.bg} ${color.fg} px-2 py-2 text-xs font-semibold shadow sm:mx-2 sm:px-3 ` +
                               (props.data.focusBookingId === b.id
-                                ? "ring-4 ring-[#CCFF00]/70 ring-offset-2 ring-offset-white dark:ring-offset-zinc-950"
+                                ? "ring-4 ring-primary/70 ring-offset-2 ring-offset-background"
                                 : "")
                             }
                             style={{
@@ -943,7 +943,7 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
 
                       {/* Closed overlay */}
                       {!isOpenWeekday(d.weekday) ? (
-                        <div className="absolute inset-0 bg-red-100/35 dark:bg-red-950/30" />
+                        <div className="absolute inset-0 bg-destructive/15" />
                       ) : null}
                     </div>
                   );
@@ -958,11 +958,11 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
       {detailsBooking ? (
         <div className="fixed inset-0 z-50">
           <button type="button" className="absolute inset-0 bg-black/60" onClick={() => setDetailsBookingId(null)} />
-          <div className="absolute left-1/2 top-1/2 max-h-[calc(100vh-32px)] w-[min(720px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-white p-6 shadow-xl dark:bg-zinc-950">
+          <div className="absolute left-1/2 top-1/2 max-h-[calc(100vh-32px)] w-[min(720px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Detalhes do agendamento</h2>
-                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{detailsBooking.court.name}</p>
+                <h2 className="text-lg font-semibold text-foreground">Detalhes do agendamento</h2>
+                <p className="mt-1 text-sm text-muted-foreground">{detailsBooking.court.name}</p>
               </div>
               <button type="button" className="ph-button-secondary" onClick={() => setDetailsBookingId(null)}>
                 Fechar
@@ -970,31 +970,31 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
             </div>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-                <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Quando</p>
-                <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+              <div className="rounded-2xl border border-border bg-card/70 p-4">
+                <p className="text-xs font-semibold text-muted-foreground">Quando</p>
+                <p className="mt-1 text-sm font-semibold text-foreground">
                   {new Date(detailsBooking.start_time).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}–
                   {new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" }).format(new Date(detailsBooking.end_time))}
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-                <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Status</p>
-                <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+              <div className="rounded-2xl border border-border bg-card/70 p-4">
+                <p className="text-xs font-semibold text-muted-foreground">Status</p>
+                <p className="mt-1 text-sm font-semibold text-foreground">
                   {detailsBooking.status === BookingStatus.CONFIRMED ? "Confirmado" : detailsBooking.status === BookingStatus.PENDING ? "Pendente" : "Cancelado"}
                 </p>
               </div>
 
-              <div className="sm:col-span-2 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-                <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Cliente</p>
-                <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+              <div className="sm:col-span-2 rounded-2xl border border-border bg-card/70 p-4">
+                <p className="text-xs font-semibold text-muted-foreground">Cliente</p>
+                <p className="mt-1 text-sm font-semibold text-foreground">
                   {detailsBooking.customer?.name ?? detailsBooking.customer_name ?? detailsBooking.customer?.email ?? detailsBooking.customer_email ?? "Cliente"}
                 </p>
                 {detailsBooking.customer?.email || detailsBooking.customer_email ? (
-                  <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">{detailsBooking.customer?.email ?? detailsBooking.customer_email}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{detailsBooking.customer?.email ?? detailsBooking.customer_email}</p>
                 ) : null}
                 {detailsBooking.customer_phone ? (
-                  <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">{detailsBooking.customer_phone}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{detailsBooking.customer_phone}</p>
                 ) : null}
               </div>
             </div>
@@ -1051,11 +1051,11 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
       {blockOpen ? (
         <div className="fixed inset-0 z-50">
           <button type="button" className="absolute inset-0 bg-black/60" onClick={() => setBlockOpen(false)} />
-          <div className="absolute left-1/2 top-1/2 max-h-[calc(100vh-32px)] w-[min(640px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-white p-6 shadow-xl dark:bg-zinc-950">
+          <div className="absolute left-1/2 top-1/2 max-h-[calc(100vh-32px)] w-[min(640px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Bloquear horário</h2>
-                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Selecione período, dias e intervalo (30 em 30).</p>
+                <h2 className="text-lg font-semibold text-foreground">Bloquear horário</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Selecione período, dias e intervalo (30 em 30).</p>
               </div>
               <button type="button" className="ph-button-secondary" onClick={() => setBlockOpen(false)}>
                 Fechar
@@ -1064,7 +1064,7 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Data início</label>
+                <label className="block text-xs font-medium text-muted-foreground">Data início</label>
                 <input
                   type="date"
                   className="ph-input mt-2"
@@ -1083,7 +1083,7 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Data fim</label>
+                <label className="block text-xs font-medium text-muted-foreground">Data fim</label>
                 <input
                   type="date"
                   className="ph-input mt-2"
@@ -1098,7 +1098,7 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
 
               <div className="sm:col-span-2">
                 <div className="flex items-center justify-between gap-3">
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Dias da semana</label>
+                  <label className="block text-xs font-medium text-muted-foreground">Dias da semana</label>
                   <button
                     type="button"
                     className="ph-button-secondary"
@@ -1117,8 +1117,8 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
                         type="button"
                         className={
                           active
-                            ? "rounded-full bg-[#CCFF00] px-3 py-2 text-xs font-bold text-black"
-                            : "rounded-full border border-zinc-200 bg-white px-3 py-2 text-xs text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                            ? "rounded-full bg-primary px-3 py-2 text-xs font-bold text-primary-foreground"
+                            : "rounded-full border border-border bg-card/60 px-3 py-2 text-xs text-foreground hover:bg-card"
                         }
                         onClick={() => setBlockWeekdays((prev) => toggleWeekday(prev, idx))}
                       >
@@ -1131,12 +1131,12 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Observação (opcional)</label>
+                <label className="block text-xs font-medium text-muted-foreground">Observação (opcional)</label>
                 <input className="ph-input mt-2" value={blockNote} onChange={(e) => setBlockNote(e.target.value)} placeholder="Ex: manutenção" />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Início</label>
+                <label className="block text-xs font-medium text-muted-foreground">Início</label>
                 <select className="ph-select mt-2" value={blockStart} onChange={(e) => {
                   const v = e.target.value;
                   setBlockStart(v);
@@ -1153,7 +1153,7 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Fim</label>
+                <label className="block text-xs font-medium text-muted-foreground">Fim</label>
                 <select className="ph-select mt-2" value={blockEnd} onChange={(e) => setBlockEnd(e.target.value)}>
                   {slots
                     .map((t) => t + 30)
@@ -1213,11 +1213,11 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
       {bookingOpen ? (
         <div className="fixed inset-0 z-50">
           <button type="button" className="absolute inset-0 bg-black/60" onClick={() => setBookingOpen(false)} />
-          <div className="absolute left-1/2 top-1/2 max-h-[calc(100vh-32px)] w-[min(720px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-white p-6 shadow-xl dark:bg-zinc-950">
+          <div className="absolute left-1/2 top-1/2 max-h-[calc(100vh-32px)] w-[min(720px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Agendar horário</h2>
-                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                <h2 className="text-lg font-semibold text-foreground">Agendar horário</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
                   Crie um agendamento manual informando nome, email e telefone do cliente.
                 </p>
               </div>
@@ -1228,7 +1228,7 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Dia</label>
+                <label className="block text-xs font-medium text-muted-foreground">Dia</label>
                 <select className="ph-select mt-2" value={bookingDayYmd} onChange={(e) => setBookingDayYmd(e.target.value)}>
                   {days.map((d) => (
                     <option key={d.ymd} value={d.ymd}>
@@ -1239,22 +1239,22 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Nome</label>
+                <label className="block text-xs font-medium text-muted-foreground">Nome</label>
                 <input className="ph-input mt-2" value={bookingCustomerName} onChange={(e) => setBookingCustomerName(e.target.value)} />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Email</label>
+                <label className="block text-xs font-medium text-muted-foreground">Email</label>
                 <input className="ph-input mt-2" type="email" value={bookingCustomerEmail} onChange={(e) => setBookingCustomerEmail(e.target.value)} />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Telefone</label>
+                <label className="block text-xs font-medium text-muted-foreground">Telefone</label>
                 <input className="ph-input mt-2" value={bookingCustomerPhone} onChange={(e) => setBookingCustomerPhone(e.target.value)} placeholder="(11) 99999-9999" />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Repetir por semanas</label>
+                <label className="block text-xs font-medium text-muted-foreground">Repetir por semanas</label>
                 <input
                   className="ph-input mt-2"
                   type="number"
@@ -1267,7 +1267,7 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Início</label>
+                <label className="block text-xs font-medium text-muted-foreground">Início</label>
                 <select className="ph-select mt-2" value={bookingStart} onChange={(e) => {
                   const v = e.target.value;
                   setBookingStart(v);
@@ -1284,7 +1284,7 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Fim</label>
+                <label className="block text-xs font-medium text-muted-foreground">Fim</label>
                 <select className="ph-select mt-2" value={bookingEnd} onChange={(e) => setBookingEnd(e.target.value)}>
                   {slots
                     .map((t) => t + 30)

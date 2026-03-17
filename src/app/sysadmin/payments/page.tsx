@@ -60,11 +60,11 @@ function outcomeLabel(status: PaymentStatus) {
 }
 
 function statusBadge(status: PaymentStatus) {
-  if (status === PaymentStatus.PAID) return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-200";
-  if (status === PaymentStatus.AUTHORIZED) return "bg-sky-500/15 text-sky-700 dark:text-sky-200";
-  if (status === PaymentStatus.PENDING) return "bg-amber-500/15 text-amber-800 dark:text-amber-200";
-  if (status === PaymentStatus.REFUNDED) return "bg-zinc-500/15 text-zinc-700 dark:text-zinc-200";
-  return "bg-rose-500/15 text-rose-800 dark:text-rose-200";
+  if (status === PaymentStatus.PAID) return "bg-emerald-500/15 text-emerald-700";
+  if (status === PaymentStatus.AUTHORIZED) return "bg-sky-500/15 text-sky-700";
+  if (status === PaymentStatus.PENDING) return "bg-amber-500/15 text-amber-800";
+  if (status === PaymentStatus.REFUNDED) return "bg-secondary/70 text-muted-foreground";
+  return "bg-rose-500/15 text-rose-800";
 }
 
 export default async function SysadminPaymentsPage(props: { searchParams?: SearchParams | Promise<SearchParams> }) {
@@ -221,8 +221,8 @@ export default async function SysadminPaymentsPage(props: { searchParams?: Searc
       <div className="ph-card p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Pagamentos</h1>
-            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Pagamentos</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
               Retornos das APIs e webhooks por administradora. Configurações ficam em {" "}
               <Link className="underline" href="/sysadmin/settings">
                 Sistema
@@ -237,7 +237,7 @@ export default async function SysadminPaymentsPage(props: { searchParams?: Searc
 
         <form className="mt-6 grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto_auto]" method="get">
           <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Administradora</label>
+            <label className="block text-xs font-medium text-muted-foreground">Administradora</label>
             <select name="provider" defaultValue={providerParam || "all"} className="ph-input mt-2">
               <option value="all">Todas</option>
               <option value="mercadopago">MercadoPago</option>
@@ -245,11 +245,11 @@ export default async function SysadminPaymentsPage(props: { searchParams?: Searc
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Data inicial</label>
+            <label className="block text-xs font-medium text-muted-foreground">Data inicial</label>
             <input name="start" type="date" defaultValue={startParam} className="ph-input mt-2" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Data final</label>
+            <label className="block text-xs font-medium text-muted-foreground">Data final</label>
             <input name="end" type="date" defaultValue={endParam} className="ph-input mt-2" />
           </div>
           <button type="submit" className="ph-button h-11 self-end">Filtrar</button>
@@ -258,50 +258,50 @@ export default async function SysadminPaymentsPage(props: { searchParams?: Searc
           </Link>
         </form>
 
-        <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-zinc-600 dark:text-zinc-300">
-          <span className="rounded-full bg-zinc-100 px-3 py-1 dark:bg-zinc-900/60">
+        <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+          <span className="rounded-full bg-secondary/60 px-3 py-1">
             {payments.length} transações
           </span>
-          <span className="rounded-full bg-zinc-100 px-3 py-1 dark:bg-zinc-900/60">{rangeLabel}</span>
+          <span className="rounded-full bg-secondary/60 px-3 py-1">{rangeLabel}</span>
         </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="ph-card p-5">
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">Recebido</p>
-          <p className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+          <p className="text-xs text-muted-foreground">Recebido</p>
+          <p className="mt-2 text-2xl font-semibold text-foreground">
             {formatMoney(totals.paidCents)}
           </p>
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{totals.paidCount} transações</p>
+          <p className="mt-2 text-xs text-muted-foreground">{totals.paidCount} transações</p>
         </div>
         <div className="ph-card p-5">
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">Reembolsado</p>
-          <p className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+          <p className="text-xs text-muted-foreground">Reembolsado</p>
+          <p className="mt-2 text-2xl font-semibold text-foreground">
             {formatMoney(totals.refundCents)}
           </p>
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{totals.refundCount} transações</p>
+          <p className="mt-2 text-xs text-muted-foreground">{totals.refundCount} transações</p>
         </div>
         <div className="ph-card p-5">
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">Pendente</p>
-          <p className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+          <p className="text-xs text-muted-foreground">Pendente</p>
+          <p className="mt-2 text-2xl font-semibold text-foreground">
             {formatMoney(totals.pendingCents)}
           </p>
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{totals.pendingCount} transações</p>
+          <p className="mt-2 text-xs text-muted-foreground">{totals.pendingCount} transações</p>
         </div>
         <div className="ph-card p-5">
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">Erro</p>
-          <p className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+          <p className="text-xs text-muted-foreground">Erro</p>
+          <p className="mt-2 text-2xl font-semibold text-foreground">
             {formatMoney(totals.errorCents)}
           </p>
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{totals.errorCount} transações</p>
+          <p className="mt-2 text-xs text-muted-foreground">{totals.errorCount} transações</p>
         </div>
       </div>
 
       <div className="ph-card p-6">
-        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Transações</h2>
-        <div className="mt-3 overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+        <h2 className="text-sm font-semibold text-foreground">Transações</h2>
+        <div className="mt-3 overflow-hidden rounded-2xl border border-border">
           <table className="w-full text-left text-xs">
-            <thead className="bg-zinc-50 text-zinc-600 dark:bg-zinc-900/40 dark:text-zinc-300">
+            <thead className="bg-secondary/50 text-muted-foreground">
               <tr>
                 <th className="px-3 py-2">Data</th>
                 <th className="px-3 py-2">Provider</th>
@@ -316,10 +316,10 @@ export default async function SysadminPaymentsPage(props: { searchParams?: Searc
                 <th className="px-3 py-2">Transação</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+            <tbody className="divide-y divide-border">
               {payments.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="px-3 py-4 text-center text-zinc-500">
+                  <td colSpan={11} className="px-3 py-4 text-center text-muted-foreground">
                     Nenhuma transação encontrada.
                   </td>
                 </tr>
@@ -352,28 +352,28 @@ export default async function SysadminPaymentsPage(props: { searchParams?: Searc
                     || "—";
 
                   return (
-                    <tr key={payment.id} className="bg-white dark:bg-zinc-950">
-                      <td className="px-3 py-2 text-zinc-900 dark:text-zinc-100">{formatDt(payment.createdAt)}</td>
-                      <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{payment.provider}</td>
-                      <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{outcomeLabel(payment.status)}</td>
+                    <tr key={payment.id} className="bg-card/70">
+                      <td className="px-3 py-2 text-foreground">{formatDt(payment.createdAt)}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{payment.provider}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{outcomeLabel(payment.status)}</td>
                       <td className="px-3 py-2">
                         <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusBadge(payment.status)}`}>
                           {payment.status}
                         </span>
                       </td>
-                      <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{formatMoney(payment.amount_cents)}</td>
-                      <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">
+                      <td className="px-3 py-2 text-muted-foreground">{formatMoney(payment.amount_cents)}</td>
+                      <td className="px-3 py-2 text-muted-foreground">
                         {refundAmount != null ? formatMoney(refundAmount) : "—"}
                       </td>
-                      <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">
+                      <td className="px-3 py-2 text-muted-foreground">
                         {refundFee != null && refundFee > 0 ? formatMoney(refundFee) : "—"}
                       </td>
-                      <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{origin}</td>
-                      <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{customerLabel}</td>
-                      <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">
+                      <td className="px-3 py-2 text-muted-foreground">{origin}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{customerLabel}</td>
+                      <td className="px-3 py-2 text-muted-foreground">
                         {establishmentLabel}
                       </td>
-                      <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">
+                      <td className="px-3 py-2 text-muted-foreground">
                         {payment.provider_payment_id ?? "—"}
                       </td>
                     </tr>
@@ -386,10 +386,10 @@ export default async function SysadminPaymentsPage(props: { searchParams?: Searc
       </div>
 
       <details className="ph-card p-6">
-        <summary className="cursor-pointer text-sm font-semibold text-zinc-900 dark:text-zinc-50">Eventos (webhooks)</summary>
-        <div className="mt-3 overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+        <summary className="cursor-pointer text-sm font-semibold text-foreground">Eventos (webhooks)</summary>
+        <div className="mt-3 overflow-hidden rounded-2xl border border-border">
           <table className="w-full text-left text-xs">
-            <thead className="bg-zinc-50 text-zinc-600 dark:bg-zinc-900/40 dark:text-zinc-300">
+            <thead className="bg-secondary/50 text-muted-foreground">
               <tr>
                 <th className="px-3 py-2">Data</th>
                 <th className="px-3 py-2">Provider</th>
@@ -400,36 +400,36 @@ export default async function SysadminPaymentsPage(props: { searchParams?: Searc
                 <th className="px-3 py-2">Payload</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+            <tbody className="divide-y divide-border">
               {events.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-3 py-4 text-center text-zinc-500">
+                  <td colSpan={7} className="px-3 py-4 text-center text-muted-foreground">
                     Nenhum evento encontrado.
                   </td>
                 </tr>
               ) : (
                 events.map((row) => (
-                  <tr key={row.id} className="bg-white dark:bg-zinc-950">
-                    <td className="px-3 py-2 text-zinc-900 dark:text-zinc-100">{formatDt(row.createdAt)}</td>
-                    <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{row.payment.provider}</td>
-                    <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{row.type}</td>
+                  <tr key={row.id} className="bg-card/70">
+                    <td className="px-3 py-2 text-foreground">{formatDt(row.createdAt)}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{row.payment.provider}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{row.type}</td>
                     <td className="px-3 py-2">
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusBadge(row.payment.status)}`}>
                         {row.payment.status}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">{formatMoney(row.payment.amount_cents)}</td>
-                    <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">
+                    <td className="px-3 py-2 text-muted-foreground">{formatMoney(row.payment.amount_cents)}</td>
+                    <td className="px-3 py-2 text-muted-foreground">
                       <div className="space-y-1">
                         <div>Pay: {row.payment.provider_payment_id ?? "—"}</div>
                         <div>Evt: {row.provider_event_id ?? "—"}</div>
                       </div>
                     </td>
-                    <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300">
+                    <td className="px-3 py-2 text-muted-foreground">
                       {row.payload ? (
                         <details>
-                          <summary className="cursor-pointer text-xs text-zinc-600 dark:text-zinc-300">Ver</summary>
-                          <pre className="mt-2 max-h-60 overflow-auto rounded-xl bg-zinc-900/90 p-3 text-[10px] text-zinc-100">
+                          <summary className="cursor-pointer text-xs text-muted-foreground">Ver</summary>
+                          <pre className="mt-2 max-h-60 overflow-auto rounded-xl bg-foreground/90 p-3 text-[10px] text-background">
                             {JSON.stringify(row.payload, null, 2)}
                           </pre>
                         </details>

@@ -45,8 +45,8 @@ export default async function SysadminSettingsPage(props: {
     <div>
       <div className="mb-6 flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Configurações do sistema</h1>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Gerencie SMTP e credenciais administrativas.</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Configurações do sistema</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Gerencie SMTP e credenciais administrativas.</p>
         </div>
         <Link className="ph-button-secondary" href="/sysadmin">
           Voltar
@@ -72,7 +72,7 @@ export default async function SysadminSettingsPage(props: {
       ) : null}
 
       {walletList ? (
-        <div className="mb-4 rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-800">
+        <div className="mb-4 rounded-2xl border border-border bg-card/70 p-4 text-sm text-muted-foreground">
           Wallets encontradas: {walletList}
         </div>
       ) : null}
@@ -100,8 +100,8 @@ export default async function SysadminSettingsPage(props: {
 
       {tab === "smtp" ? (
         <div className="ph-card p-6">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">SMTP (e-mail)</h2>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Salvo no banco (com fallback no .env).</p>
+          <h2 className="text-lg font-semibold text-foreground">SMTP (e-mail)</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Salvo no banco (com fallback no .env).</p>
 
           <form
             className="mt-4 space-y-4"
@@ -124,29 +124,29 @@ export default async function SysadminSettingsPage(props: {
             }}
           >
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Host</label>
+              <label className="block text-xs font-medium text-muted-foreground">Host</label>
               <input name="host" defaultValue={smtp.host} className="ph-input mt-2" placeholder="smtp.exemplo.com" />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Porta</label>
+              <label className="block text-xs font-medium text-muted-foreground">Porta</label>
               <input name="port" defaultValue={smtp.port} className="ph-input mt-2" placeholder="587" inputMode="numeric" />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">From</label>
+              <label className="block text-xs font-medium text-muted-foreground">From</label>
               <input name="from" defaultValue={smtp.from} className="ph-input mt-2" placeholder="PlatzGo! <no-reply@dominio.com>" />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Usuário</label>
+              <label className="block text-xs font-medium text-muted-foreground">Usuário</label>
               <input name="user" defaultValue={smtp.user} className="ph-input mt-2" placeholder="usuario@dominio.com" />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Senha</label>
+              <label className="block text-xs font-medium text-muted-foreground">Senha</label>
               <input name="pass" type="password" className="ph-input mt-2" placeholder={smtp.hasPass ? "(já definida)" : ""} />
-              <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+              <p className="mt-1 text-xs text-muted-foreground">
                 Para salvar senha pelo painel, defina a env `SETTINGS_ENCRYPTION_KEY` (32 bytes em base64/hex).
               </p>
             </div>
@@ -196,8 +196,8 @@ export default async function SysadminSettingsPage(props: {
 
       {tab === "payments" ? (
         <div className="ph-card p-6">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Pagamentos (gateways)</h2>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+          <h2 className="text-lg font-semibold text-foreground">Pagamentos (gateways)</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
             Configuração salva no banco. Mantém desativado até habilitar.
           </p>
 
@@ -229,7 +229,7 @@ export default async function SysadminSettingsPage(props: {
               }
             }}
           >
-            <div className="rounded-2xl border border-zinc-200 bg-white/70 p-4 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300">
+            <div className="rounded-2xl border border-border bg-card/70 p-4 text-sm text-muted-foreground">
               <div className="flex items-center justify-between gap-2">
                 <label className="flex items-center gap-2">
                   <input
@@ -240,11 +240,11 @@ export default async function SysadminSettingsPage(props: {
                   />
                   <span>Ativar pagamentos</span>
                 </label>
-                <span className="text-xs text-zinc-500">Provider padrão: {payments.provider}</span>
+                <span className="text-xs text-muted-foreground">Provider padrão: {payments.provider}</span>
               </div>
 
               <div className="mt-3">
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Providers ativos</label>
+                <label className="block text-xs font-medium text-muted-foreground">Providers ativos</label>
                 <div className="mt-2 flex flex-wrap gap-3">
                   <label className="inline-flex items-center gap-2 text-sm">
                     <input
@@ -265,11 +265,11 @@ export default async function SysadminSettingsPage(props: {
                     Asaas
                   </label>
                 </div>
-                <p className="mt-2 text-xs text-zinc-500">Marque os providers que estarao disponiveis no checkout.</p>
+                <p className="mt-2 text-xs text-muted-foreground">Marque os providers que estarao disponiveis no checkout.</p>
               </div>
 
               <div className="mt-3">
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Provider</label>
+                <label className="block text-xs font-medium text-muted-foreground">Provider</label>
                 <select name="paymentProvider" defaultValue={payments.provider} className="ph-input mt-2">
                   <option value="none">Desativado</option>
                   <option value="mercadopago">MercadoPago</option>
@@ -278,7 +278,7 @@ export default async function SysadminSettingsPage(props: {
               </div>
 
               <div className="mt-3">
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">URL de retorno</label>
+                <label className="block text-xs font-medium text-muted-foreground">URL de retorno</label>
                 <input
                   name="paymentReturnUrl"
                   defaultValue={payments.returnUrl}
@@ -288,11 +288,11 @@ export default async function SysadminSettingsPage(props: {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-zinc-200 bg-white/70 p-4 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300">
-              <p className="font-semibold text-zinc-900 dark:text-zinc-50">MercadoPago</p>
+            <div className="rounded-2xl border border-border bg-card/70 p-4 text-sm text-muted-foreground">
+              <p className="font-semibold text-foreground">MercadoPago</p>
               <div className="mt-3 grid gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Access token</label>
+                  <label className="block text-xs font-medium text-muted-foreground">Access token</label>
                   <input
                     name="mpAccessToken"
                     type="password"
@@ -301,7 +301,7 @@ export default async function SysadminSettingsPage(props: {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Webhook secret</label>
+                  <label className="block text-xs font-medium text-muted-foreground">Webhook secret</label>
                   <input
                     name="mpWebhook"
                     type="password"
@@ -312,11 +312,11 @@ export default async function SysadminSettingsPage(props: {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-zinc-200 bg-white/70 p-4 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300">
-              <p className="font-semibold text-zinc-900 dark:text-zinc-50">Asaas</p>
+            <div className="rounded-2xl border border-border bg-card/70 p-4 text-sm text-muted-foreground">
+              <p className="font-semibold text-foreground">Asaas</p>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Wallet ID (split)</label>
+                  <label className="block text-xs font-medium text-muted-foreground">Wallet ID (split)</label>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     <input
                       name="asaasSplitWalletId"
@@ -366,7 +366,7 @@ export default async function SysadminSettingsPage(props: {
                   </div>
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">CPF/CNPJ de teste</label>
+                  <label className="block text-xs font-medium text-muted-foreground">CPF/CNPJ de teste</label>
                   <input
                     name="asaasTestCpfCnpj"
                     className="ph-input mt-2"
@@ -377,7 +377,7 @@ export default async function SysadminSettingsPage(props: {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">API key</label>
+                  <label className="block text-xs font-medium text-muted-foreground">API key</label>
                   <input
                     name="asaasApiKey"
                     type="password"
@@ -386,7 +386,7 @@ export default async function SysadminSettingsPage(props: {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Webhook token</label>
+                  <label className="block text-xs font-medium text-muted-foreground">Webhook token</label>
                   <input
                     name="asaasWebhook"
                     type="password"
@@ -395,7 +395,7 @@ export default async function SysadminSettingsPage(props: {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Base URL</label>
+                  <label className="block text-xs font-medium text-muted-foreground">Base URL</label>
                   <input
                     name="asaasBaseUrl"
                     className="ph-input mt-2"
@@ -404,7 +404,7 @@ export default async function SysadminSettingsPage(props: {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Comissao % do app</label>
+                  <label className="block text-xs font-medium text-muted-foreground">Comissao % do app</label>
                   <input
                     name="asaasSplitPercent"
                     type="number"
@@ -417,7 +417,7 @@ export default async function SysadminSettingsPage(props: {
                   />
                 </div>
               </div>
-              <p className="mt-2 text-xs text-zinc-500">
+              <p className="mt-2 text-xs text-muted-foreground">
                 O repasse usa o Wallet ID do estabelecimento (configurado no painel do dono).
               </p>
             </div>
@@ -441,7 +441,7 @@ export default async function SysadminSettingsPage(props: {
               >
                 Limpar segredos
               </button>
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-muted-foreground">
                 Para salvar segredos pelo painel, defina `SETTINGS_ENCRYPTION_KEY`.
               </p>
             </div>
@@ -451,8 +451,8 @@ export default async function SysadminSettingsPage(props: {
 
       {tab === "notifications" ? (
         <div className="ph-card p-6">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Notificações</h2>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+          <h2 className="text-lg font-semibold text-foreground">Notificações</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
             Controle canais e regras de envio. Lembretes por e-mail usam o worker de notificações.
           </p>
 
@@ -486,8 +486,8 @@ export default async function SysadminSettingsPage(props: {
               }
             }}
           >
-            <div className="rounded-2xl border border-zinc-200 bg-white/70 p-4 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300">
-              <p className="font-semibold text-zinc-900 dark:text-zinc-50">E-mail</p>
+            <div className="rounded-2xl border border-border bg-card/70 p-4 text-sm text-muted-foreground">
+              <p className="font-semibold text-foreground">E-mail</p>
               <div className="mt-3 grid gap-3">
                 <label className="flex items-center gap-2">
                   <input name="emailEnabled" type="checkbox" defaultChecked={notifications.emailEnabled} />
@@ -518,7 +518,7 @@ export default async function SysadminSettingsPage(props: {
                   <span>Lembretes de agendamento</span>
                 </label>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                  <label className="block text-xs font-medium text-muted-foreground">
                     Enviar lembrete (horas antes)
                   </label>
                   <input
@@ -533,9 +533,9 @@ export default async function SysadminSettingsPage(props: {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-zinc-200 bg-white/70 p-4 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300">
-              <p className="font-semibold text-zinc-900 dark:text-zinc-50">WhatsApp</p>
-              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Integração pendente. As regras ficam salvas.</p>
+            <div className="rounded-2xl border border-border bg-card/70 p-4 text-sm text-muted-foreground">
+              <p className="font-semibold text-foreground">WhatsApp</p>
+              <p className="mt-1 text-xs text-muted-foreground">Integração pendente. As regras ficam salvas.</p>
               <div className="mt-3 grid gap-3">
                 <label className="flex items-center gap-2">
                   <input name="whatsappEnabled" type="checkbox" defaultChecked={notifications.whatsappEnabled} />
@@ -543,7 +543,7 @@ export default async function SysadminSettingsPage(props: {
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Início (hora)</label>
+                    <label className="block text-xs font-medium text-muted-foreground">Início (hora)</label>
                     <input
                       name="whatsappQuietHoursStart"
                       defaultValue={notifications.whatsappQuietHoursStart}
@@ -554,7 +554,7 @@ export default async function SysadminSettingsPage(props: {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Fim (hora)</label>
+                    <label className="block text-xs font-medium text-muted-foreground">Fim (hora)</label>
                     <input
                       name="whatsappQuietHoursEnd"
                       defaultValue={notifications.whatsappQuietHoursEnd}
@@ -568,9 +568,9 @@ export default async function SysadminSettingsPage(props: {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-zinc-200 bg-white/70 p-4 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300">
-              <p className="font-semibold text-zinc-900 dark:text-zinc-50">SMS</p>
-              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Integração pendente. As regras ficam salvas.</p>
+            <div className="rounded-2xl border border-border bg-card/70 p-4 text-sm text-muted-foreground">
+              <p className="font-semibold text-foreground">SMS</p>
+              <p className="mt-1 text-xs text-muted-foreground">Integração pendente. As regras ficam salvas.</p>
               <div className="mt-3 grid gap-3">
                 <label className="flex items-center gap-2">
                   <input name="smsEnabled" type="checkbox" defaultChecked={notifications.smsEnabled} />
@@ -578,7 +578,7 @@ export default async function SysadminSettingsPage(props: {
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Início (hora)</label>
+                    <label className="block text-xs font-medium text-muted-foreground">Início (hora)</label>
                     <input
                       name="smsQuietHoursStart"
                       defaultValue={notifications.smsQuietHoursStart}
@@ -589,7 +589,7 @@ export default async function SysadminSettingsPage(props: {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Fim (hora)</label>
+                    <label className="block text-xs font-medium text-muted-foreground">Fim (hora)</label>
                     <input
                       name="smsQuietHoursEnd"
                       defaultValue={notifications.smsQuietHoursEnd}
@@ -610,8 +610,8 @@ export default async function SysadminSettingsPage(props: {
 
       {tab === "password" ? (
         <div className="ph-card p-6">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Senha do administrador</h2>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Troque a senha do seu usuário SYSADMIN.</p>
+          <h2 className="text-lg font-semibold text-foreground">Senha do administrador</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Troque a senha do seu usuário SYSADMIN.</p>
 
           <form
             className="mt-4 space-y-4"
@@ -631,19 +631,19 @@ export default async function SysadminSettingsPage(props: {
             }}
           >
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Senha atual</label>
+              <label className="block text-xs font-medium text-muted-foreground">Senha atual</label>
               <input name="current" type="password" className="ph-input mt-2" required />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Nova senha</label>
+              <label className="block text-xs font-medium text-muted-foreground">Nova senha</label>
               <input name="next" type="password" className="ph-input mt-2" required minLength={8} />
-              <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Mínimo de 8 caracteres.</p>
+              <p className="mt-1 text-xs text-muted-foreground">Mínimo de 8 caracteres.</p>
             </div>
 
             <FormSubmitButton label="Salvar nova senha" pendingLabel="Salvando..." className="ph-button" />
 
-            <p className="text-xs text-zinc-600 dark:text-zinc-400">
+            <p className="text-xs text-muted-foreground">
               Dica: você também pode usar o fluxo de Esqueci minha senha no login.
             </p>
           </form>

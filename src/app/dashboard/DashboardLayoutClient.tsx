@@ -4,12 +4,25 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { getSession, signOut } from "next-auth/react";
+import {
+  BarChart3,
+  Calendar,
+  LayoutGrid,
+  DollarSign,
+  CreditCard,
+  CheckSquare,
+  Bell,
+  Settings,
+  Trophy,
+  LogOut,
+  ChevronLeft,
+} from "lucide-react";
 
-import { ThemedBackground } from "@/components/ThemedBackground";
 
 type NavItem = {
   href: string;
   label: string;
+  icon: typeof BarChart3;
 };
 
 type EstablishmentProfile = {
@@ -25,21 +38,8 @@ function initialsFromName(name?: string | null): string {
   return (a + b).toUpperCase();
 }
 
-function NavLink(props: { item: NavItem; active: boolean; onClick?: () => void }) {
-  return (
-    <Link
-      href={props.item.href}
-      onClick={props.onClick}
-      className={
-        props.active
-          ? "flex items-center justify-between rounded-2xl bg-[#CCFF00] px-4 py-3 text-sm font-bold text-black shadow-[0_10px_30px_rgba(204,255,0,0.22)] ring-1 ring-black/10"
-          : "flex items-center justify-between rounded-2xl px-4 py-3 text-sm text-zinc-800 hover:bg-zinc-900/5 dark:text-zinc-100/90 dark:hover:bg-white/10"
-      }
-    >
-      <span>{props.item.label}</span>
-      {props.active ? <span className="text-xs font-semibold">●</span> : null}
-    </Link>
-  );
+function cn(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(" ");
 }
 
 export function DashboardLayoutClient(props: {
@@ -79,7 +79,7 @@ function DashboardLayoutShell(props: {
   approvalStatus?: import("@/generated/prisma/enums").EstablishmentApprovalStatus | null;
   approvalNote?: string | null;
 }) {
-  const [accountOpen, setAccountOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   // Protege contra BFCache: se o usuário sair e apertar "voltar",
   // o browser pode restaurar HTML antigo sem pedir ao servidor. Aqui
@@ -113,164 +113,154 @@ function DashboardLayoutShell(props: {
     };
   }, [props.pathname, props.router]);
 
-  const homeHref = props.hasEstablishment && props.hasAtLeastOneCourt ? "/dashboard" : "/dashboard/admin";
-
   const nav = useMemo<NavItem[]>(() => {
-    // Sempre mostramos "Meu espaço" (é onde o dono completa o cadastro do estabelecimento).
-    const base: NavItem[] = [{ href: "/dashboard/admin", label: "Meu espaço" }];
+    const base: NavItem[] = [{ href: "/dashboard/admin", label: "Configuracoes", icon: Settings }];
 
-    // Sem estabelecimento: só Meu espaço.
     if (!props.hasEstablishment) return base;
 
-    // Com estabelecimento mas sem quadras: liberar "Quadras" para criar a primeira.
     if (!props.hasAtLeastOneCourt) {
-      return [...base, { href: "/dashboard/quadras", label: "Quadras" }];
+      return [...base, { href: "/dashboard/quadras", label: "Quadras", icon: LayoutGrid }];
     }
 
-    // Setup completo.
     return [
-      { href: "/dashboard", label: "Resumo" },
-      { href: "/dashboard/aprovacoes", label: "Aprovações" },
-      { href: "/dashboard/agenda", label: "Agenda" },
-      { href: "/dashboard/torneios", label: "Torneios" },
-      { href: "/dashboard/quadras", label: "Quadras" },
-      { href: "/dashboard/financeiro", label: "Financeiro" },
-      { href: "/dashboard/pagamentos", label: "Pagamentos" },
+      { href: "/dashboard", label: "Visao geral", icon: BarChart3 },
+      { href: "/dashboard/agenda", label: "Agenda", icon: Calendar },
+      { href: "/dashboard/quadras", label: "Quadras", icon: LayoutGrid },
+      { href: "/dashboard/financeiro", label: "Financeiro", icon: DollarSign },
+      { href: "/dashboard/pagamentos", label: "Pagamentos", icon: CreditCard },
+      { href: "/dashboard/aprovacoes", label: "Aprovacoes", icon: CheckSquare },
+      { href: "/dashboard/notificacoes", label: "Notificacoes", icon: Bell },
+      { href: "/dashboard/torneios", label: "Torneios", icon: Trophy },
       ...base,
     ];
   }, [props.hasEstablishment, props.hasAtLeastOneCourt]);
 
-  const containerClass = "mx-auto w-full max-w-[96rem] px-6";
-  const mainInnerClass = "w-full";
-
   const isActive = (href: string) => props.pathname === href;
 
   const establishmentName = props.establishmentProfile?.name ?? null;
-  const establishmentImageUrl = props.establishmentProfile?.imageUrl ?? null;
   const establishmentInitials = useMemo(() => initialsFromName(establishmentName), [establishmentName]);
 
   const signOutCallbackUrl = "/signin?logout=1&callbackUrl=%2Fdashboard";
 
-  const accountCard = props.establishmentProfile ? (
-    <div className="relative mt-5">
-      <button
-        type="button"
-        onClick={() => setAccountOpen((s) => !s)}
-        className="flex w-full items-center gap-3 rounded-2xl border border-zinc-200 bg-white/75 px-3 py-3 text-left text-zinc-900 shadow-sm hover:bg-white dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
-      >
-        <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-zinc-100 ring-1 ring-zinc-200 dark:bg-white/10 dark:ring-white/10">
-          {establishmentImageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={establishmentImageUrl} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <span className="flex h-full w-full items-center justify-center text-xs font-extrabold text-zinc-900 dark:text-white">
-              {establishmentInitials}
-            </span>
-          )}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-bold">{establishmentName}</span>
-          <span className="block text-xs text-zinc-600 dark:text-zinc-300">Você está logado</span>
-        </span>
-        <span className="text-xs text-zinc-500 dark:text-zinc-300">▾</span>
-      </button>
-
-      {accountOpen ? (
-        <div className="absolute left-0 right-0 mt-2 overflow-hidden rounded-2xl border border-zinc-200 bg-white/90 text-zinc-900 shadow-xl backdrop-blur dark:border-white/10 dark:bg-black/60 dark:text-white">
-          <button
-            type="button"
-            className="block w-full px-4 py-3 text-left text-sm hover:bg-zinc-900/5 dark:hover:bg-white/10"
-            onClick={() => signOut({ callbackUrl: signOutCallbackUrl })}
-          >
-            Sair
-          </button>
-        </div>
-      ) : null}
-    </div>
-  ) : null;
-
   const showApprovalBanner = props.approvalStatus === "PENDING" || props.approvalStatus === "REJECTED";
 
+  const todayLabel = useMemo(
+    () =>
+      new Date().toLocaleDateString("pt-BR", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }),
+    []
+  );
 
   return (
-    <div className="ph-page">
-      <ThemedBackground />
-      <div className="relative z-10">
-      <div className="sticky top-0 z-40 border-b border-zinc-200 bg-white/90 backdrop-blur shadow-sm dark:border-white/10 dark:bg-[#121212]/90">
-        <div className={`${containerClass} flex items-center justify-between py-4`}>
-          <div className="flex items-center gap-3">
-            <Link href={homeHref} className="flex items-center gap-2 text-sm font-bold text-zinc-900 dark:text-white">
-              <span className="relative h-12 w-12 overflow-hidden rounded-full">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo" alt="PlatzGo!" className="h-full w-full object-contain" />
+    <div className="min-h-screen bg-background flex">
+      <aside
+        className={cn(
+          "bg-card border-r border-border transition-all duration-300 flex flex-col fixed h-full z-40",
+          collapsed ? "w-[72px]" : "w-64"
+        )}
+      >
+        <div className="p-4 flex items-center gap-3 border-b border-border h-16">
+          <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center font-display font-bold text-primary-foreground shrink-0">
+            P
+          </div>
+          {!collapsed ? (
+            <div>
+              <span className="font-display font-bold text-lg">
+                Platz<span className="gradient-text">Go!</span>
               </span>
-            </Link>
-            <span className="text-xs text-zinc-600 dark:text-zinc-300">A partida começa AQUI</span>
-          </div>
-          <div className="flex items-center gap-2" />
+              <p className="text-xs text-muted-foreground">Painel do gestor</p>
+            </div>
+          ) : null}
         </div>
-      </div>
 
-      <div className={`${containerClass} grid gap-6 py-8 lg:grid-cols-[260px_minmax(0,1fr)]`}>
-        <aside className="hidden lg:block">
-          <div className="rounded-3xl border border-zinc-200 bg-white/75 p-5 text-zinc-900 shadow-[0_12px_40px_rgba(0,0,0,0.10)] backdrop-blur dark:border-white/10 dark:bg-[#0b0b0b]/85 dark:text-white dark:shadow-[0_12px_40px_rgba(0,0,0,0.35)]">
-            <div className="flex items-center gap-3">
-              <Link href={homeHref} className="flex items-center gap-2 text-sm font-bold">
-                <span className="relative h-12 w-12 overflow-hidden rounded-full">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/logo" alt="PlatzGo!" className="h-full w-full object-contain" />
-                </span>
-              </Link>
-              <span className="text-xs text-zinc-600 dark:text-zinc-300">A partida começa AQUI</span>
-            </div>
-            <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-300">Painel do dono</p>
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+          {nav.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all",
+                isActive(item.href)
+                  ? "bg-primary/10 text-primary font-medium"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+              )}
+            >
+              <item.icon size={20} className="shrink-0" />
+              {!collapsed ? <span>{item.label}</span> : null}
+            </Link>
+          ))}
+        </nav>
 
-            {accountCard}
+        <div className="p-3 border-t border-border space-y-1">
+          <button
+            type="button"
+            onClick={() => setCollapsed((s) => !s)}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+          >
+            <ChevronLeft size={20} className={cn("shrink-0 transition-transform", collapsed && "rotate-180")} />
+            {!collapsed ? <span>Recolher</span> : null}
+          </button>
+          <button
+            type="button"
+            onClick={() => signOut({ callbackUrl: signOutCallbackUrl })}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+          >
+            <LogOut size={20} className="shrink-0" />
+            {!collapsed ? <span>Sair</span> : null}
+          </button>
+        </div>
+      </aside>
 
-            {!props.hasEstablishment ? (
-              <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-700 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200">
-                Complete o cadastro da sua arena em <span className="font-semibold">Meu espaço</span>.
-              </div>
-            ) : !props.hasAtLeastOneCourt ? (
-              <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-700 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200">
-                Crie sua <span className="font-semibold">primeira quadra</span> em Quadras para liberar o dashboard.
-              </div>
-            ) : null}
-
-            <div className="mt-6 space-y-2">
-              {nav.map((item) => (
-                <NavLink key={item.href} item={item} active={isActive(item.href)} />
-              ))}
+      <main className={cn("flex-1 transition-all duration-300", collapsed ? "ml-[72px]" : "ml-64")}>
+        <header className="h-16 border-b border-border flex items-center justify-between px-6 bg-card/50 backdrop-blur-sm sticky top-0 z-30">
+          <div>
+            <p className="text-xs text-muted-foreground">{todayLabel}</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/dashboard/notificacoes"
+              className="relative p-2 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Bell size={18} />
+            </Link>
+            <div className="w-9 h-9 rounded-full gradient-primary flex items-center justify-center font-display font-bold text-sm text-primary-foreground">
+              {establishmentInitials || "A"}
             </div>
           </div>
-        </aside>
+        </header>
 
-        <main className="min-w-0">
-          <div className={mainInnerClass}>
-            {showApprovalBanner ? (
-              <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                {props.approvalStatus === "REJECTED" ? (
-                  <div className="space-y-2">
-                    <p>
-                      Seu cadastro foi reprovado.
-                      {props.approvalNote ? ` Motivo: ${props.approvalNote}` : ""}
-                    </p>
-                    <p>
-                      Ajuste os dados em <Link href="/dashboard/admin" className="font-semibold underline">Meu espaco</Link> e reenviar para aprovacao.
-                    </p>
-                  </div>
-                ) : (
+        <div className="p-6">
+          {showApprovalBanner ? (
+            <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              {props.approvalStatus === "REJECTED" ? (
+                <div className="space-y-2">
                   <p>
-                    Seu cadastro esta em analise pelo SYSADMIN. Voce pode ajustar o perfil normalmente, mas a aprovacao ainda esta pendente.
+                    Seu cadastro foi reprovado.
+                    {props.approvalNote ? ` Motivo: ${props.approvalNote}` : ""}
                   </p>
-                )}
-              </div>
-            ) : null}
-            {props.children}
-          </div>
-        </main>
-      </div>
-      </div>
+                  <p>
+                    Ajuste os dados em{" "}
+                    <Link href="/dashboard/admin" className="font-semibold underline">
+                      Configuracoes
+                    </Link>{" "}
+                    e reenviar para aprovacao.
+                  </p>
+                </div>
+              ) : (
+                <p>
+                  Seu cadastro esta em analise pelo SYSADMIN. Voce pode ajustar o perfil normalmente, mas a aprovacao ainda esta pendente.
+                </p>
+              )}
+            </div>
+          ) : null}
+
+          {props.children}
+        </div>
+      </main>
     </div>
   );
 }

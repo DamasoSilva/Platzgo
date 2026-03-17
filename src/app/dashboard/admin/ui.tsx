@@ -130,7 +130,7 @@ function MediaGrid(props: { urls: string[]; onRemove?: (url: string) => void; on
         return (
           <div
             key={url}
-            className="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-zinc-100/70 shadow-sm dark:bg-zinc-900/60"
+            className="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-muted/60 shadow-sm"
             draggable={Boolean(props.onReorder)}
             onDragStart={() => {
               dragIndexRef.current = idx;
@@ -159,7 +159,7 @@ function MediaGrid(props: { urls: string[]; onRemove?: (url: string) => void; on
                 href={url}
                 target="_blank"
                 rel="noreferrer"
-                className="flex h-full w-full items-center justify-center bg-black/5 text-zinc-900 dark:bg-black/30 dark:text-zinc-100"
+                className="flex h-full w-full items-center justify-center bg-muted/60 text-foreground"
                 title="Abrir vídeo em nova aba"
               >
                 <span className="flex items-center gap-2 text-sm font-semibold">
@@ -305,13 +305,13 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
       <div className="flex flex-wrap items-center gap-2">
         <Link
           href="/"
-          className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+          className="rounded-full border border-border bg-card px-4 py-2 text-xs font-semibold text-foreground hover:bg-secondary"
         >
           Ver como cliente
         </Link>
         <Link
           href="/dashboard"
-          className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+          className="rounded-full border border-border bg-card px-4 py-2 text-xs font-semibold text-foreground hover:bg-secondary"
         >
           Agenda
         </Link>
@@ -573,8 +573,8 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
       <header>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Meu espaço</h1>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Meu espaço</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
               Cadastre seu estabelecimento e gerencie suas quadras.
             </p>
           </div>
@@ -583,13 +583,13 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
       </header>
 
       {message ? (
-        <div className="rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
+        <div className="rounded-2xl border border-border bg-card p-4 text-sm text-foreground">
           {message}
         </div>
       ) : null}
 
       {props.establishment?.approval_status === "REJECTED" ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
+        <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
           <p>
             Cadastro reprovado.
             {props.establishment.approval_note ? ` Motivo: ${props.establishment.approval_note}` : ""}
@@ -614,7 +614,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
             >
               Reenviar para aprovacao
             </button>
-            <span className="text-xs text-red-700">Ajuste os dados abaixo antes de reenviar.</span>
+            <span className="text-xs text-destructive">Ajuste os dados abaixo antes de reenviar.</span>
           </div>
         </div>
       ) : null}
@@ -643,13 +643,13 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
         {tab === "general" ? (
           <div className="grid gap-6 lg:grid-cols-12">
             <section className="lg:col-span-12 ph-card p-6">
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Estabelecimento</h2>
+              <h2 className="text-lg font-semibold text-foreground">Estabelecimento</h2>
 
-              <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
+              <div className="mt-4 rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Link publico</p>
-                    <p className="mt-2 break-all text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Link publico</p>
+                    <p className="mt-2 break-all text-sm font-semibold text-foreground">
                       {publicSlug ? `/${publicSlug}` : "Defina o nome do estabelecimento"}
                     </p>
                   </div>
@@ -661,15 +661,15 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                     Copiar link
                   </button>
                 </div>
-                {copyStatus ? <p className="mt-2 text-xs text-zinc-500">{copyStatus}</p> : null}
+                {copyStatus ? <p className="mt-2 text-xs text-muted-foreground">{copyStatus}</p> : null}
               </div>
 
               <div className="mt-5 space-y-4">
-                <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+                <div className="rounded-2xl border border-border bg-card p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Confirmação de agendamento</p>
-                      <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                      <p className="text-sm font-semibold text-foreground">Confirmação de agendamento</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
                         Se desativar, os agendamentos feitos pelos clientes já entram como <span className="font-semibold">Confirmados</span>.
                       </p>
                     </div>
@@ -684,7 +684,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                       className={
                         "inline-flex h-10 items-center rounded-full border px-4 text-sm font-bold transition-all " +
                         (form.requires_booking_confirmation
-                          ? "border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900/40"
+                          ? "border-border bg-card text-foreground hover:bg-secondary"
                           : "border-black/10 bg-[#CCFF00] text-black hover:brightness-95") +
                         (confirmationLocked ? " opacity-60 pointer-events-none" : "")
                       }
@@ -693,7 +693,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                     </button>
                   </div>
 
-                  <label className="mt-3 flex items-center gap-3 text-sm text-zinc-700 dark:text-zinc-300">
+                  <label className="mt-3 flex items-center gap-3 text-sm text-muted-foreground">
                     <input
                       type="checkbox"
                       checked={!form.requires_booking_confirmation}
@@ -702,7 +702,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                         setForm((s) => ({ ...s, requires_booking_confirmation: !e.target.checked }));
                       }}
                       disabled={confirmationLocked}
-                      className="h-4 w-4 rounded border-zinc-300 text-[#CCFF00] focus:ring-[#CCFF00]"
+                      className="h-4 w-4 rounded border-border text-[#CCFF00] focus:ring-[#CCFF00]"
                     />
                     Retirar obrigatoriedade de confirmação
                   </label>
@@ -714,7 +714,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Nome</label>
+                  <label className="block text-xs font-medium text-muted-foreground">Nome</label>
                   <input
                     value={form.name}
                     onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
@@ -723,7 +723,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Descrição</label>
+                  <label className="block text-xs font-medium text-muted-foreground">Descrição</label>
                   <textarea
                     value={form.description}
                     onChange={(e) => setForm((s) => ({ ...s, description: e.target.value }))}
@@ -732,15 +732,15 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                   />
                 </div>
 
-                <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-                  <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Política de cancelamento</p>
-                  <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                <div className="rounded-2xl border border-border bg-card p-4">
+                  <p className="text-sm font-semibold text-foreground">Política de cancelamento</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
                     Define o prazo mínimo e a multa aplicada quando o cliente cancela perto do horário.
                   </p>
 
                   <div className="mt-4 grid gap-3 sm:grid-cols-3">
                     <div>
-                      <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Prazo mínimo (horas)</label>
+                      <label className="block text-xs font-medium text-muted-foreground">Prazo mínimo (horas)</label>
                       <input
                         type="number"
                         min={0}
@@ -752,7 +752,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Tipo de multa</label>
+                      <label className="block text-xs font-medium text-muted-foreground">Tipo de multa</label>
                       <div className="mt-2 flex flex-wrap gap-2">
                         <button
                           type="button"
@@ -760,7 +760,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                           className={
                             form.cancel_fee_type === "percent"
                               ? "rounded-full bg-[#CCFF00] px-4 py-2 text-xs font-bold text-black"
-                              : "rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                              : "rounded-full border border-border bg-card px-4 py-2 text-xs text-foreground"
                           }
                         >
                           Percentual
@@ -771,7 +771,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                           className={
                             form.cancel_fee_type === "fixed"
                               ? "rounded-full bg-[#CCFF00] px-4 py-2 text-xs font-bold text-black"
-                              : "rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                              : "rounded-full border border-border bg-card px-4 py-2 text-xs text-foreground"
                           }
                         >
                           Valor fixo
@@ -782,7 +782,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
 
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <div>
-                      <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Multa (%)</label>
+                      <label className="block text-xs font-medium text-muted-foreground">Multa (%)</label>
                       <input
                         type="number"
                         min={0}
@@ -795,7 +795,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Multa fixa (R$)</label>
+                      <label className="block text-xs font-medium text-muted-foreground">Multa fixa (R$)</label>
                       <input
                         type="number"
                         min={0}
@@ -810,13 +810,13 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-                  <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Buffer entre reservas</p>
-                  <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                <div className="rounded-2xl border border-border bg-card p-4">
+                  <p className="text-sm font-semibold text-foreground">Buffer entre reservas</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
                     Tempo mínimo (em minutos) entre um agendamento e outro.
                   </p>
                   <div className="mt-4">
-                    <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Minutos de buffer</label>
+                    <label className="block text-xs font-medium text-muted-foreground">Minutos de buffer</label>
                     <input
                       type="number"
                       min={0}
@@ -848,7 +848,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Instagram (opcional)</label>
+                  <label className="block text-xs font-medium text-muted-foreground">Instagram (opcional)</label>
                   <input
                     value={form.instagram_url}
                     onChange={(e) => setForm((s) => ({ ...s, instagram_url: e.target.value }))}
@@ -858,7 +858,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Fotos e vídeos do perfil</label>
+                  <label className="block text-xs font-medium text-muted-foreground">Fotos e vídeos do perfil</label>
                   <div className="mt-2 flex items-center justify-between gap-3">
                     <UploadPickerButton
                       label={form.photo_urls.length ? "Adicionar mais arquivos" : "Adicionar arquivos"}
@@ -887,7 +887,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                         }
                       }}
                     />
-                    <div className="text-xs text-zinc-600 dark:text-zinc-400">
+                    <div className="text-xs text-muted-foreground">
                       {profileCounts.photos}/{PROFILE_MAX_PHOTOS} fotos · {profileCounts.videos}/{PROFILE_MAX_VIDEOS} vídeos
                     </div>
                   </div>
@@ -900,7 +900,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Localização</label>
+                  <label className="block text-xs font-medium text-muted-foreground">Localização</label>
                   <div className="mt-2">
                     {apiKey ? (
                       <AddressMapPicker
@@ -918,7 +918,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                         }
                       />
                     ) : (
-                      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                      <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-900">
                         Defina <span className="font-mono">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</span> no .env para habilitar o mapa.
                       </div>
                     )}
@@ -941,13 +941,13 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
         {tab === "payments" ? (
           <div className="grid gap-6 lg:grid-cols-12">
             <section className="lg:col-span-12 ph-card p-6">
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Pagamentos</h2>
+              <h2 className="text-lg font-semibold text-foreground">Pagamentos</h2>
 
-              <div className="mt-5 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+              <div className="mt-5 rounded-2xl border border-border bg-card p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Pagamento online</p>
-                    <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                    <p className="text-sm font-semibold text-foreground">Pagamento online</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
                       Ative para liberar pagamento online e configurar o provedor.
                     </p>
                   </div>
@@ -969,14 +969,14 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                       "inline-flex h-10 items-center rounded-full border px-4 text-sm font-bold transition-all " +
                       (form.online_payments_enabled
                         ? "border-black/10 bg-[#CCFF00] text-black hover:brightness-95"
-                        : "border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900/40")
+                        : "border-border bg-card text-foreground hover:bg-secondary")
                     }
                   >
                     {form.online_payments_enabled ? "Ativado" : "Ativar"}
                   </button>
                 </div>
 
-                <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-100">
+                <div className="mt-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-900">
                   O pagamento online so ativa apos o teste da wallet Asaas retornar OK.
                 </div>
 
@@ -986,7 +986,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                       {PAYMENT_OPTIONS.map((opt) => {
                         const checked = form.payment_providers.includes(opt.id);
                         return (
-                          <label key={opt.id} className="inline-flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+                          <label key={opt.id} className="inline-flex items-center gap-2 text-sm text-muted-foreground">
                             <input
                               type="checkbox"
                               checked={checked}
@@ -1007,7 +1007,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                       })}
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Provider padrão</label>
+                      <label className="block text-xs font-medium text-muted-foreground">Provider padrão</label>
                       <select
                         value={form.payment_provider}
                         onChange={(e) => {
@@ -1027,7 +1027,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                     </div>
                     {form.payment_providers.includes("asaas") ? (
                       <div>
-                        <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                        <label className="block text-xs font-medium text-muted-foreground">
                           Wallet ID do recebedor (Asaas)
                         </label>
                         <input
@@ -1057,14 +1057,14 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                         {walletTestStatus === "error" && walletTestMessage ? (
                           <p className="mt-2 text-xs text-red-600">{walletTestMessage}</p>
                         ) : null}
-                        <p className="mt-2 text-xs text-zinc-500">
+                        <p className="mt-2 text-xs text-muted-foreground">
                           Necessario para repasse automatico. Sem esse ID, o pagamento online fica indisponivel.
                         </p>
                       </div>
                     ) : null}
                   </div>
                 ) : (
-                  <div className="mt-4 rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-4 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-300">
+                  <div className="mt-4 rounded-2xl border border-dashed border-border bg-muted p-4 text-xs text-muted-foreground">
                     Pagamento online desativado. Ative para liberar aos clientes.
                   </div>
                 )}
@@ -1090,26 +1090,26 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
         {tab === "hours" ? (
           <div className="grid gap-6 lg:grid-cols-12">
             <section className="lg:col-span-7 ph-card p-6">
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Horários</h2>
+              <h2 className="text-lg font-semibold text-foreground">Horários</h2>
 
               <div className="mt-4">
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Funcionamento por dia</label>
+                <label className="block text-xs font-medium text-muted-foreground">Funcionamento por dia</label>
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   {weekdayLabels.map((label, day) => {
                     const active = form.open_weekdays.includes(day);
                     const openingValue = form.opening_time_by_weekday[day] ?? "";
                     const closingValue = form.closing_time_by_weekday[day] ?? "";
                     return (
-                      <div key={label} className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+                      <div key={label} className="rounded-2xl border border-border bg-card p-4">
                         <div className="flex items-center justify-between gap-3">
-                          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{label}</p>
+                          <p className="text-sm font-semibold text-foreground">{label}</p>
                           <button
                             type="button"
                             onClick={() => toggleWeekday(day)}
                             className={
                               active
                                 ? "rounded-full bg-[#CCFF00] px-3 py-1 text-xs font-bold text-black"
-                                : "rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                                : "rounded-full border border-border bg-card px-3 py-1 text-xs text-foreground"
                             }
                           >
                             {active ? "Aberto" : "Fechado"}
@@ -1118,7 +1118,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
 
                         <div className="mt-3 grid gap-2 sm:grid-cols-2">
                           <div>
-                            <label className="block text-[11px] font-medium text-zinc-600 dark:text-zinc-300">Abertura</label>
+                            <label className="block text-[11px] font-medium text-muted-foreground">Abertura</label>
                             <input
                               value={openingValue}
                               onChange={(e) =>
@@ -1134,7 +1134,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                             />
                           </div>
                           <div>
-                            <label className="block text-[11px] font-medium text-zinc-600 dark:text-zinc-300">Fechamento</label>
+                            <label className="block text-[11px] font-medium text-muted-foreground">Fechamento</label>
                             <input
                               value={closingValue}
                               onChange={(e) =>
@@ -1158,15 +1158,15 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
             </section>
 
             <section className="lg:col-span-5 ph-card p-6">
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Feriados</h2>
-              <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+              <h2 className="text-lg font-semibold text-foreground">Feriados</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
                 Informe dias fechados ou com horário especial. Esses dias aparecem como indisponíveis na agenda.
               </p>
 
               <div className="mt-5 space-y-4">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
-                    <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Data</label>
+                    <label className="block text-xs font-medium text-muted-foreground">Data</label>
                     <input
                       type="date"
                       value={holidayForm.date}
@@ -1176,12 +1176,12 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                   </div>
 
                   <div className="flex items-end">
-                    <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+                    <label className="flex items-center gap-2 text-sm text-muted-foreground">
                       <input
                         type="checkbox"
                         checked={holidayForm.is_open}
                         onChange={(e) => setHolidayForm((s) => ({ ...s, is_open: e.target.checked }))}
-                        className="h-4 w-4 rounded border-zinc-300 text-[#CCFF00] focus:ring-[#CCFF00]"
+                        className="h-4 w-4 rounded border-border text-[#CCFF00] focus:ring-[#CCFF00]"
                       />
                       Dia aberto (horário especial)
                     </label>
@@ -1191,7 +1191,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                 {holidayForm.is_open ? (
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
-                      <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Abertura</label>
+                      <label className="block text-xs font-medium text-muted-foreground">Abertura</label>
                       <input
                         type="time"
                         value={holidayForm.opening_time}
@@ -1200,7 +1200,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Fechamento</label>
+                      <label className="block text-xs font-medium text-muted-foreground">Fechamento</label>
                       <input
                         type="time"
                         value={holidayForm.closing_time}
@@ -1212,7 +1212,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                 ) : null}
 
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Observação</label>
+                  <label className="block text-xs font-medium text-muted-foreground">Observação</label>
                   <input
                     value={holidayForm.note}
                     onChange={(e) => setHolidayForm((s) => ({ ...s, note: e.target.value }))}
@@ -1226,15 +1226,15 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                 </button>
 
                 {holidays.length === 0 ? (
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">Nenhum feriado cadastrado.</p>
+                  <p className="text-sm text-muted-foreground">Nenhum feriado cadastrado.</p>
                 ) : (
                   <div className="space-y-2">
                     {holidays.map((holiday) => (
-                      <div key={holiday.id} className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+                      <div key={holiday.id} className="rounded-2xl border border-border p-4">
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{holiday.date}</p>
-                            <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                            <p className="text-sm font-semibold text-foreground">{holiday.date}</p>
+                            <p className="text-xs text-muted-foreground">
                               {holiday.is_open
                                 ? `Aberto ${holiday.opening_time ?? ""} - ${holiday.closing_time ?? ""}`
                                 : "Fechado"}
@@ -1261,23 +1261,23 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
         {tab === "courts" ? (
           <div className="grid gap-6 lg:grid-cols-12">
             <section className="lg:col-span-7 ph-card p-6">
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Quadras</h2>
+              <h2 className="text-lg font-semibold text-foreground">Quadras</h2>
 
               <div className="mt-5 space-y-4">
                 {courts.length === 0 ? (
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">Nenhuma quadra cadastrada ainda.</p>
+                  <p className="text-sm text-muted-foreground">Nenhuma quadra cadastrada ainda.</p>
                 ) : (
                   <div className="space-y-2">
                     {courts.map((c) => (
-                      <div key={c.id} className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+                      <div key={c.id} className="rounded-2xl border border-border p-4">
                         <div className="flex items-center justify-between gap-4">
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">{c.name}</p>
-                            <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                            <p className="truncate text-sm font-semibold text-foreground">{c.name}</p>
+                            <p className="text-xs text-muted-foreground">
                               {formatSportLabel(c.sport_type)} • {formatBRLFromCents(c.price_per_hour)}/h
                             </p>
                           </div>
-                          <a className="text-sm text-zinc-900 underline dark:text-zinc-100" href={`/courts/${c.id}`}>
+                          <a className="text-sm text-foreground underline" href={`/courts/${c.id}`}>
                             Ver
                           </a>
                         </div>
@@ -1286,7 +1286,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                   </div>
                 )}
 
-                <div className="mt-6 border-t border-zinc-200 pt-5 dark:border-zinc-800">
+                <div className="mt-6 border-t border-border pt-5">
                   <Link href="/dashboard/quadras" className="ph-button w-full">
                     Gerenciar quadras
                   </Link>
