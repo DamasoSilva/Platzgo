@@ -79,6 +79,23 @@ function asLocalDayDate(ymd: string): Date {
   return new Date(`${ymd}T00:00:00`);
 }
 
+function formatYmd(date: Date): string {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function formatDateOptionLabel(date: Date, isToday: boolean): string {
+  if (isToday) return "Hoje";
+  const weekday = date
+    .toLocaleDateString("pt-BR", { weekday: "short" })
+    .replace(".", "")
+    .trim();
+  const ddmm = date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  return `${weekday} ${ddmm}`;
+}
+
 
 const COURT_FILTERS_KEY = "ph:lastCourtFilters";
 
@@ -199,6 +216,25 @@ export function CourtDetailsClient(props: {
     const dd = String(d.getDate()).padStart(2, "0");
     return `${yyyy}-${mm}-${dd}`;
   }, []);
+  const dateOptions = useMemo(() => {
+    const start = asLocalDayDate(todayYmd);
+    const options: Array<{ value: string; label: string }> = [];
+
+    for (let i = 0; i < 12; i += 1) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      const value = formatYmd(d);
+      options.push({ value, label: formatDateOptionLabel(d, i === 0) });
+    }
+
+    if (isYmd(day) && day > todayYmd && !options.some((opt) => opt.value === day)) {
+      const d = asLocalDayDate(day);
+      options.push({ value: day, label: formatDateOptionLabel(d, false) });
+      options.sort((a, b) => a.value.localeCompare(b.value));
+    }
+
+    return options;
+  }, [day, todayYmd]);
   const now = useMemo(() => new Date(), []);
   const currentMonthKey = useMemo(
     () => `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`,
@@ -717,7 +753,7 @@ export function CourtDetailsClient(props: {
   const bookingSteps = [
     { n: 1, label: "Escolha a quadra" },
     { n: 2, label: "Horário" },
-    { n: 3, label: "Confirmacao" },
+    { n: 3, label: "Confirmação" },
   ];
 
   return (
@@ -1147,17 +1183,28 @@ export function CourtDetailsClient(props: {
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div>
                         <label className="block text-xs font-medium text-muted-foreground">Data</label>
-                        <input
-                          type="date"
-                          value={day}
-                          onChange={(e) => {
-                            const next = e.target.value;
-                            setDay(next);
-                            refreshDay(next);
-                          }}
-                          min={todayYmd}
-                          className="mt-2 w-full rounded-xl border border-input bg-secondary px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
-                        />
+                        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                          {dateOptions.map((opt) => {
+                            const active = day === opt.value;
+                            return (
+                              <button
+                                key={opt.value}
+                                type="button"
+                                onClick={() => {
+                                  setDay(opt.value);
+                                  refreshDay(opt.value);
+                                }}
+                                className={
+                                  active
+                                    ? "rounded-xl border border-primary/40 bg-primary/15 px-3 py-2 text-xs font-semibold text-primary"
+                                    : "rounded-xl border border-border bg-card px-3 py-2 text-xs font-medium text-foreground hover:bg-secondary"
+                                }
+                              >
+                                {opt.label}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
 
                       <div>

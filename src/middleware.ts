@@ -27,7 +27,36 @@ function isTrackingParam(key: string) {
 }
 
 function isPrefetchRequest(req: NextRequest) {
-  return req.headers.get("x-middleware-prefetch") === "1" || req.headers.get("purpose") === "prefetch";
+  return (
+    req.headers.get("x-middleware-prefetch") === "1" ||
+    req.headers.get("purpose") === "prefetch" ||
+    req.headers.get("next-router-prefetch") === "1"
+  );
+}
+
+function isRscRequest(req: NextRequest) {
+  return req.headers.get("rsc") === "1";
+}
+
+function hasSessionCookie(req: NextRequest) {
+  return req.cookies.has("next-auth.session-token") || req.cookies.has("__Secure-next-auth.session-token");
+}
+
+function isCustomerArea(pathname: string) {
+  return (
+    pathname === "/" ||
+    pathname === "/search" ||
+    pathname.startsWith("/courts/") ||
+    pathname.startsWith("/establishments/") ||
+    pathname.startsWith("/meus-agendamentos") ||
+    pathname.startsWith("/perfil") ||
+    pathname.startsWith("/sorteio-times") ||
+    pathname.startsWith("/torneios")
+  );
+}
+
+function isOwnerArea(pathname: string) {
+  return pathname.startsWith("/dashboard") || pathname.startsWith("/sysadmin");
 }
 
 export async function middleware(req: NextRequest, event: NextFetchEvent) {
@@ -36,7 +65,7 @@ export async function middleware(req: NextRequest, event: NextFetchEvent) {
     return NextResponse.next();
   }
 
-  if (isPrefetchRequest(req)) {
+  if (isPrefetchRequest(req) || isRscRequest(req)) {
     return NextResponse.next();
   }
 
@@ -66,10 +95,27 @@ export async function middleware(req: NextRequest, event: NextFetchEvent) {
     return NextResponse.rewrite(url);
   }
 
+  const hasSession = hasSessionCookie(req);
+  const token = hasSession
+    ? await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
+    : null;
+
+  if (token?.role === "ADMIN" && isCustomerArea(pathname)) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/dashboard";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
+  if (token?.role === "CUSTOMER" && isOwnerArea(pathname)) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
   const secret = process.env.ACCESS_LOG_SECRET?.trim();
   if (!secret) return NextResponse.next();
-
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
   const userId = token?.sub ?? null;
 
   const payload = {

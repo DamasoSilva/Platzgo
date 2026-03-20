@@ -40,6 +40,7 @@ export function CustomerHeader(props: Props) {
   const variant = props.variant ?? "dark";
   const isLoggedIn = Boolean(props.viewer?.isLoggedIn);
   const role = props.viewer?.role ?? null;
+  const isOwner = role === "ADMIN";
   const router = useRouter();
 
   // Protecao contra BFCache (voltar do navegador apos logout).
@@ -118,16 +119,18 @@ export function CustomerHeader(props: Props) {
   const pill = "text-sm text-muted-foreground hover:text-foreground transition-colors";
   const menuItem = "block px-4 py-3 text-sm text-foreground hover:bg-secondary/60 transition-colors";
 
-  const links = [
-    { label: "Início", href: "/" },
-    { label: "Agendar", href: "/#busca" },
-    { label: "Sorteio de times", href: "/sorteio-times" },
-    { label: "Torneios", href: "/torneios" },
-    { label: "Como funciona", href: "/#como-funciona" },
-    { label: "Contato", href: "/#contato" },
-  ];
-  const ctaHref = "/#busca";
-  const ctaLabel = "Agendar agora";
+  const links = isOwner
+    ? [{ label: "Dashboard", href: "/dashboard" }]
+    : [
+        { label: "Início", href: "/" },
+        { label: "Agendar", href: "/#busca" },
+        { label: "Sorteio de times", href: "/sorteio-times" },
+        { label: "Torneios", href: "/torneios" },
+        { label: "Como funciona", href: "/#como-funciona" },
+        { label: "Contato", href: "/#contato" },
+      ];
+  const ctaHref = isOwner ? "/dashboard" : "/#busca";
+  const ctaLabel = isOwner ? "Ir para dashboard" : "Agendar agora";
 
   const headerClass =
     variant === "light"
@@ -210,12 +213,11 @@ export function CustomerHeader(props: Props) {
                     </>
                   ) : null}
 
-                  <Link href="/sorteio-times" className={menuItem} onClick={() => setOpen(false)}>
-                    Sorteio de times
-                  </Link>
-                  <Link href="/torneios" className={menuItem} onClick={() => setOpen(false)}>
-                    Torneios
-                  </Link>
+                  {isOwner ? (
+                    <Link href="/dashboard" className={menuItem} onClick={() => setOpen(false)}>
+                      Ir para dashboard
+                    </Link>
+                  ) : null}
                   <Link href="/perfil" className={menuItem} onClick={() => setOpen(false)}>
                     Meu perfil
                   </Link>

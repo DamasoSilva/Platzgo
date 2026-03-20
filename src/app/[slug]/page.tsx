@@ -188,8 +188,8 @@ export default async function EstablishmentSlugPage(props: {
           rightSlot={null}
         />
 
-        <div className="mx-auto max-w-5xl px-6 pb-12">
-          <div>
+        <div className="mx-auto max-w-6xl px-6 pb-12 pt-20">
+          <div className="ph-card p-6 sm:p-8">
             <p className="text-xs text-muted-foreground dark:text-muted-foreground">Selecione a quadra para ver os horários disponíveis</p>
             <h1 className="mt-1 text-3xl font-semibold tracking-tight text-foreground dark:text-foreground">{est.name}</h1>
             <p className="mt-2 text-sm text-muted-foreground dark:text-muted-foreground">{est.address_text}</p>
@@ -208,21 +208,21 @@ export default async function EstablishmentSlugPage(props: {
           <SearchPrefillClient hasDayParam={hasDayParam} hasTimeParam={hasTimeParam} basePath={basePath} />
 
           {coverUrl ? (
-            <div className="mt-6 h-72 overflow-hidden rounded-3xl border border-border bg-background/40 dark:border-border dark:bg-background/50">
+            <div className="mt-6 overflow-hidden rounded-3xl border border-border bg-card shadow-sm dark:border-border dark:bg-card">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={coverUrl} alt={`Foto de ${est.name}`} className="h-full w-full object-contain" />
+              <img src={coverUrl} alt={`Foto de ${est.name}`} className="aspect-[16/6] h-full w-full object-cover" />
             </div>
           ) : null}
 
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {est.courts.map((c) => {
               const courtCover = (c.photo_urls ?? []).find((u) => (u ?? "").trim()) ?? coverUrl;
               return (
-                <div key={c.id} className="overflow-hidden rounded-3xl ph-surface">
+                <div key={c.id} className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm dark:border-border dark:bg-card">
                   {courtCover ? (
-                    <div className="h-44 w-full bg-background/40 dark:bg-background/50">
+                    <div className="w-full bg-secondary/30">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={courtCover} alt={`Foto da quadra ${c.name}`} className="h-full w-full object-contain" />
+                      <img src={courtCover} alt={`Foto da quadra ${c.name}`} className="aspect-[16/10] h-full w-full object-cover" />
                     </div>
                   ) : null}
 
