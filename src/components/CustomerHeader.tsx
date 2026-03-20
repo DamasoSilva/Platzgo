@@ -119,10 +119,10 @@ export function CustomerHeader(props: Props) {
   const menuItem = "block px-4 py-3 text-sm text-foreground hover:bg-secondary/60 transition-colors";
 
   const links = [
-    { label: "In\u00edcio", href: "/" },
+    { label: "Início", href: "/" },
     { label: "Agendar", href: "/#busca" },
     { label: "Sorteio de times", href: "/sorteio-times" },
-    { label: "Criar torneio interno", href: "/torneios/novo" },
+    { label: "Torneios", href: "/torneios" },
     { label: "Como funciona", href: "/#como-funciona" },
     { label: "Contato", href: "/#contato" },
   ];
@@ -178,7 +178,7 @@ export function CustomerHeader(props: Props) {
                 className="flex items-center gap-3 rounded-lg border border-border bg-card/60 px-4 py-2 text-sm text-foreground backdrop-blur hover:bg-card transition-colors"
                 onClick={() => setOpen((s) => !s)}
               >
-                <span className="hidden sm:block font-semibold">{name || "Usu\u00e1rio"}</span>
+                <span className="hidden sm:block font-semibold">{name || "Usuário"}</span>
                 <span className="relative h-8 w-8 overflow-hidden rounded-full bg-secondary">
                   {props.viewer?.image ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -213,8 +213,8 @@ export function CustomerHeader(props: Props) {
                   <Link href="/sorteio-times" className={menuItem} onClick={() => setOpen(false)}>
                     Sorteio de times
                   </Link>
-                  <Link href="/torneios/novo" className={menuItem} onClick={() => setOpen(false)}>
-                    Criar torneio interno
+                  <Link href="/torneios" className={menuItem} onClick={() => setOpen(false)}>
+                    Torneios
                   </Link>
                   <Link href="/perfil" className={menuItem} onClick={() => setOpen(false)}>
                     Meu perfil

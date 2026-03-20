@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextFetchEvent, NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 
 function shouldSkip(pathname: string) {
@@ -26,9 +26,17 @@ function isTrackingParam(key: string) {
   );
 }
 
-export async function middleware(req: NextRequest) {
+function isPrefetchRequest(req: NextRequest) {
+  return req.headers.get("x-middleware-prefetch") === "1" || req.headers.get("purpose") === "prefetch";
+}
+
+export async function middleware(req: NextRequest, event: NextFetchEvent) {
   const { pathname } = req.nextUrl;
   if (shouldSkip(pathname)) {
+    return NextResponse.next();
+  }
+
+  if (isPrefetchRequest(req)) {
     return NextResponse.next();
   }
 
@@ -76,22 +84,22 @@ export async function middleware(req: NextRequest) {
   const baseUrl = req.nextUrl.origin;
   const url = `${baseUrl}/api/internal/access-log`;
 
-  try {
-    await fetch(url, {
+  event.waitUntil(
+    fetch(url, {
       method: "POST",
       headers: {
         "content-type": "application/json",
         "x-access-log-secret": secret,
       },
       body: JSON.stringify(payload),
-    });
-  } catch {
-    // ignore logging errors
-  }
+    }).catch(() => {
+      // ignore logging errors
+    })
+  );
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/:path*"]
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|icon.png).*)"],
 };

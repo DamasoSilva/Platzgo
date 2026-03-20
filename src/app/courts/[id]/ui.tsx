@@ -606,9 +606,9 @@ export function CourtDetailsClient(props: {
             title: createdCount > 1 ? "Agendamentos confirmados" : "Agendamento confirmado",
             rows: [
               { label: "Local", value: data.court.establishment.name },
-              { label: "Endereco", value: data.court.establishment.address_text },
+              { label: "Endereço", value: data.court.establishment.address_text },
               { label: "Data", value: dateLabel },
-              { label: "Horario", value: timeLabel },
+              { label: "Horário", value: timeLabel },
               { label: "Quadra/Modalidade", value: `${data.court.name} • ${formatSportLabel(data.court.sport_type)}` },
               { label: "Preco", value: priceLabel },
               { label: "Cancelamento", value: cancelLabel },
@@ -716,7 +716,7 @@ export function CourtDetailsClient(props: {
   const bookingStep = bookingAlert ? 3 : selectedStart ? 2 : 1;
   const bookingSteps = [
     { n: 1, label: "Escolha a quadra" },
-    { n: 2, label: "Horario" },
+    { n: 2, label: "Horário" },
     { n: 3, label: "Confirmacao" },
   ];
 

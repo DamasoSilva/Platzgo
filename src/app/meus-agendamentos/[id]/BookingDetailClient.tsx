@@ -414,7 +414,7 @@ export function BookingDetailClient(props: {
               </div>
               {props.booking.court.establishment.address_text ? (
                 <div className="flex flex-wrap justify-between gap-2">
-                  <span className="text-muted-foreground dark:text-muted-foreground">Endereco</span>
+                  <span className="text-muted-foreground dark:text-muted-foreground">Endereço</span>
                   <span className="font-semibold text-foreground dark:text-foreground">
                     {props.booking.court.establishment.address_text}
                   </span>
@@ -425,7 +425,7 @@ export function BookingDetailClient(props: {
                 <span className="font-semibold text-foreground dark:text-foreground">{dateLabel}</span>
               </div>
               <div className="flex flex-wrap justify-between gap-2">
-                <span className="text-muted-foreground dark:text-muted-foreground">Horario</span>
+                <span className="text-muted-foreground dark:text-muted-foreground">Horário</span>
                 <span className="font-semibold text-foreground dark:text-foreground">{timeLabel}</span>
               </div>
               <div className="flex flex-wrap justify-between gap-2">

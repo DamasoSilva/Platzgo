@@ -99,8 +99,8 @@ export function InternalTournamentCreateClient() {
     setError(null);
     startTransition(async () => {
       try {
-        if (!name.trim()) throw new Error("Nome do torneio \u00e9 obrigat\u00f3rio");
-        if (!date) throw new Error("Data do torneio \u00e9 obrigat\u00f3ria");
+        if (!name.trim()) throw new Error("Nome do torneio é obrigatório");
+        if (!date) throw new Error("Data do torneio é obrigatória");
 
         const result = await createInternalTournament({
           name,
@@ -124,7 +124,7 @@ export function InternalTournamentCreateClient() {
           router.push(`/torneios/${result.id}`);
         }
       } catch (err) {
-        const message = err instanceof Error ? err.message : "N\u00e3o foi poss\u00edvel criar o torneio";
+        const message = err instanceof Error ? err.message : "Não foi possível criar o torneio";
         setError(message);
       }
     });
@@ -194,13 +194,13 @@ export function InternalTournamentCreateClient() {
               </label>
             </div>
             <label className="mt-4 block text-xs font-semibold text-muted-foreground">
-              Regras b\u00e1sicas
+              Regras básicas
               <textarea
                 value={rules}
                 onChange={(e) => setRules(e.target.value)}
                 className="ph-textarea mt-2"
                 rows={4}
-                placeholder="Descreva dura\u00e7\u00e3o, desempate e outras regras."
+                placeholder="Descreva duração, desempate e outras regras."
                 disabled={isPending}
               />
             </label>

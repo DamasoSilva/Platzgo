@@ -213,7 +213,7 @@ export function DashboardTournamentDetailClient(props: Props) {
                 </div>
               </div>
             ))}
-            {!registrations.length ? <p className="text-xs text-muted-foreground">Nenhuma inscricao no momento.</p> : null}
+            {!registrations.length ? <p className="text-xs text-muted-foreground">Nenhuma inscrição no momento.</p> : null}
           </div>
         </div>
       ) : null}

@@ -151,7 +151,7 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">Novo torneio</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Preencha as informacoes para abrir as inscricoes.
+            Preencha as informacoes para abrir as inscrições.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -234,7 +234,7 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
                 />
               </label>
               <label className="text-xs font-semibold text-muted-foreground">
-                Taxa de inscricao (centavos)
+                Taxa de inscrição (centavos)
                 <input
                   type="number"
                   min={0}
@@ -301,7 +301,7 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
               <textarea
                 className="ph-textarea mt-2"
                 rows={3}
-                placeholder="Duracao do jogo, desempate, WO."
+                placeholder="Duração do jogo, desempate, WO."
                 value={rules}
                 onChange={(e) => setRules(e.target.value)}
                 disabled={isPending}
@@ -311,7 +311,7 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
 
           <section className="ph-card p-6">
             <h2 className="text-sm font-semibold text-foreground">Categorias e Níveis</h2>
-            <p className="mt-1 text-xs text-muted-foreground">Essas opcoes aparecem na inscricao do time.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Essas opções aparecem na inscrição do time.</p>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <div>
                 <p className="text-xs font-semibold text-muted-foreground">Categorias</p>
@@ -367,18 +367,18 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
               </button>
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
-              Entenda os formatos e siga o passo a passo para abrir inscricoes com seguranca.
+              Entenda os formatos e siga o passo a passo para abrir inscrições com segurança.
             </p>
           </section>
 
           <section className="rounded-3xl border border-border bg-card/70 p-5 shadow-sm">
             <h3 className="text-sm font-semibold text-foreground">Pagamento (Asaas)</h3>
             <p className="mt-2 text-xs text-muted-foreground">
-              O payload do PIX sera gerado na inscricao do time.
+              O payload do PIX será gerado na inscrição do time.
             </p>
             <div className="mt-4 rounded-2xl border border-border bg-secondary/60 p-4 text-xs text-muted-foreground">
               <p>Taxa ativa: PIX</p>
-              <p className="mt-2">Minimo recomendado: R$ 5,00</p>
+              <p className="mt-2">Mínimo recomendado: R$ 5,00</p>
             </div>
           </section>
 
@@ -431,7 +431,7 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Formatos</p>
                 <ul className="mt-2 space-y-2">
                   <li>
-                    <span className="font-semibold">Grupos + mata-mata:</span> fase de grupos e os melhores avancam para eliminatorias.
+                    <span className="font-semibold">Grupos + mata-mata:</span> fase de grupos e os melhores avancam para eliminatórias.
                   </li>
                   <li>
                     <span className="font-semibold">Pontos corridos:</span> todos contra todos, vence quem somar mais pontos.
@@ -451,7 +451,7 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
                   <li>Configure limite de times, taxa e tamanho dos elencos.</li>
                   <li>Escolha o formato e escreva as regras principais.</li>
                   <li>Adicione categorias e níveis para filtrar inscritos.</li>
-                  <li>Salve como rascunho, revise e publique para abrir inscricoes.</li>
+                  <li>Salve como rascunho, revise e publique para abrir inscrições.</li>
                 </ol>
                 <p className="mt-3 text-[11px] text-muted-foreground">
                   Depois de publicar, use o painel do torneio para gerar chaveamento e agenda.

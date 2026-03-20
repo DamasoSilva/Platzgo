@@ -16,7 +16,7 @@ export default async function InternalTournamentCreatePage() {
   }
 
   if (user.role !== "CUSTOMER") {
-    redirect("/");
+    redirect("/torneios");
   }
 
   return (

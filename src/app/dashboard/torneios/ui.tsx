@@ -52,7 +52,7 @@ export function DashboardTournamentsClient(props: { tournaments: DashboardTourna
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">Torneios</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Organize inscricoes, chaveamento e resultados.
+            Organize inscrições, chaveamento e resultados.
           </p>
         </div>
         <Link href="/dashboard/torneios/novo" className="ph-button inline-flex items-center gap-2">
@@ -151,7 +151,7 @@ export function DashboardTournamentsClient(props: { tournaments: DashboardTourna
                 <Link href={`/dashboard/torneios/${tournament.id}`} className="ph-button-secondary-sm">
                   Gerenciar
                 </Link>
-                <Link href={`/dashboard/torneios/${tournament.id}?tab=inscricoes`} className="ph-button-secondary-sm">
+                <Link href={`/dashboard/torneios/${tournament.id}?tab=inscrições`} className="ph-button-secondary-sm">
                   Inscricoes
                 </Link>
               </div>

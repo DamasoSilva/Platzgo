@@ -271,7 +271,7 @@ export default async function SysadminSettingsPage(props: {
                     Asaas
                   </label>
                 </div>
-                <p className="mt-2 text-xs text-muted-foreground">Marque os providers que estarao disponiveis no checkout.</p>
+                <p className="mt-2 text-xs text-muted-foreground">Marque os providers que estarao disponíveis no checkout.</p>
               </div>
 
               <div className="mt-3">
@@ -616,9 +616,9 @@ export default async function SysadminSettingsPage(props: {
 
       {tab === "site" ? (
         <div className="ph-card p-6">
-          <h2 className="text-lg font-semibold text-foreground">Site (rodap\u00e9)</h2>
+          <h2 className="text-lg font-semibold text-foreground">Site (rodapé)</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Atualize os dados exibidos no rodap\u00e9 do site.
+            Atualize os dados exibidos no rodapé do site.
           </p>
 
           <form

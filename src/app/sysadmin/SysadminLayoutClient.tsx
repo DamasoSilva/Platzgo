@@ -81,12 +81,12 @@ function SysadminLayoutShell(props: {
   const nav = useMemo<NavItem[]>(
     () => [
       { href: "/sysadmin", label: "Administrador", icon: BarChart3 },
-      { href: "/sysadmin/users", label: "Usuarios", icon: Users },
+      { href: "/sysadmin/users", label: "Usuários", icon: Users },
       { href: "/sysadmin/approvals", label: "Aprovacoes", icon: CheckSquare, badge: props.pendingApprovalsCount ?? 0 },
       { href: "/sysadmin/settings", label: "Sistema", icon: Settings },
       { href: "/sysadmin/payments", label: "Pagamentos", icon: CreditCard },
       { href: "/sysadmin/sistema", label: "Monitoramento", icon: Activity },
-      { href: "/sysadmin/search-options", label: "Opcoes de quadras", icon: Sliders },
+      { href: "/sysadmin/search-options", label: "Opções de quadras", icon: Sliders },
       { href: "/sysadmin/reasons", label: "Motivos", icon: AlertTriangle },
     ],
     [props.pendingApprovalsCount]

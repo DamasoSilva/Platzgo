@@ -64,7 +64,7 @@ export async function generateMetadata(props: {
 
   return {
     title: `${est.name} • PlatzGo!`,
-    description: est.description ?? `Agende horarios em ${est.name}.`,
+    description: est.description ?? `Agende horários em ${est.name}.`,
   };
 }
 
@@ -190,7 +190,7 @@ export default async function EstablishmentSlugPage(props: {
 
         <div className="mx-auto max-w-5xl px-6 pb-12">
           <div>
-            <p className="text-xs text-muted-foreground dark:text-muted-foreground">Selecione a quadra para ver os horarios disponiveis</p>
+            <p className="text-xs text-muted-foreground dark:text-muted-foreground">Selecione a quadra para ver os horários disponíveis</p>
             <h1 className="mt-1 text-3xl font-semibold tracking-tight text-foreground dark:text-foreground">{est.name}</h1>
             <p className="mt-2 text-sm text-muted-foreground dark:text-muted-foreground">{est.address_text}</p>
             {instagramUrl ? (
@@ -241,7 +241,7 @@ export default async function EstablishmentSlugPage(props: {
                         hasTimeParam={hasTimeParam}
                         className="ph-button-sm"
                       >
-                        Ver horarios
+                        Ver horários
                       </PrefilledCourtLink>
 
                       <a
