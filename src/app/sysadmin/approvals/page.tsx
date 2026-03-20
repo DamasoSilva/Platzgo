@@ -51,8 +51,8 @@ export default async function SysadminApprovalsPage(props: {
           className={
             "rounded-2xl border p-4 text-sm " +
             (okStatus === "rejected"
-              ? "border-red-200 bg-red-50 text-red-900"
-              : "border-emerald-200 bg-emerald-50 text-emerald-900")
+              ? "border-destructive/30 bg-destructive/10 text-destructive"
+              : "border-primary/30 bg-primary/10 text-primary")
           }
         >
           {okStatus === "rejected"
@@ -65,7 +65,7 @@ export default async function SysadminApprovalsPage(props: {
         </div>
       ) : null}
 
-      {err ? <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">{err}</div> : null}
+      {err ? <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">{err}</div> : null}
 
       <div className="ph-card p-6">
         <h2 className="text-lg font-semibold text-foreground">Pendentes</h2>

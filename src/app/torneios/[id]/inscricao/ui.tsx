@@ -371,7 +371,7 @@ export function TournamentRegistrationClient(props: Props) {
               </button>
 
               {isConfirmed ? (
-                <div className="mt-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-900">
+                <div className="mt-4 rounded-2xl border border-emerald-500/30 bg-primary/100/10 p-3 text-xs text-primary">
                   Inscricao confirmada. O time sera liberado apos validacao do pagamento.
                 </div>
               ) : null}

@@ -141,7 +141,7 @@ export function SysadminSearchOptions() {
                 }
               });
             }}
-            className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60"
+            className="rounded-full border border-destructive/30 bg-destructive/10 px-4 py-2 text-xs font-semibold text-destructive hover:bg-destructive/20 disabled:opacity-60"
           >
             Limpar lista
           </button>
@@ -258,7 +258,7 @@ export function SysadminSearchOptions() {
                     type="button"
                     onClick={() => onDelete(r.id)}
                     disabled={isPending}
-                    className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold text-red-700 hover:bg-red-100"
+                    className="rounded-full border border-destructive/30 bg-destructive/10 px-4 py-2 text-xs font-semibold text-destructive hover:bg-destructive/20"
                   >
                     Excluir
                   </button>

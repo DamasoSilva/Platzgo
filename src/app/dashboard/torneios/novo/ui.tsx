@@ -396,7 +396,7 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
 
       {helpOpen ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-6 py-10"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/85 px-6 py-10"
           role="dialog"
           aria-modal="true"
           aria-labelledby="tournament-help-title"

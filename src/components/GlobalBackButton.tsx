@@ -27,7 +27,7 @@ export function GlobalBackButton() {
       type="button"
       onClick={onBack}
       aria-label="Voltar"
-      className="fixed left-4 top-4 z-[60] inline-flex h-11 items-center justify-center gap-2 rounded-full border border-white/10 bg-black/40 px-4 text-sm font-semibold text-white backdrop-blur transition hover:bg-black/55 focus:outline-none focus:ring-2 focus:ring-[#CCFF00] md:left-6 md:top-6"
+      className="fixed left-4 top-4 z-[60] inline-flex h-11 items-center justify-center gap-2 rounded-full border border-border/60 bg-card/80 px-4 text-sm font-semibold text-foreground backdrop-blur transition hover:bg-card focus:outline-none focus:ring-2 focus:ring-primary md:left-6 md:top-6"
     >
       <svg
         width="18"

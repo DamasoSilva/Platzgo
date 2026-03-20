@@ -35,11 +35,11 @@ function formatMoney(cents?: number | null): string {
 }
 
 function statusBadge(status: PaymentStatus) {
-  if (status === PaymentStatus.PAID) return "bg-emerald-500/15 text-emerald-700";
+  if (status === PaymentStatus.PAID) return "bg-primary/15 text-primary";
   if (status === PaymentStatus.AUTHORIZED) return "bg-sky-500/15 text-sky-700";
-  if (status === PaymentStatus.PENDING) return "bg-amber-500/15 text-amber-800";
+  if (status === PaymentStatus.PENDING) return "bg-amber-500/15 text-amber-600";
   if (status === PaymentStatus.REFUNDED) return "bg-secondary/70 text-muted-foreground";
-  return "bg-rose-500/15 text-rose-800";
+  return "bg-destructive/15 text-destructive";
 }
 
 function outcomeLabel(status: PaymentStatus) {

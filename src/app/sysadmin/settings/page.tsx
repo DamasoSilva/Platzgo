@@ -54,21 +54,21 @@ export default async function SysadminSettingsPage(props: {
       </div>
 
       {ok ? (
-        <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+        <div className="mb-4 rounded-2xl border border-primary/30 bg-primary/10 p-4 text-sm text-primary">
           Configuração salva.
         </div>
       ) : null}
 
-      {err ? <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">{err}</div> : null}
+      {err ? <div className="mb-4 rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">{err}</div> : null}
 
       {walletOk ? (
-        <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+        <div className="mb-4 rounded-2xl border border-primary/30 bg-primary/10 p-4 text-sm text-primary">
           Wallet Asaas validado.
         </div>
       ) : null}
 
       {walletErr ? (
-        <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">{walletErr}</div>
+        <div className="mb-4 rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">{walletErr}</div>
       ) : null}
 
       {walletList ? (

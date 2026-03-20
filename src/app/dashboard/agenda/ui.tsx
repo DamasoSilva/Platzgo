@@ -71,7 +71,7 @@ const BOOKING_COLORS = [
   { bg: "bg-amber-400", fg: "text-black" },
   { bg: "bg-rose-500", fg: "text-white" },
   { bg: "bg-violet-500", fg: "text-white" },
-  { bg: "bg-emerald-500", fg: "text-white" },
+  { bg: "bg-primary/100", fg: "text-white" },
 ] as const;
 
 function parseTimeToMinutes(hhmm: string): number {
@@ -897,7 +897,7 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
                                   <button
                                     type="button"
                                     disabled={isPending}
-                                    className="whitespace-nowrap rounded-full bg-black/15 px-2 py-1 text-[11px] font-bold hover:bg-black/25"
+                                    className="whitespace-nowrap rounded-full bg-primary px-2 py-1 text-[11px] font-bold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
                                     onClick={() => {
                                       startTransition(async () => {
                                         try {
@@ -916,7 +916,7 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
                                   <button
                                     type="button"
                                     disabled={isPending}
-                                    className="whitespace-nowrap rounded-full bg-black/15 px-2 py-1 text-[11px] font-bold hover:bg-black/25"
+                                    className="whitespace-nowrap rounded-full bg-destructive px-2 py-1 text-[11px] font-bold text-destructive-foreground transition-colors hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-60"
                                     onClick={() => {
                                       const reason = prompt("Motivo do cancelamento (visível ao cliente):", "Cancelado pelo estabelecimento.") ?? "";
                                       if (!confirm("Cancelar este agendamento pendente?")) return;
@@ -957,7 +957,7 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
       {/* Booking details modal */}
       {detailsBooking ? (
         <div className="fixed inset-0 z-50">
-          <button type="button" className="absolute inset-0 bg-black/60" onClick={() => setDetailsBookingId(null)} />
+          <button type="button" className="absolute inset-0 bg-foreground/60" onClick={() => setDetailsBookingId(null)} />
           <div className="absolute left-1/2 top-1/2 max-h-[calc(100vh-32px)] w-[min(720px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-xl">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -1050,7 +1050,7 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
       {/* Block modal */}
       {blockOpen ? (
         <div className="fixed inset-0 z-50">
-          <button type="button" className="absolute inset-0 bg-black/60" onClick={() => setBlockOpen(false)} />
+          <button type="button" className="absolute inset-0 bg-foreground/60" onClick={() => setBlockOpen(false)} />
           <div className="absolute left-1/2 top-1/2 max-h-[calc(100vh-32px)] w-[min(640px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-xl">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -1212,7 +1212,7 @@ function AgendaWeekViewInner(props: { data: AgendaWeekData }) {
       {/* Booking modal */}
       {bookingOpen ? (
         <div className="fixed inset-0 z-50">
-          <button type="button" className="absolute inset-0 bg-black/60" onClick={() => setBookingOpen(false)} />
+          <button type="button" className="absolute inset-0 bg-foreground/60" onClick={() => setBookingOpen(false)} />
           <div className="absolute left-1/2 top-1/2 max-h-[calc(100vh-32px)] w-[min(720px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-xl">
             <div className="flex items-start justify-between gap-4">
               <div>

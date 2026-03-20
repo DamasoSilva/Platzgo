@@ -438,14 +438,14 @@ export function TeamDrawClient(props: { isLoggedIn: boolean }) {
   return (
     <div className="space-y-6">
       <div className="ph-card p-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Sorteio de times</h1>
-        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground dark:text-foreground">Sorteio de times</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
           Escolha o formato de sorteio, informe os jogadores e gere times automaticamente.
         </p>
 
         <div className="mt-5 grid gap-4 sm:grid-cols-3">
           <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Formato</label>
+            <label className="block text-xs font-medium text-muted-foreground dark:text-muted-foreground">Formato</label>
             <select
               className="ph-select mt-2"
               value={mode}
@@ -457,7 +457,7 @@ export function TeamDrawClient(props: { isLoggedIn: boolean }) {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Quantidade de times</label>
+            <label className="block text-xs font-medium text-muted-foreground dark:text-muted-foreground">Quantidade de times</label>
             <input
               type="number"
               min={2}
@@ -469,7 +469,7 @@ export function TeamDrawClient(props: { isLoggedIn: boolean }) {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Jogadores por time</label>
+            <label className="block text-xs font-medium text-muted-foreground dark:text-muted-foreground">Jogadores por time</label>
             <input
               type="number"
               min={1}
@@ -484,7 +484,7 @@ export function TeamDrawClient(props: { isLoggedIn: boolean }) {
         <div className="mt-6">
           {mode === "random" ? (
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Jogadores (um por linha ou separado por vírgula)</label>
+              <label className="block text-xs font-medium text-muted-foreground dark:text-muted-foreground">Jogadores (um por linha ou separado por vírgula)</label>
               <textarea
                 rows={6}
                 value={randomNames}
@@ -497,7 +497,7 @@ export function TeamDrawClient(props: { isLoggedIn: boolean }) {
             <div className="grid gap-4 md:grid-cols-3">
               {LEVELS.map((lvl) => (
                 <div key={lvl.key}>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">{lvl.label}</label>
+                  <label className="block text-xs font-medium text-muted-foreground dark:text-muted-foreground">{lvl.label}</label>
                   <textarea
                     rows={6}
                     value={lvl.key === "level1" ? level1Names : lvl.key === "level2" ? level2Names : level3Names}
@@ -516,7 +516,7 @@ export function TeamDrawClient(props: { isLoggedIn: boolean }) {
             </div>
           )}
 
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-600 dark:text-zinc-400">
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
             <span>Total de jogadores (duplicados removidos): {totalPlayers}</span>
             <span>Capacidade sugerida: {capacity} ({teamCount} times × {playersPerTeam} jogadores)</span>
           </div>
@@ -550,17 +550,17 @@ export function TeamDrawClient(props: { isLoggedIn: boolean }) {
               </div>
             </div>
           ) : null}
-          <p className="mt-2 text-[11px] text-zinc-500 dark:text-zinc-400">
+          <p className="mt-2 text-[11px] text-muted-foreground/80 dark:text-muted-foreground">
             Times completos possíveis: {fullTeamsPossible}. Se sobrarem jogadores, eles entram no último time.
           </p>
           {remainderPreview > 0 ? (
-            <p className="mt-1 text-[11px] text-zinc-500 dark:text-zinc-400">
+            <p className="mt-1 text-[11px] text-muted-foreground/80 dark:text-muted-foreground">
               Excedente estimado: {remainderPreview} jogador(es).
             </p>
           ) : null}
 
           {error ? (
-            <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-100">
+            <div className="mt-4 rounded-2xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive dark:border-destructive/40 dark:bg-destructive/20 dark:text-destructive">
               {error}
             </div>
           ) : null}
@@ -588,7 +588,7 @@ export function TeamDrawClient(props: { isLoggedIn: boolean }) {
             </button>
           </div>
           {!isLoggedIn ? (
-            <p className="mt-2 text-[11px] text-zinc-500 dark:text-zinc-400">
+            <p className="mt-2 text-[11px] text-muted-foreground/80 dark:text-muted-foreground">
               Para gerar o sorteio, faca login. Seus dados serao mantidos.
             </p>
           ) : null}
@@ -598,25 +598,25 @@ export function TeamDrawClient(props: { isLoggedIn: boolean }) {
       {result ? (
         <div className="ph-card p-6">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Resultado</h2>
+            <h2 className="text-lg font-semibold text-foreground dark:text-foreground">Resultado</h2>
             {mode === "skill" ? (
-              <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100">
+              <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-primary dark:bg-emerald-950/40 dark:text-emerald-100">
                 Balanceamento por nível aplicado
               </span>
             ) : null}
           </div>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             {result.teams.map((team, idx) => (
-              <div key={`team-${idx}`} className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-                <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Time {idx + 1}</p>
+              <div key={`team-${idx}`} className="rounded-2xl border border-border bg-card p-4 dark:border-border dark:bg-card">
+                <p className="text-sm font-semibold text-foreground dark:text-foreground">Time {idx + 1}</p>
                 {team.length ? (
-                  <ul className="mt-2 space-y-1 text-sm text-zinc-700 dark:text-zinc-300">
+                  <ul className="mt-2 space-y-1 text-sm text-muted-foreground dark:text-muted-foreground">
                     {team.map((p) => (
                       <li key={p}>{p}</li>
                     ))}
                   </ul>
                 ) : (
-                  <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">Sem jogadores</p>
+                  <p className="mt-2 text-sm text-muted-foreground/80 dark:text-muted-foreground">Sem jogadores</p>
                 )}
 
                 {mode === "skill" && lastSkillLevels ? (() => {
@@ -628,7 +628,7 @@ export function TeamDrawClient(props: { isLoggedIn: boolean }) {
                   const p2 = Math.round((l2 / total) * 100);
                   const p3 = Math.round((l3 / total) * 100);
                   return (
-                    <div className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-200">
+                    <div className="mt-3 rounded-xl border border-border bg-card p-3 text-xs text-muted-foreground dark:border-border dark:bg-card/40 dark:text-muted-foreground">
                       <p className="font-semibold">Resumo por nível</p>
                       <p className="mt-1">
                         Nível 1: {l1} ({p1}%) • Nível 2: {l2} ({p2}%) • Nível 3: {l3} ({p3}%)

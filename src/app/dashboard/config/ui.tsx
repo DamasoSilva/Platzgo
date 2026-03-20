@@ -196,7 +196,7 @@ function MediaGrid(props: { urls: string[]; onRemove?: (url: string) => void; on
                 title="Abrir vídeo em nova aba"
               >
                 <span className="flex items-center gap-2 text-sm font-semibold">
-                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/80 text-white">▶</span>
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-foreground/80 text-background">▶</span>
                   Vídeo
                 </span>
               </a>
@@ -215,7 +215,7 @@ function MediaGrid(props: { urls: string[]; onRemove?: (url: string) => void; on
               <button
                 type="button"
                 onClick={() => props.onRemove?.(url)}
-                className="absolute right-2 top-2 hidden rounded-full bg-black/70 px-3 py-1 text-xs font-semibold text-white group-hover:block"
+                className="absolute right-2 top-2 hidden rounded-full bg-foreground/70 px-3 py-1 text-xs font-semibold text-white group-hover:block"
                 title="Remover"
               >
                 Remover
@@ -721,7 +721,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
                         onClick={() => toggleSetupWeekday(day)}
                         className={
                           active
-                            ? "rounded-full bg-[#CCFF00] px-4 py-2 text-sm font-bold text-black"
+                            ? "rounded-full bg-primary px-4 py-2 text-sm font-bold text-black"
                             : "rounded-full border border-border bg-card px-4 py-2 text-sm text-foreground"
                         }
                       >
@@ -840,7 +840,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
                       onClick={() => toggleWeekday(day)}
                       className={
                         active
-                          ? "rounded-full bg-[#CCFF00] px-4 py-2 text-sm font-bold text-black"
+                          ? "rounded-full bg-primary px-4 py-2 text-sm font-bold text-black"
                           : "rounded-full border border-border bg-card px-4 py-2 text-sm text-foreground"
                       }
                     >
@@ -944,7 +944,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
                           <button
                             type="button"
                             onClick={() => onReactivateCourt(c.id)}
-                            className="text-xs font-semibold text-emerald-700 underline"
+                            className="text-xs font-semibold text-primary underline"
                           >
                             Reativar
                           </button>
@@ -953,7 +953,7 @@ export function OwnerConfig(props: { establishment: EstablishmentWithCourts }) {
                         <button
                           type="button"
                           onClick={() => onDeleteCourt(c.id)}
-                          className="text-xs font-semibold text-red-700 underline"
+                          className="text-xs font-semibold text-destructive underline"
                         >
                           Excluir
                         </button>

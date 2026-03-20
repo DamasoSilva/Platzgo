@@ -91,7 +91,7 @@ export function TournamentDetailClient(props: Props) {
             <span className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
               {formatSportLabel(tournament.sport_type)}
             </span>
-            <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+            <span className="rounded-full bg-primary/100/15 px-3 py-1 text-xs font-semibold text-primary dark:text-emerald-300">
               {statusLabel(tournament.status)}
             </span>
           </div>
@@ -274,7 +274,7 @@ export function TournamentDetailClient(props: Props) {
                 {tournament.rules.length ? (
                   tournament.rules.map((item) => (
                     <li key={item} className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-[#CCFF00]" />
+                      <span className="h-2 w-2 rounded-full bg-primary" />
                       <span>{item}</span>
                     </li>
                   ))
@@ -377,7 +377,7 @@ export function TournamentDetailClient(props: Props) {
               {tournament.rules.length ? (
                 tournament.rules.map((rule) => (
                   <li key={rule} className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-[#CCFF00]" />
+                    <span className="h-2 w-2 rounded-full bg-primary" />
                     <span>{rule}</span>
                   </li>
                 ))

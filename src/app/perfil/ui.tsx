@@ -130,7 +130,7 @@ export function ProfileClient(props: Props) {
             className={
               "mt-6 rounded-2xl border p-4 text-sm " +
               (message.type === "success"
-                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-900"
+                ? "border-emerald-500/30 bg-primary/100/10 text-primary"
                 : "border-destructive/30 bg-destructive/10 text-destructive")
             }
           >

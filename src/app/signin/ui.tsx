@@ -79,25 +79,25 @@ export function SignInForm(props: {
 
   return (
     <div className="ph-page">
-      <div className="pointer-events-none absolute -top-48 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-[#CCFF00]/15 blur-3xl" />
+      <div className="pointer-events-none absolute -top-48 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-primary/15 blur-3xl" />
       <div className="relative mx-auto max-w-md px-6 py-16">
-        <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Entrar</h1>
-        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">Use seu email e senha para acessar.</p>
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground dark:text-foreground">Entrar</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Use seu email e senha para acessar.</p>
 
         {props.success === "signup" ? (
-          <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+          <div className="mt-4 rounded-2xl border border-primary/30 bg-primary/10 p-4 text-sm text-primary">
             Cadastro efetuado com sucesso. Agora é só entrar.
           </div>
         ) : null}
 
         {props.loggedOut ? (
-          <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-800">
+          <div className="mt-4 rounded-2xl border border-border bg-card p-4 text-sm text-foreground">
             Você saiu do sistema com sucesso.
           </div>
         ) : null}
 
         {props.resetDone ? (
-          <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+          <div className="mt-4 rounded-2xl border border-primary/30 bg-primary/10 p-4 text-sm text-primary">
             Senha redefinida com sucesso. Agora é só entrar.
           </div>
         ) : null}
@@ -105,15 +105,15 @@ export function SignInForm(props: {
         <form onSubmit={onSubmit} className="ph-card mt-6 p-6">
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Sou</label>
+              <label className="block text-xs font-medium text-muted-foreground dark:text-muted-foreground">Sou</label>
               <div className="mt-2 grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setRole("CUSTOMER")}
                   className={
                     role === "CUSTOMER"
-                      ? "rounded-full bg-[#CCFF00] px-4 py-3 text-sm font-bold text-black"
-                      : "rounded-full border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                      ? "rounded-full bg-primary px-4 py-3 text-sm font-bold text-primary-foreground"
+                      : "rounded-full border border-border bg-card px-4 py-3 text-sm text-foreground dark:border-border dark:bg-card dark:text-foreground"
                   }
                 >
                   Cliente
@@ -123,8 +123,8 @@ export function SignInForm(props: {
                   onClick={() => setRole("OWNER")}
                   className={
                     role === "OWNER"
-                      ? "rounded-full bg-[#CCFF00] px-4 py-3 text-sm font-bold text-black"
-                      : "rounded-full border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                      ? "rounded-full bg-primary px-4 py-3 text-sm font-bold text-primary-foreground"
+                      : "rounded-full border border-border bg-card px-4 py-3 text-sm text-foreground dark:border-border dark:bg-card dark:text-foreground"
                   }
                 >
                   Dono de Arena
@@ -133,7 +133,7 @@ export function SignInForm(props: {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Email</label>
+              <label className="block text-xs font-medium text-muted-foreground dark:text-muted-foreground">Email</label>
               <input
                 type="email"
                 value={email}
@@ -144,7 +144,7 @@ export function SignInForm(props: {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Senha</label>
+              <label className="block text-xs font-medium text-muted-foreground dark:text-muted-foreground">Senha</label>
               <input
                 type="password"
                 value={password}
@@ -154,22 +154,22 @@ export function SignInForm(props: {
               />
 
               <div className="mt-2 text-right text-sm">
-                <a className="font-semibold text-zinc-900 underline dark:text-zinc-100" href="/forgot-password">
+                <a className="font-semibold text-foreground underline dark:text-foreground" href="/forgot-password">
                   Esqueci minha senha
                 </a>
               </div>
             </div>
 
-            {error ? <p className="text-sm text-red-600">{error}</p> : null}
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
             <button type="submit" disabled={isPending} className="ph-button w-full">
               {isPending ? "Entrando..." : "Entrar"}
             </button>
 
-            <div className="text-center text-sm text-zinc-600 dark:text-zinc-400">
+            <div className="text-center text-sm text-muted-foreground">
               Não tem conta?{" "}
               <a
-                className="font-semibold text-zinc-900 underline dark:text-zinc-100"
+                className="font-semibold text-foreground underline dark:text-foreground"
                 href={`/signup?callbackUrl=${encodeURIComponent(props.callbackUrl)}&role=${role}`}
               >
                 Criar conta

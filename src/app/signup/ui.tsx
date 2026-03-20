@@ -252,22 +252,22 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
 
   return (
     <div className="ph-page">
-      <div className="pointer-events-none absolute -top-48 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-[#CCFF00]/15 blur-3xl" />
+      <div className="pointer-events-none absolute -top-48 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-primary/15 blur-3xl" />
       <div className="relative mx-auto max-w-md px-6 py-16">
-        <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Criar conta</h1>
-        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground dark:text-foreground">Criar conta</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
           Escolha o tipo de conta e complete seu cadastro.
         </p>
 
         {step === "verify" ? (
           <div className="ph-card mt-6 p-6">
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Verifique seu e-mail</h2>
-            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+            <h2 className="text-lg font-semibold text-foreground dark:text-foreground">Verifique seu e-mail</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
               Enviamos um código para <strong>{verificationEmail}</strong>. Digite abaixo para finalizar o cadastro.
             </p>
 
             {error ? (
-              <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">{error}</div>
+              <div className="mt-4 rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>
             ) : null}
 
             <form
@@ -305,7 +305,7 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
               className="mt-4 space-y-4"
             >
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Código</label>
+                <label className="block text-xs font-medium text-muted-foreground dark:text-muted-foreground">Código</label>
                 <input
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value)}
@@ -343,15 +343,15 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
           <form onSubmit={onSubmit} className="ph-card mt-6 p-6">
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Sou</label>
+              <label className="block text-xs font-medium text-muted-foreground dark:text-muted-foreground">Sou</label>
               <div className="mt-2 grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setRole("CUSTOMER")}
                   className={
                     role === "CUSTOMER"
-                      ? "rounded-full bg-[#CCFF00] px-4 py-3 text-sm font-bold text-black"
-                      : "rounded-full border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                      ? "rounded-full bg-primary px-4 py-3 text-sm font-bold text-primary-foreground"
+                      : "rounded-full border border-border bg-card px-4 py-3 text-sm text-foreground dark:border-border dark:bg-card dark:text-foreground"
                   }
                 >
                   Cliente
@@ -361,8 +361,8 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
                   onClick={() => setRole("OWNER")}
                   className={
                     role === "OWNER"
-                      ? "rounded-full bg-[#CCFF00] px-4 py-3 text-sm font-bold text-black"
-                      : "rounded-full border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                      ? "rounded-full bg-primary px-4 py-3 text-sm font-bold text-primary-foreground"
+                      : "rounded-full border border-border bg-card px-4 py-3 text-sm text-foreground dark:border-border dark:bg-card dark:text-foreground"
                   }
                 >
                   Dono de Arena
@@ -373,7 +373,7 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
             {role === "CUSTOMER" ? (
               <>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Nome completo</label>
+                  <label className="block text-xs font-medium text-muted-foreground dark:text-muted-foreground">Nome completo</label>
                   <input value={name} onChange={(e) => setName(e.target.value)} className="ph-input mt-2" required />
                 </div>
 
@@ -388,7 +388,7 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">CPF/CNPJ</label>
+                  <label className="block text-xs font-medium text-muted-foreground dark:text-muted-foreground">CPF/CNPJ</label>
                   <input
                     value={cpfCnpj}
                     onChange={(e) => setCpfCnpj(normalizeCpfCnpj(e.target.value).slice(0, 14))}
@@ -413,7 +413,7 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
             ) : (
               <>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Nome da Arena</label>
+                  <label className="block text-xs font-medium text-muted-foreground dark:text-muted-foreground">Nome da Arena</label>
                   <input
                     value={arenaName}
                     onChange={(e) => setArenaName(e.target.value)}
@@ -443,7 +443,7 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                  <label className="block text-xs font-medium text-muted-foreground dark:text-muted-foreground">
                     Instagram (opcional)
                   </label>
                   <input
@@ -466,7 +466,7 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
             )}
 
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Email</label>
+              <label className="block text-xs font-medium text-muted-foreground dark:text-muted-foreground">Email</label>
               <input
                 type="email"
                 value={email}
@@ -477,7 +477,7 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Senha</label>
+              <label className="block text-xs font-medium text-muted-foreground dark:text-muted-foreground">Senha</label>
               <input
                 type="password"
                 value={password}
@@ -490,7 +490,7 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
 
             {role === "OWNER" ? (
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Fotos e vídeos da Arena</label>
+                <label className="block text-xs font-medium text-muted-foreground dark:text-muted-foreground">Fotos e vídeos da Arena</label>
                 <div className="mt-2 flex items-center justify-between gap-3">
                   <UploadPickerButton
                     label={photoFiles.length ? "Adicionar mais arquivos" : "Adicionar arquivos"}
@@ -513,7 +513,7 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
                       }
                     }}
                   />
-                  <div className="text-xs text-zinc-600 dark:text-zinc-400">
+                  <div className="text-xs text-muted-foreground">
                     {selectedCounts.photos}/{PROFILE_MAX_PHOTOS} fotos · {selectedCounts.videos}/{PROFILE_MAX_VIDEOS} vídeos
                   </div>
                 </div>
@@ -532,18 +532,18 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
                       return (
                         <div
                           key={url}
-                          className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900"
+                          className="relative overflow-hidden rounded-2xl border border-border bg-secondary dark:border-border dark:bg-card"
                         >
                           {isVideo ? (
                             <a
                               href={url}
                               target="_blank"
                               rel="noreferrer"
-                              className="flex h-24 w-full items-center justify-center bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100"
+                              className="flex h-24 w-full items-center justify-center bg-secondary text-foreground dark:bg-card dark:text-foreground"
                               title="Abrir vídeo em nova aba"
                             >
                               <span className="flex items-center gap-2 text-xs font-semibold">
-                                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/80 text-white">▶</span>
+                                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-foreground/80 text-background">▶</span>
                                 Vídeo
                               </span>
                             </a>
@@ -556,7 +556,7 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
                             onClick={() => {
                               setPhotoFiles((prev) => prev.filter((_, i) => i !== idx));
                             }}
-                            className="absolute right-2 top-2 rounded-full bg-black/60 px-2 py-1 text-[10px] font-semibold text-white"
+                            className="absolute right-2 top-2 rounded-full bg-foreground/60 px-2 py-1 text-[10px] font-semibold text-white"
                           >
                             Remover
                           </button>
@@ -568,16 +568,16 @@ export function SignUpForm(props: { callbackUrl: string; initialRole?: SignUpRol
               </div>
             ) : null}
 
-            {error ? <p className="text-sm text-red-600">{error}</p> : null}
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
             <button type="submit" disabled={isPending} className="ph-button w-full">
               {isPending ? "Criando..." : "Criar conta"}
             </button>
 
-            <div className="text-center text-sm text-zinc-600 dark:text-zinc-400">
+            <div className="text-center text-sm text-muted-foreground">
               Já tem conta?{" "}
               <a
-                className="font-semibold text-zinc-900 underline dark:text-zinc-100"
+                className="font-semibold text-foreground underline dark:text-foreground"
                 href={`/signin?callbackUrl=${encodeURIComponent(props.callbackUrl)}&role=${role}`}
               >
                 Entrar

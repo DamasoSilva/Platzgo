@@ -76,15 +76,15 @@ export function BrazilPhoneInput(props: {
 
   return (
     <div>
-      <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">{props.label}</label>
-      <div className="mt-2 flex overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-        <div className="flex items-center justify-center px-4 text-sm font-semibold text-zinc-700 dark:text-zinc-300 bg-zinc-100/80 dark:bg-zinc-900/60">
+      <label className="block text-xs font-medium text-muted-foreground dark:text-muted-foreground">{props.label}</label>
+      <div className="mt-2 flex overflow-hidden rounded-xl border border-border bg-card dark:border-border dark:bg-card">
+        <div className="flex items-center justify-center px-4 text-sm font-semibold text-muted-foreground dark:text-muted-foreground bg-secondary/80 dark:bg-card/60">
           +55
         </div>
         <input
           value={displayValue}
           onChange={onChange}
-          className="w-full bg-transparent px-4 py-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-inset focus:ring-[#CCFF00] dark:text-zinc-100"
+          className="w-full bg-transparent px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-inset focus:ring-primary dark:text-foreground"
           placeholder={props.placeholder ?? "(11) 99999-9999"}
           inputMode="numeric"
           autoComplete="tel"

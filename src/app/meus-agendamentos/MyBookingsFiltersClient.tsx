@@ -38,15 +38,15 @@ export function MyBookingsFiltersClient(props: Props) {
       onSubmit={onSubmit}
     >
       <div>
-        <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Data inicio</label>
+        <label className="block text-xs font-medium text-muted-foreground dark:text-muted-foreground">Data inicio</label>
         <input name="start" type="date" defaultValue={props.start ?? ""} className="ph-input mt-2" />
       </div>
       <div>
-        <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Data fim</label>
+        <label className="block text-xs font-medium text-muted-foreground dark:text-muted-foreground">Data fim</label>
         <input name="end" type="date" defaultValue={props.end ?? ""} className="ph-input mt-2" />
       </div>
       <div>
-        <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Status</label>
+        <label className="block text-xs font-medium text-muted-foreground dark:text-muted-foreground">Status</label>
         <select name="status" defaultValue={props.status ?? "all"} className="ph-input mt-2">
           <option value="all">Todos</option>
           <option value="awaiting_payment">Aguardando pagamento</option>

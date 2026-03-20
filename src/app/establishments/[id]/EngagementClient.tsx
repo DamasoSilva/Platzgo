@@ -56,7 +56,7 @@ export function EngagementClient(props: {
           className={
             "rounded-full px-4 py-2 text-xs font-bold " +
             (isFavorite
-              ? "bg-[#CCFF00] text-black"
+              ? "bg-primary text-primary-foreground"
               : "border border-border bg-card text-foreground")
           }
         >

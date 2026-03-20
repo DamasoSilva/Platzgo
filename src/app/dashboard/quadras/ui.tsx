@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Edit, Eye, Plus, Power, Tag, Trash2 } from "lucide-react";
 
 import { createCourt, deleteCourt, setCourtActiveStatus, updateCourt } from "@/lib/actions/admin";
 import { listCourtInactivationReasonsForAdmin, listSearchSportOptionsForAdmin } from "@/lib/actions/sysadmin";
@@ -159,7 +160,7 @@ function MediaGrid(props: {
                 title="Abrir vídeo em nova aba"
               >
                 <span className="flex items-center gap-2 text-sm font-semibold">
-                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/80 text-white">▶</span>
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-foreground/80 text-background">▶</span>
                   Vídeo
                 </span>
               </a>
@@ -172,7 +173,7 @@ function MediaGrid(props: {
               <button
                 type="button"
                 onClick={() => props.onRemove?.(url)}
-                className="absolute right-2 top-2 hidden rounded-full bg-black/70 px-3 py-1 text-xs font-semibold text-white group-hover:block"
+                className="absolute right-2 top-2 hidden rounded-full bg-foreground/70 px-3 py-1 text-xs font-semibold text-white group-hover:block"
                 title="Remover"
               >
                 Remover
@@ -219,6 +220,21 @@ function defaultSportLabel(v: SportType): string {
       return "Padel";
     default:
       return String(v);
+  }
+}
+
+function sportEmoji(v: SportType): string {
+  switch (v) {
+    case SportType.FUTSAL:
+      return "⚽";
+    case SportType.PADEL:
+      return "🎾";
+    case SportType.BEACH_TENNIS:
+      return "🏐";
+    case SportType.TENNIS:
+      return "🎾";
+    default:
+      return "🏟️";
   }
 }
 
@@ -520,9 +536,12 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
       <header className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">Quadras</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Gerencie suas quadras em cards (editar, inativar e adicionar).</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {courts.filter((c) => c.is_active).length} ativas de {courts.length} quadras.
+          </p>
         </div>
-        <button type="button" className="ph-button" onClick={() => setCreating(true)} disabled={isPending}>
+        <button type="button" className="ph-button inline-flex items-center gap-2" onClick={() => setCreating(true)} disabled={isPending}>
+          <Plus size={16} />
           Nova quadra
         </button>
       </header>
@@ -537,7 +556,8 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
         <div className="ph-card p-6">
           <p className="text-sm text-muted-foreground">Nenhuma quadra cadastrada ainda.</p>
           <div className="mt-4">
-            <button type="button" className="ph-button" onClick={() => setCreating(true)}>
+            <button type="button" className="ph-button inline-flex items-center gap-2" onClick={() => setCreating(true)}>
+              <Plus size={16} />
               Adicionar primeira quadra
             </button>
           </div>
@@ -545,86 +565,115 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           {courts.map((c) => (
-            <div key={c.id} className="ph-card p-5">
+            <div key={c.id} className="rounded-2xl bg-card border border-border overflow-hidden group hover:glow-border transition-shadow duration-300">
               {(() => {
                 const coverUrl = (c.photo_urls ?? []).find((u) => (u ?? "").trim() && !isVideoUrl(u));
                 return (
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex min-w-0 items-start gap-3">
-                  {coverUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={coverUrl}
-                      alt={`Foto da quadra ${c.name}`}
-                      className="h-16 w-24 shrink-0 rounded-xl object-cover"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  ) : (
-                    <div className="flex h-16 w-24 shrink-0 items-center justify-center rounded-xl bg-secondary/60 text-[11px] font-semibold text-muted-foreground">
-                      Sem foto
+                  <div className="relative h-36 bg-secondary/50 overflow-hidden">
+                    {coverUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={coverUrl}
+                        alt={`Foto da quadra ${c.name}`}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center text-4xl">
+                        {sportEmoji(c.sport_type)}
+                      </div>
+                    )}
+
+                    <div className="absolute inset-0 bg-gradient-to-t from-card/85 to-transparent" />
+
+                    <div className="absolute top-3 left-3">
+                      <span
+                        className={
+                          c.is_active
+                            ? "text-xs font-medium px-2.5 py-1 rounded-full backdrop-blur-sm bg-primary/20 text-primary border border-primary/20"
+                            : "text-xs font-medium px-2.5 py-1 rounded-full backdrop-blur-sm bg-destructive/20 text-destructive border border-destructive/20"
+                        }
+                      >
+                        {c.is_active ? "Ativa" : "Inativa"}
+                      </span>
                     </div>
-                  )}
-                  <div className="min-w-0">
-                    <p className="truncate text-base font-semibold text-foreground">{c.name}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {sportLabel(c.sport_type)} • {formatBRLFromCents(c.price_per_hour)}/h
-                      {c.discount_percentage_over_90min ? ` • -${c.discount_percentage_over_90min}% (≥ 90min)` : ""}
-                    </p>
+
+                    <div className="absolute top-3 right-3 text-xs font-semibold bg-card/70 backdrop-blur-sm px-2.5 py-1 rounded-full text-foreground">
+                      {formatBRLFromCents(c.price_per_hour)}/h
+                    </div>
                   </div>
-                </div>
-                <span
-                  className={
-                    c.is_active
-                      ? "rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-300"
-                      : "rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-muted-foreground"
-                  }
-                >
-                  {c.is_active ? "Ativa" : "Inativa"}
-                </span>
-              </div>
                 );
               })()}
 
-              {!c.is_active && c.inactive_reason?.title ? (
-                <p className="mt-3 text-xs text-muted-foreground">
-                  Motivo: <span className="font-semibold">{c.inactive_reason.title}</span>
-                  {c.inactive_reason_note ? ` • ${c.inactive_reason_note}` : ""}
+              <div className="p-5">
+                <h3 className="truncate text-base font-semibold text-foreground">{c.name}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {sportLabel(c.sport_type)}
+                  {c.discount_percentage_over_90min ? ` • -${c.discount_percentage_over_90min}% (>= 90min)` : ""}
                 </p>
-              ) : null}
 
-              <div className="mt-4 flex flex-wrap gap-2">
-                <a
-                  className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500"
-                  href={`/courts/${c.id}`}
-                >
-                  Ver
-                </a>
-                <button
-                  type="button"
-                  className="inline-flex items-center justify-center rounded-xl bg-sky-600 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-500"
-                  onClick={() => setEditingCourtId(c.id)}
-                >
-                  Editar
-                </button>
-                <button
-                  type="button"
-                  className={
-                    c.is_active
-                      ? "inline-flex items-center justify-center rounded-xl bg-amber-600 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-500"
-                      : "inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
-                  }
-                  onClick={() => onToggleActive(c)}
-                >
-                  {c.is_active ? "Inativar" : "Ativar"}
-                </button>
-                <button
-                  type="button"
-                  className="inline-flex items-center justify-center rounded-xl bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-500"
-                  onClick={() => onDelete(c.id)}
-                >
-                  Excluir
-                </button>
+                <div className="mt-3 flex items-center gap-2 text-sm text-foreground">
+                  <Tag size={14} className="text-primary" />
+                  <span className="font-semibold">{formatBRLFromCents(c.price_per_hour)} <span className="font-normal text-muted-foreground">/ hora</span></span>
+                </div>
+
+                {c.amenities?.length ? (
+                  <div className="mt-4 flex flex-wrap gap-1.5">
+                    {c.amenities.slice(0, 4).map((a) => (
+                      <span key={a} className="text-xs bg-secondary/80 px-2.5 py-1 rounded-full text-muted-foreground">
+                        {a}
+                      </span>
+                    ))}
+                    {c.amenities.length > 4 ? (
+                      <span className="text-xs bg-secondary/80 px-2.5 py-1 rounded-full text-muted-foreground">
+                        +{c.amenities.length - 4}
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {!c.is_active && c.inactive_reason?.title ? (
+                  <p className="mt-4 text-xs text-muted-foreground">
+                    Motivo: <span className="font-semibold text-foreground">{c.inactive_reason.title}</span>
+                    {c.inactive_reason_note ? ` • ${c.inactive_reason_note}` : ""}
+                  </p>
+                ) : null}
+
+                <div className="mt-5 flex flex-wrap gap-2 border-t border-border pt-4">
+                  <a className="ph-button-secondary-xs inline-flex items-center gap-1.5" href={`/courts/${c.id}`}>
+                    <Eye size={14} />
+                    Ver
+                  </a>
+                  <button
+                    type="button"
+                    className="ph-button-secondary-xs inline-flex items-center gap-1.5"
+                    onClick={() => setEditingCourtId(c.id)}
+                  >
+                    <Edit size={14} />
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    className={
+                      c.is_active
+                        ? "inline-flex h-9 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
+                        : "inline-flex h-9 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                    }
+                    onClick={() => onToggleActive(c)}
+                  >
+                    <Power size={14} />
+                    {c.is_active ? "Inativar" : "Ativar"}
+                  </button>
+                  <button
+                    type="button"
+                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
+                    onClick={() => onDelete(c.id)}
+                  >
+                    <Trash2 size={14} />
+                    Excluir
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -634,7 +683,7 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
       {/* Create modal */}
       {creating ? (
         <div className="fixed inset-0 z-50">
-          <button className="absolute inset-0 bg-black/60" onClick={() => setCreating(false)} type="button" />
+          <button className="absolute inset-0 bg-foreground/60" onClick={() => setCreating(false)} type="button" />
           <div className="absolute left-1/2 top-1/2 max-h-[calc(100vh-32px)] w-[min(720px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-xl">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -792,7 +841,7 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
       {/* Edit modal */}
       {editingCourtId && editForm ? (
         <div className="fixed inset-0 z-50">
-          <button className="absolute inset-0 bg-black/60" onClick={() => setEditingCourtId(null)} type="button" />
+          <button className="absolute inset-0 bg-foreground/60" onClick={() => setEditingCourtId(null)} type="button" />
           <div className="absolute left-1/2 top-1/2 max-h-[calc(100vh-32px)] w-[min(720px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-xl">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -952,7 +1001,7 @@ export function QuadrasDashboard(props: { establishment: EstablishmentForCourts 
       {/* Deactivate modal */}
       {deactivateCourtId ? (
         <div className="fixed inset-0 z-50">
-          <button className="absolute inset-0 bg-black/60" onClick={() => setDeactivateCourtId(null)} type="button" />
+          <button className="absolute inset-0 bg-foreground/60" onClick={() => setDeactivateCourtId(null)} type="button" />
           <div className="absolute left-1/2 top-1/2 max-h-[calc(100vh-32px)] w-[min(560px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-xl">
             <div className="flex items-start justify-between gap-4">
               <div>

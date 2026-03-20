@@ -402,41 +402,41 @@ export function BookingDetailClient(props: {
   return (
     <div className="mt-6 rounded-3xl ph-surface p-6">
       {confirmationOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-lg rounded-3xl border border-emerald-200 bg-white p-6 text-emerald-900 shadow-xl dark:border-emerald-900/40 dark:bg-zinc-950 dark:text-emerald-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4">
+          <div className="w-full max-w-lg rounded-3xl border border-primary/30 bg-white p-6 text-primary shadow-xl dark:border-emerald-900/40 dark:bg-card dark:text-emerald-100">
             <div className="text-lg font-semibold">Agendamento confirmado</div>
             <div className="mt-4 space-y-2 text-sm">
               <div className="flex flex-wrap justify-between gap-2">
-                <span className="text-zinc-600 dark:text-zinc-300">Local</span>
-                <span className="font-semibold text-zinc-900 dark:text-zinc-50">
+                <span className="text-muted-foreground dark:text-muted-foreground">Local</span>
+                <span className="font-semibold text-foreground dark:text-foreground">
                   {props.booking.court.establishment.name}
                 </span>
               </div>
               {props.booking.court.establishment.address_text ? (
                 <div className="flex flex-wrap justify-between gap-2">
-                  <span className="text-zinc-600 dark:text-zinc-300">Endereco</span>
-                  <span className="font-semibold text-zinc-900 dark:text-zinc-50">
+                  <span className="text-muted-foreground dark:text-muted-foreground">Endereco</span>
+                  <span className="font-semibold text-foreground dark:text-foreground">
                     {props.booking.court.establishment.address_text}
                   </span>
                 </div>
               ) : null}
               <div className="flex flex-wrap justify-between gap-2">
-                <span className="text-zinc-600 dark:text-zinc-300">Data</span>
-                <span className="font-semibold text-zinc-900 dark:text-zinc-50">{dateLabel}</span>
+                <span className="text-muted-foreground dark:text-muted-foreground">Data</span>
+                <span className="font-semibold text-foreground dark:text-foreground">{dateLabel}</span>
               </div>
               <div className="flex flex-wrap justify-between gap-2">
-                <span className="text-zinc-600 dark:text-zinc-300">Horario</span>
-                <span className="font-semibold text-zinc-900 dark:text-zinc-50">{timeLabel}</span>
+                <span className="text-muted-foreground dark:text-muted-foreground">Horario</span>
+                <span className="font-semibold text-foreground dark:text-foreground">{timeLabel}</span>
               </div>
               <div className="flex flex-wrap justify-between gap-2">
-                <span className="text-zinc-600 dark:text-zinc-300">Quadra/Modalidade</span>
-                <span className="font-semibold text-zinc-900 dark:text-zinc-50">
+                <span className="text-muted-foreground dark:text-muted-foreground">Quadra/Modalidade</span>
+                <span className="font-semibold text-foreground dark:text-foreground">
                   {props.booking.court.name} • {formatSportLabel(props.booking.court.sport_type)}
                 </span>
               </div>
               <div className="flex flex-wrap justify-between gap-2">
-                <span className="text-zinc-600 dark:text-zinc-300">Preco</span>
-                <span className="font-semibold text-zinc-900 dark:text-zinc-50">{priceLabel}</span>
+                <span className="text-muted-foreground dark:text-muted-foreground">Preco</span>
+                <span className="font-semibold text-foreground dark:text-foreground">{priceLabel}</span>
               </div>
             </div>
             <button
@@ -453,13 +453,13 @@ export function BookingDetailClient(props: {
         </div>
       ) : null}
       {pixModalOpen && payment ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="w-full max-w-md rounded-3xl border border-emerald-200 bg-white p-6 text-emerald-900 shadow-xl dark:border-emerald-900/40 dark:bg-zinc-950 dark:text-emerald-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/85 px-4">
+          <div className="w-full max-w-md rounded-3xl border border-primary/30 bg-white p-6 text-primary shadow-xl dark:border-emerald-900/40 dark:bg-card dark:text-emerald-100">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold">Pagamento pendente</p>
                 {countdownSeconds !== null ? (
-                  <p className="text-xs text-emerald-800 dark:text-emerald-200">
+                  <p className="text-xs text-primary dark:text-emerald-200">
                     {countdownSeconds > 0 ? `Expira em ${formatCountdown(countdownSeconds)}` : "Expirado"}
                   </p>
                 ) : null}
@@ -467,15 +467,15 @@ export function BookingDetailClient(props: {
               <button
                 type="button"
                 onClick={() => setPixModalOpen(false)}
-                className="rounded-full border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-900 dark:border-emerald-900/50 dark:text-emerald-100"
+                className="rounded-full border border-primary/30 px-3 py-1 text-xs font-semibold text-primary dark:border-emerald-900/50 dark:text-emerald-100"
               >
                 Fechar
               </button>
             </div>
 
-            <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 dark:border-emerald-900/40 dark:bg-emerald-950/30">
-              <p className="text-xs font-semibold text-emerald-800 dark:text-emerald-100">Valor do pagamento</p>
-              <p className="mt-1 text-2xl font-semibold text-emerald-900 dark:text-emerald-50">{priceLabel}</p>
+            <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/10 p-4 dark:border-emerald-900/40 dark:bg-emerald-950/30">
+              <p className="text-xs font-semibold text-primary dark:text-emerald-100">Valor do pagamento</p>
+              <p className="mt-1 text-2xl font-semibold text-primary dark:text-emerald-50">{priceLabel}</p>
             </div>
 
             {payment.pixQrBase64 ? (
@@ -484,13 +484,13 @@ export function BookingDetailClient(props: {
                 <img
                   src={`data:image/png;base64,${payment.pixQrBase64}`}
                   alt="QR Code PIX"
-                  className="h-48 w-48 rounded-2xl border border-emerald-200 bg-white p-2"
+                  className="h-48 w-48 rounded-2xl border border-primary/30 bg-white p-2"
                 />
               </div>
             ) : null}
 
             {payment.pixPayload ? (
-              <div className="mt-4 rounded-2xl border border-emerald-200 bg-white p-3 text-xs text-emerald-900 dark:border-emerald-900/40 dark:bg-zinc-950 dark:text-emerald-100">
+              <div className="mt-4 rounded-2xl border border-primary/30 bg-white p-3 text-xs text-primary dark:border-emerald-900/40 dark:bg-card dark:text-emerald-100">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-semibold">PIX copia e cola</span>
                   <button
@@ -508,7 +508,7 @@ export function BookingDetailClient(props: {
                     Copiar
                   </button>
                 </div>
-                <div className="mt-2 break-words rounded-xl bg-emerald-50 px-3 py-2 text-[11px] text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100">
+                <div className="mt-2 break-words rounded-xl bg-primary/10 px-3 py-2 text-[11px] text-primary dark:bg-emerald-950/40 dark:text-emerald-100">
                   {payment.pixPayload}
                 </div>
                 {pixCopyStatus ? <div className="mt-2 text-[11px]">{pixCopyStatus}</div> : null}
@@ -521,7 +521,7 @@ export function BookingDetailClient(props: {
                   href={payment.checkoutUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center rounded-full bg-[#CCFF00] px-4 py-2 text-xs font-bold text-black"
+                  className="inline-flex items-center rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
                 >
                   Ir para pagamento
                 </a>
@@ -532,10 +532,10 @@ export function BookingDetailClient(props: {
       ) : null}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="truncate text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+          <h1 className="truncate text-lg font-semibold text-foreground dark:text-foreground">
             {props.booking.court.establishment.name} • {props.booking.court.name}
           </h1>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="mt-1 text-sm text-muted-foreground dark:text-muted-foreground">
             {formatSportLabel(props.booking.court.sport_type)} • {formatDateTimeBR(startDate)} → {formatDateTimeBR(endDate)}
           </p>
 
@@ -544,11 +544,11 @@ export function BookingDetailClient(props: {
               className={
                 "inline-flex rounded-full px-3 py-1 text-xs font-semibold " +
                 (isFinished
-                  ? "bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100"
+                  ? "bg-secondary text-foreground dark:bg-secondary dark:text-foreground"
                   : props.booking.status === BookingStatus.CONFIRMED
-                    ? "bg-emerald-100 text-emerald-900"
+                    ? "bg-primary/15 text-primary"
                     : props.booking.status === BookingStatus.CANCELLED
-                      ? "bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100"
+                      ? "bg-secondary text-foreground dark:bg-secondary dark:text-foreground"
                       : "bg-amber-100 text-amber-900")
               }
             >
@@ -556,7 +556,7 @@ export function BookingDetailClient(props: {
             </span>
 
             {props.booking.total_price_cents === 0 ? (
-              <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100">
+              <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-primary dark:bg-primary/20 dark:text-primary">
                 Mensalidade
               </span>
             ) : null}
@@ -584,7 +584,7 @@ export function BookingDetailClient(props: {
         <div className="flex flex-wrap gap-2">
           <Link
             href={{ pathname: `/courts/${props.booking.court.id}`, query: { day: props.booking.start_time.slice(0, 10) } }}
-            className="rounded-full bg-[#CCFF00] px-4 py-2 text-xs font-bold text-black hover:scale-105 transition-all"
+            className="rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:scale-105 transition-all"
           >
             Ver quadra
           </Link>
@@ -592,36 +592,36 @@ export function BookingDetailClient(props: {
       </div>
 
       {isFinished ? (
-        <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-100">
+        <div className="mt-4 rounded-2xl border border-primary/30 bg-primary/10 p-4 text-sm text-primary dark:border-emerald-900/40 dark:bg-primary/20 dark:text-primary">
           Agendamento finalizado. Obrigado por utilizar a quadra corretamente.
         </div>
       ) : null}
 
-      <div className="mt-5 rounded-2xl border border-zinc-200 bg-white/70 p-4 text-sm text-zinc-700 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/50 dark:text-zinc-300">
-        <p className="font-semibold text-zinc-900 dark:text-zinc-50">Reagendamento</p>
+      <div className="mt-5 rounded-2xl border border-border bg-card/70 p-4 text-sm text-muted-foreground backdrop-blur dark:border-border dark:bg-card/50 dark:text-muted-foreground">
+        <p className="font-semibold text-foreground dark:text-foreground">Reagendamento</p>
         <p className="mt-1">
           Você pode reagendar <span className="font-semibold">apenas 1 vez</span> por agendamento. Ao reagendar, este agendamento será
           cancelado e um novo agendamento será criado como <span className="font-semibold">Pendente</span>.
         </p>
-        <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
+        <p className="mt-2 text-xs text-muted-foreground dark:text-muted-foreground">
           O dono do estabelecimento receberá uma solicitação de aprovação para o reagendamento.
         </p>
       </div>
 
       {payment ? (
-        <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-100">
+        <div className="mt-4 rounded-2xl border border-primary/30 bg-primary/10 p-4 text-sm text-primary dark:border-emerald-900/40 dark:bg-primary/20 dark:text-primary">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="font-semibold">Pagamento pendente</p>
             <div className="flex flex-wrap items-center gap-2">
               {countdownSeconds !== null ? (
-                <span className="text-xs text-emerald-800 dark:text-emerald-200">
+                <span className="text-xs text-primary dark:text-emerald-200">
                   {countdownSeconds > 0 ? `Expira em ${formatCountdown(countdownSeconds)}` : "Expirado"}
                 </span>
               ) : null}
               <button
                 type="button"
                 onClick={() => setPixModalOpen(true)}
-                className="rounded-full border border-emerald-200 px-3 py-1 text-[11px] font-semibold text-emerald-900 dark:border-emerald-900/50 dark:text-emerald-100"
+                className="rounded-full border border-primary/30 px-3 py-1 text-[11px] font-semibold text-primary dark:border-emerald-900/50 dark:text-emerald-100"
               >
                 Abrir pagamento
               </button>
@@ -647,7 +647,7 @@ export function BookingDetailClient(props: {
                   Copiar
                 </button>
               </div>
-              <div className="mt-2 break-words rounded-xl bg-white px-3 py-2 text-[11px] text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+              <div className="mt-2 break-words rounded-xl bg-white px-3 py-2 text-[11px] text-foreground dark:bg-card dark:text-foreground">
                 {payment.pixPayload}
               </div>
               {pixCopyStatus ? <div className="mt-2 text-[11px]">{pixCopyStatus}</div> : null}
@@ -657,7 +657,7 @@ export function BookingDetailClient(props: {
                   <img
                     src={`data:image/png;base64,${payment.pixQrBase64}`}
                     alt="QR Code PIX"
-                    className="h-40 w-40 rounded-lg border border-emerald-200 bg-white p-2"
+                    className="h-40 w-40 rounded-lg border border-primary/30 bg-white p-2"
                   />
                 </div>
               ) : null}
@@ -703,7 +703,7 @@ export function BookingDetailClient(props: {
                 href={payment.checkoutUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center rounded-full bg-[#CCFF00] px-4 py-2 text-xs font-bold text-black"
+                className="inline-flex items-center rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
               >
                 Ir para pagamento
               </a>
@@ -713,8 +713,8 @@ export function BookingDetailClient(props: {
       ) : null}
 
       {props.booking.status === BookingStatus.CANCELLED ? (
-        <div className="mt-4 rounded-2xl border border-zinc-200 bg-white/70 p-4 text-sm text-zinc-700 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/50 dark:text-zinc-300">
-          <p className="font-semibold text-zinc-900 dark:text-zinc-50">Motivo do cancelamento</p>
+        <div className="mt-4 rounded-2xl border border-border bg-card/70 p-4 text-sm text-muted-foreground backdrop-blur dark:border-border dark:bg-card/50 dark:text-muted-foreground">
+          <p className="font-semibold text-foreground dark:text-foreground">Motivo do cancelamento</p>
           <p className="mt-1 text-sm">{(props.booking.cancel_reason ?? "Cancelado").trim() || "Cancelado"}</p>
           {props.booking.cancel_fee_cents && props.booking.cancel_fee_cents > 0 ? (
             <p className="mt-1 text-sm">Multa aplicada: {formatBRLFromCents(props.booking.cancel_fee_cents)}</p>
@@ -722,12 +722,12 @@ export function BookingDetailClient(props: {
         </div>
       ) : null}
 
-      {message ? <div className="mt-4 rounded-2xl bg-zinc-100 px-4 py-3 text-sm text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">{message}</div> : null}
+      {message ? <div className="mt-4 rounded-2xl bg-secondary px-4 py-3 text-sm text-foreground dark:bg-card dark:text-foreground">{message}</div> : null}
 
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
         <div className="rounded-2xl ph-surface p-4">
-          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Cancelar</p>
-          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Disponível até o horário do agendamento.</p>
+          <p className="text-sm font-semibold text-foreground dark:text-foreground">Cancelar</p>
+          <p className="mt-1 text-xs text-muted-foreground dark:text-muted-foreground">Disponível até o horário do agendamento.</p>
           <button
             type="button"
             disabled={!canCancel || isPending}
@@ -737,7 +737,7 @@ export function BookingDetailClient(props: {
             }}
             className={
               "mt-3 w-full rounded-full px-4 py-2 text-xs font-bold transition-all " +
-              (canCancel && !isPending ? "bg-rose-500 text-white hover:brightness-110" : "bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400")
+              (canCancel && !isPending ? "bg-rose-500 text-white hover:brightness-110" : "bg-secondary text-muted-foreground dark:bg-secondary dark:text-muted-foreground")
             }
           >
             Cancelar agendamento
@@ -745,8 +745,8 @@ export function BookingDetailClient(props: {
         </div>
 
         <div className="rounded-2xl ph-surface p-4">
-          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Reagendar</p>
-          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Escolha um dia e um horário disponível (30 em 30).</p>
+          <p className="text-sm font-semibold text-foreground dark:text-foreground">Reagendar</p>
+          <p className="mt-1 text-xs text-muted-foreground dark:text-muted-foreground">Escolha um dia e um horário disponível (30 em 30).</p>
 
           <button
             type="button"
@@ -754,7 +754,7 @@ export function BookingDetailClient(props: {
             onClick={() => setShowReschedule((s) => !s)}
             className={
               "mt-3 w-full rounded-full px-4 py-2 text-xs font-bold transition-all " +
-              (canReschedule && !isPending ? "bg-[#CCFF00] text-black" : "bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400")
+              (canReschedule && !isPending ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground dark:bg-secondary dark:text-muted-foreground")
             }
           >
             {showReschedule ? "Fechar reagendamento" : "Abrir reagendamento"}
@@ -763,8 +763,8 @@ export function BookingDetailClient(props: {
             <div className="mt-3 grid gap-3">
             <div className="grid gap-2">
               <div className="flex items-center justify-between gap-3">
-                <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Dia</label>
-                <span className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-300">
+                <label className="text-xs font-medium text-muted-foreground dark:text-muted-foreground">Dia</label>
+                <span className="text-[11px] font-semibold text-muted-foreground dark:text-muted-foreground">
                   {formatDateBR(asLocalDayDate(availabilityDay))}
                 </span>
               </div>
@@ -772,7 +772,7 @@ export function BookingDetailClient(props: {
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  className="rounded-full border border-zinc-200 bg-white px-3 py-2 text-xs font-bold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900"
+                  className="rounded-full border border-border bg-white px-3 py-2 text-xs font-bold text-foreground hover:bg-card dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-card"
                   disabled={!canReschedule || isPending || availabilityDay <= todayYmd}
                   onClick={() => refreshAvailability(addDaysYmd(availabilityDay, -1))}
                 >
@@ -780,7 +780,7 @@ export function BookingDetailClient(props: {
                 </button>
                 <button
                   type="button"
-                  className="rounded-full border border-zinc-200 bg-white px-3 py-2 text-xs font-bold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900"
+                  className="rounded-full border border-border bg-white px-3 py-2 text-xs font-bold text-foreground hover:bg-card dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-card"
                   disabled={!canReschedule || isPending}
                   onClick={() => refreshAvailability(addDaysYmd(availabilityDay, 1))}
                 >
@@ -799,7 +799,7 @@ export function BookingDetailClient(props: {
             </div>
 
             <div className="grid gap-2">
-              <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Duração</label>
+              <label className="text-xs font-medium text-muted-foreground dark:text-muted-foreground">Duração</label>
               <select
                 className="ph-input"
                 value={durationMinutes}
@@ -812,16 +812,16 @@ export function BookingDetailClient(props: {
                   </option>
                 ))}
               </select>
-              <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
+              <p className="text-[11px] text-muted-foreground dark:text-muted-foreground">
                 Duração original: {originalDurationMinutes} min.
               </p>
             </div>
 
             <div>
               <div className="flex items-center justify-between gap-3">
-                <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Horários disponíveis</label>
+                <label className="text-xs font-medium text-muted-foreground dark:text-muted-foreground">Horários disponíveis</label>
                 {selectedStart && selectedEnd ? (
-                  <span className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-300">
+                  <span className="text-[11px] font-semibold text-muted-foreground dark:text-muted-foreground">
                     {formatHHMM(selectedStart)}–{formatHHMM(selectedEnd)}
                   </span>
                 ) : null}
@@ -832,13 +832,13 @@ export function BookingDetailClient(props: {
                   {availability.dayInfo.notice ?? "Fechado neste dia."}
                 </div>
               ) : availability.dayInfo.notice ? (
-                <div className="mt-2 rounded-2xl border border-zinc-200 bg-white/70 p-3 text-xs text-zinc-700 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/50 dark:text-zinc-300">
+                <div className="mt-2 rounded-2xl border border-border bg-card/70 p-3 text-xs text-muted-foreground backdrop-blur dark:border-border dark:bg-card/50 dark:text-muted-foreground">
                   {availability.dayInfo.notice}
                 </div>
               ) : null}
 
               {slotOptions.length ? (
-                <div className="mt-2 space-y-3 rounded-2xl border border-zinc-200 bg-white/70 p-3 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/50">
+                <div className="mt-2 space-y-3 rounded-2xl border border-border bg-card/70 p-3 backdrop-blur dark:border-border dark:bg-card/50">
                   {(
                     [
                       { key: "morning", label: "Manhã", items: slotsByPeriod.morning },
@@ -848,7 +848,7 @@ export function BookingDetailClient(props: {
                   ).map((section) =>
                     section.items.length ? (
                       <div key={section.key}>
-                        <div className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300">{section.label}</div>
+                        <div className="text-[11px] font-bold text-muted-foreground dark:text-muted-foreground">{section.label}</div>
                         <div className="mt-2 max-h-40 overflow-auto pr-1">
                           <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
                             {section.items.map((opt) => {
@@ -862,8 +862,8 @@ export function BookingDetailClient(props: {
                                   className={
                                     "rounded-full px-3 py-2 text-xs font-bold transition-all " +
                                     (isSelected
-                                      ? "bg-[#CCFF00] text-black"
-                                      : "border border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800")
+                                      ? "bg-primary text-primary-foreground"
+                                      : "border border-border bg-white text-foreground hover:bg-card dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-secondary")
                                   }
                                 >
                                   {formatHHMM(opt.start)}
@@ -877,14 +877,14 @@ export function BookingDetailClient(props: {
                   )}
                 </div>
               ) : (
-                <div className="mt-2 rounded-2xl border border-zinc-200 bg-white/70 p-3 text-xs text-zinc-600 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/50 dark:text-zinc-400">
+                <div className="mt-2 rounded-2xl border border-border bg-card/70 p-3 text-xs text-muted-foreground backdrop-blur dark:border-border dark:bg-card/50 dark:text-muted-foreground">
                   Nenhum horário disponível para essa duração neste dia.
                 </div>
               )}
             </div>
 
             {computedTotalCents !== null ? (
-              <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-xs font-semibold text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100">
+              <div className="rounded-2xl border border-border bg-card px-4 py-3 text-xs font-semibold text-foreground dark:border-border dark:bg-card dark:text-foreground">
                 Total estimado: {formatBRLFromCents(computedTotalCents)}
                 {monthlyIsActive ? " (mensalidade)" : ""}
               </div>
@@ -899,7 +899,7 @@ export function BookingDetailClient(props: {
               onClick={() => void onReschedule()}
               className={
                 "mt-3 w-full rounded-full px-4 py-2 text-xs font-bold transition-all " +
-                (canReschedule && !isPending ? "bg-[#CCFF00] text-black hover:scale-[1.02]" : "bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400")
+                (canReschedule && !isPending ? "bg-primary text-primary-foreground hover:scale-[1.02]" : "bg-secondary text-muted-foreground dark:bg-secondary dark:text-muted-foreground")
               }
             >
               Reagendar
@@ -907,14 +907,14 @@ export function BookingDetailClient(props: {
           ) : null}
 
           {alreadyRescheduled ? (
-            <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
+            <p className="mt-2 text-xs text-muted-foreground dark:text-muted-foreground">
               Este agendamento já foi reagendado. Para reagendar novamente, use o novo agendamento (limitado a 1 reagendamento por agendamento).
             </p>
           ) : null}
         </div>
       </div>
 
-      <div className="mt-5 text-xs text-zinc-600 dark:text-zinc-400">
+      <div className="mt-5 text-xs text-muted-foreground dark:text-muted-foreground">
         <p>
           Dica: se você tiver uma mensalidade ativa para este mês nesta quadra, o valor do novo agendamento será {" "}
           <span className="font-semibold">R$ 0</span>.
@@ -924,13 +924,13 @@ export function BookingDetailClient(props: {
 
       {props.booking.notifications?.length ? (
         <div className="mt-6 rounded-3xl ph-surface p-6">
-          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Notificações deste agendamento</h2>
+          <h2 className="text-sm font-semibold text-foreground dark:text-foreground">Notificações deste agendamento</h2>
           <div className="mt-4 space-y-3">
             {props.booking.notifications.map((n) => (
-              <div key={n.id} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950">
-                <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{n.title}</p>
-                <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{n.body}</p>
-                <p className="mt-2 text-[11px] text-zinc-500 dark:text-zinc-500">{formatDateTimeBR(new Date(n.createdAt))}</p>
+              <div key={n.id} className="rounded-2xl border border-border bg-card p-4 dark:border-border dark:bg-card">
+                <p className="text-sm font-semibold text-foreground dark:text-foreground">{n.title}</p>
+                <p className="mt-1 text-xs text-muted-foreground dark:text-muted-foreground">{n.body}</p>
+                <p className="mt-2 text-[11px] text-muted-foreground/80 dark:text-muted-foreground/80">{formatDateTimeBR(new Date(n.createdAt))}</p>
               </div>
             ))}
           </div>

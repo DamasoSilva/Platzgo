@@ -163,7 +163,7 @@ function MediaGrid(props: { urls: string[]; onRemove?: (url: string) => void; on
                 title="Abrir vídeo em nova aba"
               >
                 <span className="flex items-center gap-2 text-sm font-semibold">
-                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/80 text-white">▶</span>
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-foreground/80 text-background">▶</span>
                   Vídeo
                 </span>
               </a>
@@ -181,7 +181,7 @@ function MediaGrid(props: { urls: string[]; onRemove?: (url: string) => void; on
               <button
                 type="button"
                 onClick={() => props.onRemove?.(url)}
-                className="absolute right-2 top-2 hidden rounded-full bg-black/70 px-3 py-1 text-xs font-semibold text-white group-hover:block"
+                className="absolute right-2 top-2 hidden rounded-full bg-foreground/70 px-3 py-1 text-xs font-semibold text-white group-hover:block"
                 title="Remover"
               >
                 Remover
@@ -656,7 +656,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                   <button
                     type="button"
                     onClick={onCopyPublicLink}
-                    className="rounded-full bg-[#CCFF00] px-4 py-2 text-xs font-bold text-black"
+                    className="rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
                   >
                     Copiar link
                   </button>
@@ -685,7 +685,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                         "inline-flex h-10 items-center rounded-full border px-4 text-sm font-bold transition-all " +
                         (form.requires_booking_confirmation
                           ? "border-border bg-card text-foreground hover:bg-secondary"
-                          : "border-black/10 bg-[#CCFF00] text-black hover:brightness-95") +
+                          : "border-black/10 bg-primary text-primary-foreground hover:brightness-95") +
                         (confirmationLocked ? " opacity-60 pointer-events-none" : "")
                       }
                     >
@@ -702,7 +702,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                         setForm((s) => ({ ...s, requires_booking_confirmation: !e.target.checked }));
                       }}
                       disabled={confirmationLocked}
-                      className="h-4 w-4 rounded border-border text-[#CCFF00] focus:ring-[#CCFF00]"
+                      className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
                     />
                     Retirar obrigatoriedade de confirmação
                   </label>
@@ -759,7 +759,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                           onClick={() => setForm((s) => ({ ...s, cancel_fee_type: "percent" }))}
                           className={
                             form.cancel_fee_type === "percent"
-                              ? "rounded-full bg-[#CCFF00] px-4 py-2 text-xs font-bold text-black"
+                              ? "rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
                               : "rounded-full border border-border bg-card px-4 py-2 text-xs text-foreground"
                           }
                         >
@@ -770,7 +770,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                           onClick={() => setForm((s) => ({ ...s, cancel_fee_type: "fixed" }))}
                           className={
                             form.cancel_fee_type === "fixed"
-                              ? "rounded-full bg-[#CCFF00] px-4 py-2 text-xs font-bold text-black"
+                              ? "rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
                               : "rounded-full border border-border bg-card px-4 py-2 text-xs text-foreground"
                           }
                         >
@@ -968,7 +968,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                     className={
                       "inline-flex h-10 items-center rounded-full border px-4 text-sm font-bold transition-all " +
                       (form.online_payments_enabled
-                        ? "border-black/10 bg-[#CCFF00] text-black hover:brightness-95"
+                        ? "border-black/10 bg-primary text-primary-foreground hover:brightness-95"
                         : "border-border bg-card text-foreground hover:bg-secondary")
                     }
                   >
@@ -1055,7 +1055,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                           ) : null}
                         </div>
                         {walletTestStatus === "error" && walletTestMessage ? (
-                          <p className="mt-2 text-xs text-red-600">{walletTestMessage}</p>
+                          <p className="mt-2 text-xs text-destructive">{walletTestMessage}</p>
                         ) : null}
                         <p className="mt-2 text-xs text-muted-foreground">
                           Necessario para repasse automatico. Sem esse ID, o pagamento online fica indisponivel.
@@ -1108,7 +1108,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                             onClick={() => toggleWeekday(day)}
                             className={
                               active
-                                ? "rounded-full bg-[#CCFF00] px-3 py-1 text-xs font-bold text-black"
+                                ? "rounded-full bg-primary px-3 py-1 text-xs font-bold text-black"
                                 : "rounded-full border border-border bg-card px-3 py-1 text-xs text-foreground"
                             }
                           >
@@ -1181,7 +1181,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                         type="checkbox"
                         checked={holidayForm.is_open}
                         onChange={(e) => setHolidayForm((s) => ({ ...s, is_open: e.target.checked }))}
-                        className="h-4 w-4 rounded border-border text-[#CCFF00] focus:ring-[#CCFF00]"
+                        className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
                       />
                       Dia aberto (horário especial)
                     </label>
@@ -1244,7 +1244,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                           <button
                             type="button"
                             onClick={() => onDeleteHoliday(holiday.id)}
-                            className="text-xs font-semibold text-red-600 hover:text-red-700"
+                            className="text-xs font-semibold text-destructive hover:text-destructive"
                           >
                             Remover
                           </button>

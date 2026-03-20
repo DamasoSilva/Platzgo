@@ -196,8 +196,8 @@ export default async function MyBookingsPage(props: { searchParams?: SearchParam
       <div className="mx-auto max-w-4xl px-6 pb-10">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Meus agendamentos</h1>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Histórico dos seus agendamentos.</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground dark:text-foreground">Meus agendamentos</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Histórico dos seus agendamentos.</p>
           </div>
         </div>
 
@@ -207,8 +207,8 @@ export default async function MyBookingsPage(props: { searchParams?: SearchParam
           <div className="mt-6 rounded-3xl ph-surface p-6">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Notificações</h2>
-                <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Confirmações e cancelamentos recentes.</p>
+                <h2 className="text-sm font-semibold text-foreground dark:text-foreground">Notificações</h2>
+                <p className="mt-1 text-xs text-muted-foreground">Confirmações e cancelamentos recentes.</p>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
@@ -248,31 +248,31 @@ export default async function MyBookingsPage(props: { searchParams?: SearchParam
                   className={
                     "rounded-2xl border p-4 " +
                     (n.readAt
-                      ? "border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950"
-                      : "border-[#CCFF00]/40 bg-[#CCFF00]/10 dark:border-[#CCFF00]/40 dark:bg-[#CCFF00]/10")
+                      ? "border-border bg-card dark:border-border dark:bg-card"
+                      : "border-primary/40 bg-primary/10 dark:border-primary/40 dark:bg-primary/10")
                   }
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        {!n.readAt ? <span className="inline-flex h-2 w-2 rounded-full bg-[#CCFF00]" /> : null}
-                        <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">{n.title}</p>
+                        {!n.readAt ? <span className="inline-flex h-2 w-2 rounded-full bg-primary" /> : null}
+                        <p className="truncate text-sm font-semibold text-foreground dark:text-foreground">{n.title}</p>
                       </div>
-                      <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{n.body}</p>
-                      <p className="mt-2 text-[11px] text-zinc-500 dark:text-zinc-500">{formatDateTimeBR(n.createdAt)}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{n.body}</p>
+                      <p className="mt-2 text-[11px] text-muted-foreground/80 dark:text-muted-foreground/80">{formatDateTimeBR(n.createdAt)}</p>
                     </div>
                     {n.bookingId ? (
                       <div className="flex shrink-0 items-center gap-2">
                         <Link
                           href={`/meus-agendamentos/${n.bookingId}`}
-                          className="rounded-full border border-zinc-200 bg-white px-3 py-2 text-xs font-bold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                          className="rounded-full border border-border bg-card px-3 py-2 text-xs font-bold text-foreground hover:bg-card dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-secondary"
                         >
                           Ver
                         </Link>
                         <form action={deleteMyNotification.bind(null, n.id)}>
                           <button
                             type="submit"
-                            className="rounded-full border border-zinc-200 bg-white px-3 py-2 text-xs font-bold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                            className="rounded-full border border-border bg-card px-3 py-2 text-xs font-bold text-foreground hover:bg-card dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-secondary"
                           >
                             Excluir
                           </button>
@@ -282,7 +282,7 @@ export default async function MyBookingsPage(props: { searchParams?: SearchParam
                       <form action={deleteMyNotification.bind(null, n.id)} className="shrink-0">
                         <button
                           type="submit"
-                          className="rounded-full border border-zinc-200 bg-white px-3 py-2 text-xs font-bold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                          className="rounded-full border border-border bg-card px-3 py-2 text-xs font-bold text-foreground hover:bg-card dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-secondary"
                         >
                           Excluir
                         </button>
@@ -309,45 +309,45 @@ export default async function MyBookingsPage(props: { searchParams?: SearchParam
                   : statusLabel(b.status);
             const statusClass =
               isFinished
-                ? "bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100"
+                ? "bg-secondary text-foreground dark:bg-secondary dark:text-foreground"
                 : b.status === BookingStatus.CONFIRMED
-                  ? "bg-emerald-100 text-emerald-900"
+                  ? "bg-primary/15 text-primary"
                   : b.status === BookingStatus.CANCELLED
-                    ? "bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100"
+                    ? "bg-secondary text-foreground dark:bg-secondary dark:text-foreground"
                     : "bg-amber-100 text-amber-900";
 
             return (
               <div key={b.id} className="rounded-3xl ph-surface p-6">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                    <p className="truncate text-sm font-semibold text-foreground dark:text-foreground">
                       {b.court.establishment.name} • {b.court.name}
                     </p>
-                    <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       {formatSportLabel(b.court.sport_type)} • {formatDateTimeBR(b.start_time)} → {formatDateTimeBR(b.end_time)}
                     </p>
 
                     {b.total_price_cents === 0 ? (
-                      <span className="mt-2 inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100">
+                      <span className="mt-2 inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-primary dark:bg-primary/20 dark:text-primary">
                         Mensalidade
                       </span>
                     ) : null}
 
                     {b.status === BookingStatus.CANCELLED ? (
-                      <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
+                      <p className="mt-2 text-xs text-muted-foreground">
                         Motivo: {b.cancel_reason ? b.cancel_reason : "Cancelado"}
                       </p>
                     ) : null}
 
                     {b.status === BookingStatus.CANCELLED && b.cancel_fee_cents > 0 ? (
-                      <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                      <p className="mt-1 text-xs text-muted-foreground">
                         Multa aplicada: {formatBRLFromCents(b.cancel_fee_cents)}
                       </p>
                     ) : null}
                   </div>
 
                   <div className="text-right">
-                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                    <p className="text-sm font-semibold text-foreground dark:text-foreground">
                       {b.total_price_cents === 0 ? `${formatBRLFromCents(0)} (mensalidade)` : formatBRLFromCents(b.total_price_cents)}
                     </p>
                     <p className={`mt-1 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusClass}`}>{statusText}</p>
@@ -357,13 +357,13 @@ export default async function MyBookingsPage(props: { searchParams?: SearchParam
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Link
                     href={`/meus-agendamentos/${b.id}`}
-                    className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-bold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900"
+                    className="rounded-full border border-border bg-card px-4 py-2 text-xs font-bold text-foreground hover:bg-card dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-card"
                   >
                     Detalhes
                   </Link>
                   <Link
                     href={{ pathname: `/courts/${b.court.id}`, query: { day: b.start_time.toISOString().slice(0, 10) } }}
-                    className="rounded-full bg-[#CCFF00] px-4 py-2 text-xs font-bold text-black hover:scale-105 transition-all"
+                    className="rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:scale-105 transition-all"
                   >
                     Ver quadra
                   </Link>
@@ -371,7 +371,7 @@ export default async function MyBookingsPage(props: { searchParams?: SearchParam
                   {pendingPayment ? (
                     <Link
                       href={`/meus-agendamentos/${b.id}?pay=1`}
-                      className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-900 hover:bg-emerald-100 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-100"
+                      className="rounded-full border border-primary/30 bg-primary/10 px-4 py-2 text-xs font-bold text-primary hover:bg-primary/20 dark:border-emerald-900/50 dark:bg-primary/20 dark:text-primary"
                     >
                       Pagar agora
                     </Link>
@@ -404,9 +404,9 @@ export default async function MyBookingsPage(props: { searchParams?: SearchParam
 
           {bookings.length === 0 ? (
             <div className="rounded-3xl ph-surface p-6">
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">Você ainda não fez nenhum agendamento.</p>
+              <p className="text-sm text-muted-foreground">Você ainda não fez nenhum agendamento.</p>
               <div className="mt-4">
-                <Link href="/" className="rounded-full bg-[#CCFF00] px-5 py-2 text-sm font-bold text-black hover:scale-105 transition-all">
+                <Link href="/" className="rounded-full bg-primary px-5 py-2 text-sm font-bold text-primary-foreground hover:scale-105 transition-all">
                   Buscar quadras
                 </Link>
               </div>

@@ -16,6 +16,8 @@ import {
   Trophy,
   LogOut,
   ChevronLeft,
+  Menu,
+  X,
 } from "lucide-react";
 
 
@@ -40,6 +42,24 @@ function initialsFromName(name?: string | null): string {
 
 function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
+}
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const media = window.matchMedia("(max-width: 1023px)");
+
+    const update = () => setIsMobile(media.matches);
+    update();
+
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+
+  return isMobile;
 }
 
 export function DashboardLayoutClient(props: {
@@ -80,6 +100,16 @@ function DashboardLayoutShell(props: {
   approvalNote?: string | null;
 }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const isMobile = useIsMobile();
+
+  useEffect(() => {
+    if (isMobile) setCollapsed(false);
+  }, [isMobile]);
+
+  useEffect(() => {
+    if (!isMobile) setMobileOpen(false);
+  }, [isMobile]);
 
   // Protege contra BFCache: se o usuário sair e apertar "voltar",
   // o browser pode restaurar HTML antigo sem pedir ao servidor. Aqui
@@ -135,7 +165,10 @@ function DashboardLayoutShell(props: {
     ];
   }, [props.hasEstablishment, props.hasAtLeastOneCourt]);
 
-  const isActive = (href: string) => props.pathname === href;
+  const isActive = (href: string) => {
+    if (href === "/dashboard") return props.pathname === "/dashboard";
+    return props.pathname === href || props.pathname.startsWith(`${href}/`);
+  };
 
   const establishmentName = props.establishmentProfile?.name ?? null;
   const establishmentInitials = useMemo(() => initialsFromName(establishmentName), [establishmentName]);
@@ -155,71 +188,138 @@ function DashboardLayoutShell(props: {
     []
   );
 
-  return (
-    <div className="min-h-screen bg-background flex">
-      <aside
-        className={cn(
-          "bg-card border-r border-border transition-all duration-300 flex flex-col fixed h-full z-40",
-          collapsed ? "w-[72px]" : "w-64"
-        )}
-      >
-        <div className="p-4 flex items-center gap-3 border-b border-border h-16">
-          <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center font-display font-bold text-primary-foreground shrink-0">
-            P
-          </div>
-          {!collapsed ? (
-            <div>
-              <span className="font-display font-bold text-lg">
-                Platz<span className="gradient-text">Go!</span>
-              </span>
-              <p className="text-xs text-muted-foreground">Painel do gestor</p>
-            </div>
-          ) : null}
+  const sidebarContent = (
+    <>
+      <div className="p-4 flex items-center gap-3 border-b border-border h-16">
+        <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center font-display font-bold text-primary-foreground shrink-0 shadow-lg shadow-primary/20">
+          P
         </div>
 
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {nav.map((item) => (
+        {(!collapsed || isMobile) ? (
+          <div className="flex-1 min-w-0">
+            <span className="font-display font-bold text-lg">
+              Platz<span className="gradient-text">Go!</span>
+            </span>
+            <p className="text-xs text-muted-foreground">Painel do gestor</p>
+          </div>
+        ) : null}
+
+        {isMobile ? (
+          <button
+            type="button"
+            onClick={() => setMobileOpen(false)}
+            className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground"
+            aria-label="Fechar menu"
+          >
+            <X size={20} />
+          </button>
+        ) : null}
+      </div>
+
+      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+        {nav.map((item) => {
+          const active = isActive(item.href);
+          return (
             <Link
               key={item.href}
               href={item.href}
+              onClick={() => {
+                if (isMobile) setMobileOpen(false);
+              }}
               className={cn(
-                "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all",
-                isActive(item.href)
-                  ? "bg-primary/10 text-primary font-medium"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200 group relative",
+                active
+                  ? "text-primary font-medium"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
               )}
             >
-              <item.icon size={20} className="shrink-0" />
-              {!collapsed ? <span>{item.label}</span> : null}
+              {active ? <div className="absolute inset-0 rounded-xl bg-primary/8 glow-border" /> : null}
+              <item.icon
+                size={20}
+                className={cn(
+                  "shrink-0 relative z-10 transition-colors",
+                  active && "drop-shadow-[0_0_6px_hsl(72_100%_50%/0.5)]"
+                )}
+              />
+              {(!collapsed || isMobile) ? <span className="relative z-10">{item.label}</span> : null}
+              {active && (!collapsed || isMobile) ? (
+                <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary relative z-10 shadow-[0_0_6px_hsl(72_100%_50%/0.6)]" />
+              ) : null}
             </Link>
-          ))}
-        </nav>
+          );
+        })}
+      </nav>
 
-        <div className="p-3 border-t border-border space-y-1">
+      <div className="p-3 border-t border-border space-y-0.5">
+        {!isMobile ? (
           <button
             type="button"
             onClick={() => setCollapsed((s) => !s)}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all"
           >
-            <ChevronLeft size={20} className={cn("shrink-0 transition-transform", collapsed && "rotate-180")} />
+            <ChevronLeft
+              size={20}
+              className={cn("shrink-0 transition-transform duration-300", collapsed && "rotate-180")}
+            />
             {!collapsed ? <span>Recolher</span> : null}
           </button>
-          <button
-            type="button"
-            onClick={() => signOut({ callbackUrl: signOutCallbackUrl })}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
-          >
-            <LogOut size={20} className="shrink-0" />
-            {!collapsed ? <span>Sair</span> : null}
-          </button>
-        </div>
+        ) : null}
+
+        <button
+          type="button"
+          onClick={() => signOut({ callbackUrl: signOutCallbackUrl })}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all"
+        >
+          <LogOut size={20} className="shrink-0" />
+          {(!collapsed || isMobile) ? <span>Sair</span> : null}
+        </button>
+      </div>
+    </>
+  );
+
+  return (
+    <div className="min-h-screen bg-background flex">
+      {isMobile && mobileOpen ? (
+        <button
+          type="button"
+          aria-label="Fechar menu"
+          className="fixed inset-0 bg-foreground/60 backdrop-blur-sm z-40"
+          onClick={() => setMobileOpen(false)}
+        />
+      ) : null}
+
+      <aside
+        className={cn(
+          "bg-card border-r border-border flex flex-col h-full z-50",
+          isMobile
+            ? cn("fixed transition-transform duration-300 w-72", mobileOpen ? "translate-x-0" : "-translate-x-full")
+            : cn("fixed transition-all duration-300", collapsed ? "w-[72px]" : "w-64")
+        )}
+      >
+        {sidebarContent}
       </aside>
 
-      <main className={cn("flex-1 transition-all duration-300", collapsed ? "ml-[72px]" : "ml-64")}>
-        <header className="h-16 border-b border-border flex items-center justify-between px-6 bg-card/50 backdrop-blur-sm sticky top-0 z-30">
-          <div>
-            <p className="text-xs text-muted-foreground">{todayLabel}</p>
+      <main
+        className={cn(
+          "flex-1 transition-all duration-300",
+          isMobile ? "ml-0" : collapsed ? "ml-[72px]" : "ml-64"
+        )}
+      >
+        <header className="h-16 border-b border-border flex items-center justify-between px-4 sm:px-6 bg-card/50 backdrop-blur-sm sticky top-0 z-30">
+          <div className="flex items-center gap-3">
+            {isMobile ? (
+              <button
+                type="button"
+                onClick={() => setMobileOpen(true)}
+                className="p-2 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Abrir menu"
+              >
+                <Menu size={20} />
+              </button>
+            ) : null}
+            <p className="text-xs text-muted-foreground hidden sm:block">{todayLabel}</p>
           </div>
+
           <div className="flex items-center gap-3">
             <Link
               href="/dashboard/notificacoes"
@@ -227,15 +327,24 @@ function DashboardLayoutShell(props: {
             >
               <Bell size={18} />
             </Link>
-            <div className="w-9 h-9 rounded-full gradient-primary flex items-center justify-center font-display font-bold text-sm text-primary-foreground">
-              {establishmentInitials || "A"}
+            <div className="w-9 h-9 rounded-full gradient-primary flex items-center justify-center font-display font-bold text-sm text-primary-foreground shadow-lg shadow-primary/20 overflow-hidden">
+              {props.establishmentProfile?.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={props.establishmentProfile.imageUrl}
+                  alt={props.establishmentProfile.name || "Estabelecimento"}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                establishmentInitials || "A"
+              )}
             </div>
           </div>
         </header>
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {showApprovalBanner ? (
-            <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            <div className="mb-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
               {props.approvalStatus === "REJECTED" ? (
                 <div className="space-y-2">
                   <p>
@@ -244,7 +353,7 @@ function DashboardLayoutShell(props: {
                   </p>
                   <p>
                     Ajuste os dados em{" "}
-                    <Link href="/dashboard/admin" className="font-semibold underline">
+                    <Link href="/dashboard/admin" className="font-semibold underline text-foreground">
                       Configuracoes
                     </Link>{" "}
                     e reenviar para aprovacao.

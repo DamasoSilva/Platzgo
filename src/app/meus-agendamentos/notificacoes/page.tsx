@@ -155,8 +155,8 @@ export default async function MyNotificationsHistoryPage({
       <div className="mx-auto max-w-4xl px-6 pb-10">
         <div className="mt-6 flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Histórico de notificações</h1>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Inclui notificações excluídas.</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground dark:text-foreground">Histórico de notificações</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Inclui notificações excluídas.</p>
           </div>
 
           <Link
@@ -170,11 +170,11 @@ export default async function MyNotificationsHistoryPage({
         <form method="get" className="mt-4 rounded-3xl ph-surface p-4">
           <div className="flex flex-wrap items-end gap-3">
             <div>
-              <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Status</label>
+              <label className="block text-[11px] font-semibold text-muted-foreground">Status</label>
               <select
                 name="status"
                 defaultValue={status}
-                className="mt-1 h-10 rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                className="mt-1 h-10 rounded-xl bg-secondary px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary dark:bg-secondary dark:text-foreground"
               >
                 <option value="all">Todas</option>
                 <option value="active">Ativas</option>
@@ -183,11 +183,11 @@ export default async function MyNotificationsHistoryPage({
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Leitura</label>
+              <label className="block text-[11px] font-semibold text-muted-foreground">Leitura</label>
               <select
                 name="read"
                 defaultValue={read}
-                className="mt-1 h-10 rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                className="mt-1 h-10 rounded-xl bg-secondary px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary dark:bg-secondary dark:text-foreground"
               >
                 <option value="all">Todas</option>
                 <option value="unread">Não lidas</option>
@@ -196,11 +196,11 @@ export default async function MyNotificationsHistoryPage({
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Tipo</label>
+              <label className="block text-[11px] font-semibold text-muted-foreground">Tipo</label>
               <select
                 name="type"
                 defaultValue={typeParam}
-                className="mt-1 h-10 rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                className="mt-1 h-10 rounded-xl bg-secondary px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary dark:bg-secondary dark:text-foreground"
               >
                 <option value="all">Todos</option>
                 {Object.values(NotificationType).map((t) => (
@@ -212,53 +212,53 @@ export default async function MyNotificationsHistoryPage({
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">De</label>
+              <label className="block text-[11px] font-semibold text-muted-foreground">De</label>
               <input
                 type="date"
                 name="from"
                 defaultValue={from}
-                className="mt-1 h-10 rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                className="mt-1 h-10 rounded-xl bg-secondary px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary dark:bg-secondary dark:text-foreground"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Até</label>
+              <label className="block text-[11px] font-semibold text-muted-foreground">Até</label>
               <input
                 type="date"
                 name="to"
                 defaultValue={to}
-                className="mt-1 h-10 rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                className="mt-1 h-10 rounded-xl bg-secondary px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary dark:bg-secondary dark:text-foreground"
               />
             </div>
 
             <div className="min-w-[220px] flex-1">
-              <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Busca</label>
+              <label className="block text-[11px] font-semibold text-muted-foreground">Busca</label>
               <input
                 type="text"
                 name="q"
                 defaultValue={q}
                 placeholder="Título ou mensagem"
-                className="mt-1 h-10 w-full rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                className="mt-1 h-10 w-full rounded-xl bg-secondary px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary dark:bg-secondary dark:text-foreground"
               />
             </div>
 
             <div className="min-w-[220px] flex-1">
-              <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Booking ID</label>
+              <label className="block text-[11px] font-semibold text-muted-foreground">Booking ID</label>
               <input
                 type="text"
                 name="bookingId"
                 defaultValue={bookingId}
                 placeholder="Opcional"
-                className="mt-1 h-10 w-full rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                className="mt-1 h-10 w-full rounded-xl bg-secondary px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary dark:bg-secondary dark:text-foreground"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Limite</label>
+              <label className="block text-[11px] font-semibold text-muted-foreground">Limite</label>
               <select
                 name="take"
                 defaultValue={String(take)}
-                className="mt-1 h-10 rounded-xl bg-zinc-100 px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-[#CCFF00] dark:bg-zinc-800 dark:text-zinc-100"
+                className="mt-1 h-10 rounded-xl bg-secondary px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary dark:bg-secondary dark:text-foreground"
               >
                 <option value="50">50</option>
                 <option value="100">100</option>
@@ -269,7 +269,7 @@ export default async function MyNotificationsHistoryPage({
 
             <button
               type="submit"
-              className="rounded-full bg-[#CCFF00] px-5 py-2 text-sm font-bold text-black hover:scale-105 transition-all"
+              className="rounded-full bg-primary px-5 py-2 text-sm font-bold text-primary-foreground hover:scale-105 transition-all"
             >
               Aplicar
             </button>
@@ -284,11 +284,11 @@ export default async function MyNotificationsHistoryPage({
         </form>
 
         <div className="mt-4 space-y-3">
-          <div className="rounded-2xl ph-surface p-4 text-sm text-zinc-700 dark:text-zinc-300">
+          <div className="rounded-2xl ph-surface p-4 text-sm text-muted-foreground dark:text-muted-foreground">
             <p>
               Mostrando <span className="font-semibold">{notifications.length}</span> notificação(ões).
             </p>
-            <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Filtros: {filterSummary.join(" • ")}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Filtros: {filterSummary.join(" • ")}</p>
           </div>
 
           {notifications.map((n) => (
@@ -297,35 +297,35 @@ export default async function MyNotificationsHistoryPage({
               className={
                 "rounded-2xl border p-4 " +
                 (n.deletedAt
-                  ? "border-zinc-200 bg-zinc-50 opacity-80 dark:border-zinc-800 dark:bg-zinc-950"
+                  ? "border-border bg-card opacity-80 dark:border-border dark:bg-card"
                   : n.readAt
-                    ? "border-zinc-200 bg-white/70 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/50"
-                    : "border-[#CCFF00]/40 bg-[#CCFF00]/10 dark:border-[#CCFF00]/40 dark:bg-[#CCFF00]/10")
+                    ? "border-border bg-card/70 backdrop-blur dark:border-border dark:bg-card/50"
+                    : "border-primary/40 bg-primary/10 dark:border-primary/40 dark:bg-primary/10")
               }
             >
               <summary className="flex cursor-pointer list-none items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                  <p className="truncate text-sm font-semibold text-foreground dark:text-foreground">
                     {n.title}
                     {n.deletedAt ? " (excluída)" : ""}
                   </p>
-                  <p className="mt-1 text-[11px] text-zinc-500 dark:text-zinc-500">{formatDateTimeBR(n.createdAt)}</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground/80 dark:text-muted-foreground/80">{formatDateTimeBR(n.createdAt)}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   {!n.readAt && !n.deletedAt ? (
-                    <span className="rounded-full bg-[#CCFF00]/80 px-2 py-1 text-[10px] font-bold text-black">NOVA</span>
+                    <span className="rounded-full bg-primary/80 px-2 py-1 text-[10px] font-bold text-primary-foreground">NOVA</span>
                   ) : null}
                 </div>
               </summary>
 
-              <div className="mt-3 border-t border-zinc-200 pt-3 text-xs text-zinc-600 dark:border-zinc-800 dark:text-zinc-300">
+              <div className="mt-3 border-t border-border pt-3 text-xs text-muted-foreground dark:border-border dark:text-muted-foreground">
                 <p>{n.body}</p>
 
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   {n.bookingId ? (
                     <Link
                       href={`/meus-agendamentos/${n.bookingId}`}
-                      className="rounded-full border border-zinc-200 bg-white px-3 py-2 text-xs font-bold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                      className="rounded-full border border-border bg-card px-3 py-2 text-xs font-bold text-foreground hover:bg-card dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-secondary"
                     >
                       Ver
                     </Link>
@@ -335,7 +335,7 @@ export default async function MyNotificationsHistoryPage({
                     <form action={restoreMyNotification.bind(null, n.id)}>
                       <button
                         type="submit"
-                        className="rounded-full border border-zinc-200 bg-white px-3 py-2 text-xs font-bold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                        className="rounded-full border border-border bg-card px-3 py-2 text-xs font-bold text-foreground hover:bg-card dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-secondary"
                       >
                         Restaurar
                       </button>
@@ -344,7 +344,7 @@ export default async function MyNotificationsHistoryPage({
                     <form action={deleteMyNotification.bind(null, n.id)}>
                       <button
                         type="submit"
-                        className="rounded-full border border-zinc-200 bg-white px-3 py-2 text-xs font-bold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                        className="rounded-full border border-border bg-card px-3 py-2 text-xs font-bold text-foreground hover:bg-card dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-secondary"
                       >
                         Excluir
                       </button>
@@ -357,7 +357,7 @@ export default async function MyNotificationsHistoryPage({
 
           {notifications.length === 0 ? (
             <div className="rounded-3xl ph-surface p-6">
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">Você ainda não tem notificações.</p>
+              <p className="text-sm text-muted-foreground">Você ainda não tem notificações.</p>
             </div>
           ) : null}
         </div>

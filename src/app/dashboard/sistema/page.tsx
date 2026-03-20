@@ -47,10 +47,10 @@ function formatMinutesSince(d: Date | null | undefined): string {
 }
 
 function badgeClass(status: OutboundEmailStatus) {
-  if (status === OutboundEmailStatus.SENT) return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-200";
-  if (status === OutboundEmailStatus.PENDING) return "bg-amber-500/15 text-amber-800 dark:text-amber-200";
-  if (status === OutboundEmailStatus.SENDING) return "bg-sky-500/15 text-sky-800 dark:text-sky-200";
-  return "bg-rose-500/15 text-rose-800 dark:text-rose-200";
+  if (status === OutboundEmailStatus.SENT) return "bg-primary/15 text-primary";
+  if (status === OutboundEmailStatus.PENDING) return "bg-amber-500/15 text-amber-600";
+  if (status === OutboundEmailStatus.SENDING) return "bg-sky-500/15 text-sky-600";
+  return "bg-destructive/15 text-destructive";
 }
 
 export default async function DashboardSistemaPage() {
@@ -216,8 +216,8 @@ export default async function DashboardSistemaPage() {
       <div className="ph-card p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Sistema</h1>
-            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground dark:text-foreground">Sistema</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
               Saúde do sistema e indicadores do estabelecimento{establishmentName ? `: ${establishmentName}` : ""}.
             </p>
           </div>
@@ -235,55 +235,55 @@ export default async function DashboardSistemaPage() {
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-            <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">SMTP</p>
-            <p className="mt-1 text-lg font-bold text-zinc-900 dark:text-zinc-50">{smtpOk ? "OK" : "Não configurado"}</p>
-            <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Precisa de SMTP_* para enviar.</p>
+          <div className="rounded-2xl border border-border bg-card p-4 dark:border-border dark:bg-card">
+            <p className="text-xs font-semibold text-muted-foreground">SMTP</p>
+            <p className="mt-1 text-lg font-bold text-foreground dark:text-foreground">{smtpOk ? "OK" : "Não configurado"}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Precisa de SMTP_* para enviar.</p>
           </div>
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-            <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Endpoint interno</p>
-            <p className="mt-1 text-lg font-bold text-zinc-900 dark:text-zinc-50">{queueSecretOk ? "Protegido" : "Sem secret"}</p>
-            <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">EMAIL_QUEUE_SECRET</p>
+          <div className="rounded-2xl border border-border bg-card p-4 dark:border-border dark:bg-card">
+            <p className="text-xs font-semibold text-muted-foreground">Endpoint interno</p>
+            <p className="mt-1 text-lg font-bold text-foreground dark:text-foreground">{queueSecretOk ? "Protegido" : "Sem secret"}</p>
+            <p className="mt-1 text-xs text-muted-foreground">EMAIL_QUEUE_SECRET</p>
           </div>
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-            <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Fila de e-mails</p>
-            <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+          <div className="rounded-2xl border border-border bg-card p-4 dark:border-border dark:bg-card">
+            <p className="text-xs font-semibold text-muted-foreground">Fila de e-mails</p>
+            <p className="mt-1 text-sm font-semibold text-foreground dark:text-foreground">
               PENDING: {countByStatus(OutboundEmailStatus.PENDING)} • SENDING: {countByStatus(OutboundEmailStatus.SENDING)}
             </p>
-            <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+            <p className="mt-1 text-sm font-semibold text-foreground dark:text-foreground">
               FAILED: {countByStatus(OutboundEmailStatus.FAILED)} • SENT: {countByStatus(OutboundEmailStatus.SENT)}
             </p>
-            <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
+            <p className="mt-2 text-xs text-muted-foreground">
               Prontos para envio agora: {dueNowCount} • Último envio: {latestSentAt ? formatMinutesSince(latestSentAt) : "—"}
             </p>
-            <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+            <p className="mt-1 text-xs text-muted-foreground">
               Mais antigo (due): {oldestDueAt ? formatMinutesSince(oldestDueAt) : "—"}
             </p>
           </div>
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-            <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Agendamentos hoje</p>
-            <p className="mt-1 text-lg font-bold text-zinc-900 dark:text-zinc-50">{todayTotal}</p>
-            <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+          <div className="rounded-2xl border border-border bg-card p-4 dark:border-border dark:bg-card">
+            <p className="text-xs font-semibold text-muted-foreground">Agendamentos hoje</p>
+            <p className="mt-1 text-lg font-bold text-foreground dark:text-foreground">{todayTotal}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
               PENDING: {countBookings(bookingsToday, "PENDING")} • CONFIRMED: {countBookings(bookingsToday, "CONFIRMED")} • CANCELLED: {countBookings(bookingsToday, "CANCELLED")}
             </p>
           </div>
 
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-            <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Próximos 7 dias</p>
-            <p className="mt-1 text-lg font-bold text-zinc-900 dark:text-zinc-50">{next7Total}</p>
-            <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+          <div className="rounded-2xl border border-border bg-card p-4 dark:border-border dark:bg-card">
+            <p className="text-xs font-semibold text-muted-foreground">Próximos 7 dias</p>
+            <p className="mt-1 text-lg font-bold text-foreground dark:text-foreground">{next7Total}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
               PENDING: {countBookings(bookingsNext7Days, "PENDING")} • CONFIRMED: {countBookings(bookingsNext7Days, "CONFIRMED")}
             </p>
           </div>
 
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-            <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Mensalidades</p>
-            <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-50">PENDING: {monthlyPassPending}</p>
-            <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-50">ACTIVE: {monthlyPassActive}</p>
-            <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">Não lidas: {unreadNotifications} notificações</p>
+          <div className="rounded-2xl border border-border bg-card p-4 dark:border-border dark:bg-card">
+            <p className="text-xs font-semibold text-muted-foreground">Mensalidades</p>
+            <p className="mt-1 text-sm font-semibold text-foreground dark:text-foreground">PENDING: {monthlyPassPending}</p>
+            <p className="mt-1 text-sm font-semibold text-foreground dark:text-foreground">ACTIVE: {monthlyPassActive}</p>
+            <p className="mt-2 text-xs text-muted-foreground">Não lidas: {unreadNotifications} notificações</p>
           </div>
         </div>
       </div>
@@ -291,8 +291,8 @@ export default async function DashboardSistemaPage() {
       <div className="ph-card p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Acessos recentes</h2>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+            <h2 className="text-lg font-semibold text-foreground dark:text-foreground">Acessos recentes</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
               Últimos acessos registrados{establishmentName ? ` para ${establishmentName}` : ""}.
             </p>
           </div>
@@ -301,7 +301,7 @@ export default async function DashboardSistemaPage() {
         <div className="mt-4 overflow-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-zinc-500">
+              <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground/80">
                 <th className="py-2 pr-4">Data</th>
                 <th className="py-2 pr-4">Usuário</th>
                 <th className="py-2 pr-4">Rota</th>
@@ -310,32 +310,32 @@ export default async function DashboardSistemaPage() {
                 <th className="py-2 pr-4">Agente</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+            <tbody className="divide-y divide-border dark:divide-border">
               {accessLogsTyped.map((log) => (
-                <tr key={log.id} className="text-zinc-800 dark:text-zinc-200">
+                <tr key={log.id} className="text-foreground">
                   <td className="py-2 pr-4 whitespace-nowrap">{formatDt(log.createdAt)}</td>
                   <td className="py-2 pr-4">
                     <div className="text-xs font-semibold">{log.user?.name ?? log.user?.email ?? "Visitante"}</div>
-                    {log.user?.email ? <div className="text-[11px] text-zinc-500">{log.user.email}</div> : null}
+                    {log.user?.email ? <div className="text-[11px] text-muted-foreground/80">{log.user.email}</div> : null}
                   </td>
                   <td className="py-2 pr-4 whitespace-nowrap">
-                    <span className="rounded-full bg-zinc-100 px-2 py-1 text-xs font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+                    <span className="rounded-full bg-secondary px-2 py-1 text-xs font-semibold text-muted-foreground dark:bg-secondary dark:text-muted-foreground">
                       {log.method}
                     </span>
-                    <span className="ml-2 text-xs text-zinc-600 dark:text-zinc-400">{log.path}</span>
+                    <span className="ml-2 text-xs text-muted-foreground">{log.path}</span>
                   </td>
                   <td className="py-2 pr-4 whitespace-nowrap text-xs">
                     {log.court?.name ?? "—"}
                   </td>
                   <td className="py-2 pr-4 text-xs">{log.ip ?? "—"}</td>
-                  <td className="py-2 pr-4 text-[11px] text-zinc-500">
+                  <td className="py-2 pr-4 text-[11px] text-muted-foreground/80">
                     {log.userAgent ? log.userAgent.slice(0, 60) : "—"}
                   </td>
                 </tr>
               ))}
               {!accessLogs.length ? (
                 <tr>
-                  <td className="py-4 text-center text-sm text-zinc-500" colSpan={6}>
+                  <td className="py-4 text-center text-sm text-muted-foreground/80" colSpan={6}>
                     Nenhum acesso registrado.
                   </td>
                 </tr>
@@ -348,15 +348,15 @@ export default async function DashboardSistemaPage() {
       <div className="ph-card p-6">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">E-mails recentes</h2>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Últimos 50 itens da fila.</p>
+            <h2 className="text-lg font-semibold text-foreground dark:text-foreground">E-mails recentes</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Últimos 50 itens da fila.</p>
           </div>
         </div>
 
         <div className="mt-4 overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="text-left text-xs text-zinc-500 dark:text-zinc-400">
+              <tr className="text-left text-xs text-muted-foreground/80 dark:text-muted-foreground">
                 <th className="py-2 pr-4">Status</th>
                 <th className="py-2 pr-4">Para</th>
                 <th className="py-2 pr-4">Assunto</th>
@@ -367,7 +367,7 @@ export default async function DashboardSistemaPage() {
                 <th className="py-2 pr-4">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-900">
+            <tbody className="divide-y divide-border dark:divide-border">
               {latestTyped.map((e) => (
                 <tr key={e.id} className="align-top">
                   <td className="py-3 pr-4">
@@ -380,17 +380,17 @@ export default async function DashboardSistemaPage() {
                       </div>
                     ) : null}
                     {e.providerMessageId ? (
-                      <div className="mt-1 max-w-[260px] text-[11px] text-zinc-500 dark:text-zinc-500">
+                      <div className="mt-1 max-w-[260px] text-[11px] text-muted-foreground/80 dark:text-muted-foreground/80">
                         id: {e.providerMessageId}
                       </div>
                     ) : null}
                   </td>
-                  <td className="py-3 pr-4 max-w-[220px] break-words text-zinc-900 dark:text-zinc-50">{e.to}</td>
-                  <td className="py-3 pr-4 max-w-[360px] break-words text-zinc-900 dark:text-zinc-50">{e.subject}</td>
-                  <td className="py-3 pr-4 text-zinc-700 dark:text-zinc-300">{e.attempts}/{e.maxAttempts}</td>
-                  <td className="py-3 pr-4 text-zinc-700 dark:text-zinc-300">{formatDt(e.nextAttemptAt)}</td>
-                  <td className="py-3 pr-4 text-zinc-700 dark:text-zinc-300">{formatDt(e.createdAt)}</td>
-                  <td className="py-3 pr-4 text-zinc-700 dark:text-zinc-300">{formatDt(e.sentAt)}</td>
+                  <td className="py-3 pr-4 max-w-[220px] break-words text-foreground dark:text-foreground">{e.to}</td>
+                  <td className="py-3 pr-4 max-w-[360px] break-words text-foreground dark:text-foreground">{e.subject}</td>
+                  <td className="py-3 pr-4 text-muted-foreground dark:text-muted-foreground">{e.attempts}/{e.maxAttempts}</td>
+                  <td className="py-3 pr-4 text-muted-foreground dark:text-muted-foreground">{formatDt(e.nextAttemptAt)}</td>
+                  <td className="py-3 pr-4 text-muted-foreground dark:text-muted-foreground">{formatDt(e.createdAt)}</td>
+                  <td className="py-3 pr-4 text-muted-foreground dark:text-muted-foreground">{formatDt(e.sentAt)}</td>
                   <td className="py-3 pr-4">
                     {e.status !== OutboundEmailStatus.SENT ? (
                       <form action={retryOutboundEmail}>
@@ -398,7 +398,7 @@ export default async function DashboardSistemaPage() {
                         <button type="submit" className="ph-button-secondary">Reenviar</button>
                       </form>
                     ) : (
-                      <span className="text-xs text-zinc-500 dark:text-zinc-500">—</span>
+                      <span className="text-xs text-muted-foreground/80 dark:text-muted-foreground/80">—</span>
                     )}
                   </td>
                 </tr>

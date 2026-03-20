@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { Calendar, ChevronRight, Plus, Trophy, Users } from "lucide-react";
 
 import { formatBRLFromCents } from "@/lib/utils/currency";
 import { formatSportLabel } from "@/lib/utils/sport";
@@ -27,6 +28,14 @@ function statusLabel(status: string) {
   return "Rascunho";
 }
 
+function statusPillClass(status: string, isFull: boolean) {
+  if (status === "FINISHED") return "bg-muted text-muted-foreground border border-border";
+  if (status === "RUNNING") return "bg-amber-500/15 text-amber-600 border border-amber-500/30";
+  if (status === "OPEN" && isFull) return "bg-amber-500/15 text-amber-600 border border-amber-500/30";
+  if (status === "OPEN") return "bg-primary/10 text-primary border border-primary/20";
+  return "bg-secondary text-muted-foreground border border-border";
+}
+
 export function DashboardTournamentsClient(props: { tournaments: DashboardTournamentListItem[] }) {
   const adminTournaments = props.tournaments;
 
@@ -46,7 +55,8 @@ export function DashboardTournamentsClient(props: { tournaments: DashboardTourna
             Organize inscricoes, chaveamento e resultados.
           </p>
         </div>
-        <Link href="/dashboard/torneios/novo" className="ph-button">
+        <Link href="/dashboard/torneios/novo" className="ph-button inline-flex items-center gap-2">
+          <Plus size={16} />
           Novo torneio
         </Link>
       </div>
@@ -84,57 +94,70 @@ export function DashboardTournamentsClient(props: { tournaments: DashboardTourna
         </div>
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        {filtered.map((tournament) => (
-          <div key={tournament.id} className="ph-card p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <span className="rounded-full bg-secondary/60 px-3 py-1 text-xs text-muted-foreground">
-                  {statusLabel(tournament.status)}
-                </span>
-                <h3 className="mt-3 text-lg font-semibold text-foreground">{tournament.name}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {formatSportLabel(tournament.sport_type)} · {tournament.city ?? "-"}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-border bg-card/60 px-3 py-2 text-xs text-muted-foreground">
-                {tournament.registered_teams}/{tournament.max_teams} times
-              </div>
-            </div>
+      <div className="mt-6 space-y-3">
+        {filtered.map((tournament) => {
+          const registered = tournament.registered_teams;
+          const maxTeams = tournament.max_teams > 0 ? tournament.max_teams : 1;
+          const progress = Math.round((registered / maxTeams) * 100);
+          const isFull = registered >= maxTeams;
+          const statusText = tournament.status === "OPEN" && isFull ? "Lotado" : statusLabel(tournament.status);
 
-            <div className="mt-4 grid gap-3 text-sm text-muted-foreground md:grid-cols-2">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Taxa</p>
-                <p className="font-semibold text-foreground">
-                  {tournament.entry_fee_cents ? formatBRLFromCents(tournament.entry_fee_cents) : "Gratuito"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Formato</p>
-                <p className="font-semibold text-foreground">
-                  {tournament.format === "GROUPS_KO"
-                    ? "Grupos + mata-mata"
-                    : tournament.format === "LEAGUE"
-                      ? "Pontos corridos"
-                      : tournament.format === "SINGLE_ELIM"
-                        ? "Eliminatoria simples"
-                        : tournament.format === "DOUBLE_ELIM"
-                          ? "Eliminatoria dupla"
-                          : "Formato customizado"}
-                </p>
-              </div>
-            </div>
+          return (
+            <div key={tournament.id} className="block p-5 rounded-2xl bg-card border border-border hover:glow-border transition-all duration-300 group">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                      <Trophy size={16} className="text-primary" />
+                    </div>
+                    <h3 className="font-display font-semibold truncate text-foreground">{tournament.name}</h3>
+                  </div>
 
-            <div className="mt-5 flex flex-wrap gap-2">
-              <Link href={`/dashboard/torneios/${tournament.id}`} className="ph-button-secondary-sm">
-                Gerenciar
-              </Link>
-              <Link href={`/dashboard/torneios/${tournament.id}?tab=inscricoes`} className="ph-button-secondary-sm">
-                Inscricoes
-              </Link>
+                  <div className="flex flex-wrap gap-3 text-sm text-muted-foreground mt-2 ml-10">
+                    <span>{formatSportLabel(tournament.sport_type)} • {tournament.city ?? "-"}</span>
+                    <span className="flex items-center gap-1"><Users size={14} /> {registered}/{maxTeams}</span>
+                    <span className="flex items-center gap-1"><Calendar size={14} /> {tournament.entry_fee_cents ? formatBRLFromCents(tournament.entry_fee_cents) : "Gratuito"}</span>
+                  </div>
+
+                  <div className="ml-10 mt-3 h-1.5 rounded-full bg-secondary overflow-hidden max-w-xs">
+                    <div
+                      className={isFull ? "h-full rounded-full transition-all bg-yellow-500" : "h-full rounded-full transition-all gradient-primary"}
+                      style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+                    />
+                  </div>
+
+                  <p className="mt-3 ml-10 text-xs text-muted-foreground">
+                    {tournament.format === "GROUPS_KO"
+                      ? "Grupos + mata-mata"
+                      : tournament.format === "LEAGUE"
+                        ? "Pontos corridos"
+                        : tournament.format === "SINGLE_ELIM"
+                          ? "Eliminatoria simples"
+                          : tournament.format === "DOUBLE_ELIM"
+                            ? "Eliminatoria dupla"
+                            : "Formato customizado"}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap ${statusPillClass(tournament.status, isFull)}`}>
+                    {statusText}
+                  </span>
+                  <ChevronRight size={18} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                </div>
+              </div>
+
+              <div className="mt-5 flex flex-wrap gap-2">
+                <Link href={`/dashboard/torneios/${tournament.id}`} className="ph-button-secondary-sm">
+                  Gerenciar
+                </Link>
+                <Link href={`/dashboard/torneios/${tournament.id}?tab=inscricoes`} className="ph-button-secondary-sm">
+                  Inscricoes
+                </Link>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

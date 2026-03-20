@@ -138,12 +138,12 @@ export default async function SysadminUsersPage(props: {
       </div>
 
       {ok ? (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+        <div className="rounded-2xl border border-primary/30 bg-primary/10 p-4 text-sm text-primary">
           Ação concluída.
         </div>
       ) : null}
 
-      {err ? <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">{err}</div> : null}
+      {err ? <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">{err}</div> : null}
 
       <div className="space-y-4">
         <h2 className="text-lg font-semibold text-foreground">Estabelecimentos</h2>
@@ -162,7 +162,7 @@ export default async function SysadminUsersPage(props: {
                       WhatsApp: {est.owner?.whatsapp_number ?? "—"}
                     </p>
                     {!est.owner?.is_active ? (
-                      <p className="text-xs font-semibold text-red-700">
+                      <p className="text-xs font-semibold text-destructive">
                         Inativo: {est.owner?.inactive_reason ?? "motivo não informado"}
                       </p>
                     ) : null}
@@ -209,7 +209,7 @@ export default async function SysadminUsersPage(props: {
                     <p className="text-xs text-muted-foreground">{u.email}</p>
                     <p className="text-xs text-muted-foreground">WhatsApp: {u.whatsapp_number ?? "—"}</p>
                     {!u.is_active ? (
-                      <p className="text-xs font-semibold text-red-700">
+                      <p className="text-xs font-semibold text-destructive">
                         Inativo: {u.inactive_reason ?? "motivo não informado"}
                       </p>
                     ) : null}
@@ -253,7 +253,7 @@ export default async function SysadminUsersPage(props: {
                     <p className="text-sm font-semibold text-foreground">{u.name ?? "Sem nome"}</p>
                     <p className="text-xs text-muted-foreground">{u.email}</p>
                     {!u.is_active ? (
-                      <p className="text-xs font-semibold text-red-700">
+                      <p className="text-xs font-semibold text-destructive">
                         Inativo: {u.inactive_reason ?? "motivo não informado"}
                       </p>
                     ) : null}

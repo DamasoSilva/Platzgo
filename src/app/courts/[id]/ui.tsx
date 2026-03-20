@@ -745,7 +745,7 @@ export function CourtDetailsClient(props: {
       />
 
       {bookingAlert ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4">
           <div className="w-full max-w-lg rounded-3xl border border-border bg-card p-6 text-foreground shadow-2xl">
             <div className="text-lg font-semibold">{bookingAlert.title}</div>
             <div className="mt-4 space-y-2 text-sm">
@@ -787,7 +787,7 @@ export function CourtDetailsClient(props: {
       ) : null}
 
       {cpfPromptOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4">
           <div className="w-full max-w-md rounded-3xl border border-border bg-card p-6 text-foreground shadow-2xl">
             <div className="text-lg font-semibold">CPF/CNPJ necessario</div>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -834,7 +834,7 @@ export function CourtDetailsClient(props: {
       ) : null}
 
       {pixModalOpen && (pixPayload || pixQrBase64) ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/85 px-4">
           <div className="w-full max-w-md rounded-3xl border border-border bg-card p-6 text-foreground shadow-2xl">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">

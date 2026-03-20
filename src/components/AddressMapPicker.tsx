@@ -99,7 +99,7 @@ export function AddressMapPicker(props: AddressMapPickerProps) {
 
   return (
     <div className="space-y-2">
-      <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Endereço</label>
+      <label className="block text-xs font-medium text-muted-foreground dark:text-muted-foreground">Endereço</label>
       <input
         ref={inputRef}
         placeholder="Digite e selecione um endereço"
@@ -114,7 +114,7 @@ export function AddressMapPicker(props: AddressMapPickerProps) {
       )}
       <div
         ref={mapRef}
-        className="h-72 w-full rounded-3xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900"
+        className="h-72 w-full rounded-3xl border border-border bg-secondary dark:border-border dark:bg-card"
       />
     </div>
   );

@@ -49,7 +49,7 @@ function statusLabel(status: string) {
 }
 
 function statusClass(status: string) {
-  if (status === "OPEN") return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300";
+  if (status === "OPEN") return "bg-primary/15 text-primary dark:text-emerald-300";
   if (status === "RUNNING") return "bg-amber-500/15 text-amber-700 dark:text-amber-300";
   if (status === "FINISHED") return "bg-secondary text-muted-foreground";
   if (status === "CANCELLED") return "bg-rose-500/15 text-rose-700 dark:text-rose-300";

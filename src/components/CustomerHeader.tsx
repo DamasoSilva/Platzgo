@@ -129,7 +129,7 @@ export function CustomerHeader(props: Props) {
 
   const headerClass =
     variant === "light"
-      ? "fixed top-0 left-0 right-0 z-50 bg-white/80 text-zinc-900 backdrop-blur border-b border-zinc-200/60"
+      ? "fixed top-0 left-0 right-0 z-50 bg-card/90 text-foreground backdrop-blur border-b border-border"
       : "fixed top-0 left-0 right-0 z-50 glass";
 
   return (

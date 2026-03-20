@@ -190,15 +190,15 @@ export default async function EstablishmentSlugPage(props: {
 
         <div className="mx-auto max-w-5xl px-6 pb-12">
           <div>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400">Selecione a quadra para ver os horarios disponiveis</p>
-            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">{est.name}</h1>
-            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{est.address_text}</p>
+            <p className="text-xs text-muted-foreground dark:text-muted-foreground">Selecione a quadra para ver os horarios disponiveis</p>
+            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-foreground dark:text-foreground">{est.name}</h1>
+            <p className="mt-2 text-sm text-muted-foreground dark:text-muted-foreground">{est.address_text}</p>
             {instagramUrl ? (
               <a
                 href={instagramUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-2 inline-flex items-center text-sm font-semibold text-zinc-900 underline decoration-zinc-300 underline-offset-4 dark:text-zinc-100 dark:decoration-zinc-600"
+                className="mt-2 inline-flex items-center text-sm font-semibold text-foreground underline decoration-border underline-offset-4 dark:text-foreground dark:decoration-border"
               >
                 Instagram
               </a>
@@ -208,7 +208,7 @@ export default async function EstablishmentSlugPage(props: {
           <SearchPrefillClient hasDayParam={hasDayParam} hasTimeParam={hasTimeParam} basePath={basePath} />
 
           {coverUrl ? (
-            <div className="mt-6 h-72 overflow-hidden rounded-3xl border border-zinc-200 bg-black/20 dark:border-zinc-800 dark:bg-black/30">
+            <div className="mt-6 h-72 overflow-hidden rounded-3xl border border-border bg-background/40 dark:border-border dark:bg-background/50">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={coverUrl} alt={`Foto de ${est.name}`} className="h-full w-full object-contain" />
             </div>
@@ -220,15 +220,15 @@ export default async function EstablishmentSlugPage(props: {
               return (
                 <div key={c.id} className="overflow-hidden rounded-3xl ph-surface">
                   {courtCover ? (
-                    <div className="h-44 w-full bg-black/20 dark:bg-black/30">
+                    <div className="h-44 w-full bg-background/40 dark:bg-background/50">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={courtCover} alt={`Foto da quadra ${c.name}`} className="h-full w-full object-contain" />
                     </div>
                   ) : null}
 
                   <div className="p-5">
-                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{c.name}</p>
-                    <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                    <p className="text-sm font-semibold text-foreground dark:text-foreground">{c.name}</p>
+                    <p className="mt-1 text-xs text-muted-foreground dark:text-muted-foreground">
                       {formatSportLabel(c.sport_type)} • {formatBRLFromCents(c.price_per_hour)}/h
                     </p>
 
@@ -260,7 +260,7 @@ export default async function EstablishmentSlugPage(props: {
           </div>
 
           {est.courts.length === 0 ? (
-            <div className="mt-6 rounded-3xl ph-surface p-6 text-sm text-zinc-700 dark:text-zinc-200">
+            <div className="mt-6 rounded-3xl ph-surface p-6 text-sm text-muted-foreground dark:text-muted-foreground">
               Nenhuma quadra ativa encontrada neste estabelecimento.
             </div>
           ) : null}

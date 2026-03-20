@@ -191,7 +191,7 @@ export function DashboardTournamentDetailClient(props: Props) {
                   <span className="rounded-full bg-secondary/60 px-3 py-1 text-xs text-muted-foreground">
                     {item.status}
                   </span>
-                  <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs text-emerald-700 dark:text-emerald-300">
+                  <span className="rounded-full bg-primary/100/15 px-3 py-1 text-xs text-primary dark:text-emerald-300">
                     {item.paid ? "Pago" : "Pendente"}
                   </span>
                   <button

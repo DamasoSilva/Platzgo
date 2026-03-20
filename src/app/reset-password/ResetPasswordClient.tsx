@@ -107,21 +107,21 @@ export function ResetPasswordClient(props: { initialEmail?: string | null; sent?
 
   return (
     <div className="ph-page">
-      <div className="pointer-events-none absolute -top-48 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-[#CCFF00]/15 blur-3xl" />
+      <div className="pointer-events-none absolute -top-48 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-primary/15 blur-3xl" />
       <div className="relative mx-auto max-w-md px-6 py-16">
-        <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Redefinir senha</h1>
-        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground dark:text-foreground">Redefinir senha</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
           Informe seu email. Enviaremos um código para redefinir sua senha.
         </p>
 
         {info || props.sent ? (
-          <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+          <div className="mt-4 rounded-2xl border border-primary/30 bg-primary/10 p-4 text-sm text-primary">
             {info ?? "Se existir uma conta com esse email, enviamos um código para redefinir a senha."}
           </div>
         ) : null}
 
         {error ? (
-          <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
+          <div className="mt-4 rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
             {error}
           </div>
         ) : null}
@@ -129,7 +129,7 @@ export function ResetPasswordClient(props: { initialEmail?: string | null; sent?
         {!verified ? (
           <form className="ph-card mt-6 p-6 space-y-4" onSubmit={handleVerify}>
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Email</label>
+              <label className="block text-xs font-medium text-muted-foreground dark:text-muted-foreground">Email</label>
               <input
                 type="email"
                 className="ph-input mt-2"
@@ -140,7 +140,7 @@ export function ResetPasswordClient(props: { initialEmail?: string | null; sent?
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Código</label>
+              <label className="block text-xs font-medium text-muted-foreground dark:text-muted-foreground">Código</label>
               <input
                 type="text"
                 inputMode="numeric"
@@ -171,7 +171,7 @@ export function ResetPasswordClient(props: { initialEmail?: string | null; sent?
         {verified ? (
           <form className="ph-card mt-4 p-6 space-y-4" onSubmit={handleReset}>
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Nova senha</label>
+              <label className="block text-xs font-medium text-muted-foreground dark:text-muted-foreground">Nova senha</label>
               <input
                 type="password"
                 className="ph-input mt-2"
@@ -180,11 +180,11 @@ export function ResetPasswordClient(props: { initialEmail?: string | null; sent?
                 minLength={8}
                 required
               />
-              <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Mínimo de 8 caracteres.</p>
+              <p className="mt-1 text-xs text-muted-foreground">Mínimo de 8 caracteres.</p>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">Confirmar nova senha</label>
+              <label className="block text-xs font-medium text-muted-foreground dark:text-muted-foreground">Confirmar nova senha</label>
               <input
                 type="password"
                 className="ph-input mt-2"
@@ -210,8 +210,8 @@ export function ResetPasswordClient(props: { initialEmail?: string | null; sent?
           </form>
         ) : null}
 
-        <div className="mt-4 text-center text-sm text-zinc-600 dark:text-zinc-400">
-          <Link className="font-semibold text-zinc-900 underline dark:text-zinc-100" href="/signin">
+        <div className="mt-4 text-center text-sm text-muted-foreground">
+          <Link className="font-semibold text-foreground underline dark:text-foreground" href="/signin">
             Voltar para o login
           </Link>
         </div>

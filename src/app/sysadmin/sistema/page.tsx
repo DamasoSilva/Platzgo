@@ -45,10 +45,10 @@ function formatMinutesSince(d: Date | null | undefined): string {
 }
 
 function badgeClass(status: OutboundEmailStatus) {
-  if (status === OutboundEmailStatus.SENT) return "bg-emerald-500/15 text-emerald-700";
-  if (status === OutboundEmailStatus.PENDING) return "bg-amber-500/15 text-amber-800";
-  if (status === OutboundEmailStatus.SENDING) return "bg-sky-500/15 text-sky-800";
-  return "bg-rose-500/15 text-rose-800";
+  if (status === OutboundEmailStatus.SENT) return "bg-primary/15 text-primary";
+  if (status === OutboundEmailStatus.PENDING) return "bg-amber-500/15 text-amber-600";
+  if (status === OutboundEmailStatus.SENDING) return "bg-sky-500/15 text-sky-600";
+  return "bg-destructive/15 text-destructive";
 }
 
 export default async function SysadminSistemaPage() {
