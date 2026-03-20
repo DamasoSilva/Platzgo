@@ -54,7 +54,7 @@ function formatDateLong(dateStr: string) {
 }
 
 function statusLabel(status: string) {
-  if (status === "OPEN") return "Inscricoes abertas";
+  if (status === "OPEN") return "Inscri\u00e7\u00f5es abertas";
   if (status === "RUNNING") return "Em andamento";
   if (status === "FINISHED") return "Finalizado";
   if (status === "CANCELLED") return "Cancelado";
@@ -64,8 +64,8 @@ function statusLabel(status: string) {
 function formatFormatLabel(value: string) {
   if (value === "GROUPS_KO") return "Grupos + mata-mata";
   if (value === "LEAGUE") return "Pontos corridos";
-  if (value === "SINGLE_ELIM") return "Eliminatoria simples";
-  if (value === "DOUBLE_ELIM") return "Eliminatoria dupla";
+  if (value === "SINGLE_ELIM") return "Elimina\u00e7\u00e3o simples";
+  if (value === "DOUBLE_ELIM") return "Elimina\u00e7\u00e3o dupla";
   return "Formato customizado";
 }
 
@@ -86,7 +86,7 @@ export function TournamentDetailClient(props: Props) {
         <div className="max-w-3xl">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-sky-500/15 px-3 py-1 text-xs font-semibold text-sky-700 dark:text-sky-300">
-              {tournament.visibility === "PRIVATE" ? "Privado" : "Publico"}
+              {tournament.visibility === "PRIVATE" ? "Privado" : "P\u00fablico"}
             </span>
             <span className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
               {formatSportLabel(tournament.sport_type)}
@@ -156,7 +156,7 @@ export function TournamentDetailClient(props: Props) {
           ) : null}
           {tournament.levels.length ? (
             <div className="mt-4">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Niveis</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">N\u00edveis</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {tournament.levels.map((level) => (
                   <span
@@ -185,7 +185,7 @@ export function TournamentDetailClient(props: Props) {
               <span className="font-semibold text-foreground">{feeLabel}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span>Inscricoes</span>
+              <span>Inscri\u00e7\u00f5es</span>
               <span className="font-semibold text-foreground">{statusLabel(tournament.status)}</span>
             </div>
           </div>
@@ -212,7 +212,7 @@ export function TournamentDetailClient(props: Props) {
 
           {tournament.visibility === "PRIVATE" ? (
             <div className="mt-6 rounded-2xl border border-sky-500/30 bg-sky-500/10 p-4 text-xs text-sky-800">
-              Torneio privado. O ingresso do time depende de convite ou liberacao do organizador.
+              Torneio privado. O ingresso do time depende de convite ou libera\u00e7\u00e3o do organizador.
             </div>
           ) : null}
         </div>
@@ -228,7 +228,7 @@ export function TournamentDetailClient(props: Props) {
           }
           onClick={() => setTab("overview")}
         >
-          Visao geral
+          Vis\u00e3o geral
         </button>
         <button
           type="button"

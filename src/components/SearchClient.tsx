@@ -42,6 +42,13 @@ type Props = {
   showOwnerCtaOnLoggedOut?: boolean;
   showMarketingCardsOnLoggedOut?: boolean;
   showFooter?: boolean;
+  footer?: {
+    contactEmail?: string | null;
+    contactInstagram?: string | null;
+    contactWhatsapp?: string | null;
+    termsUrl?: string | null;
+    privacyUrl?: string | null;
+  };
   initial: {
     lat: number;
     lng: number;
@@ -92,23 +99,23 @@ type Card = {
 const landingFeatures = [
   {
     icon: Zap,
-    title: "Reserva instantanea",
+    title: "Reserva instant\u00e2nea",
     description: "Escolha, reserve e confirme sua quadra em menos de 30 segundos.",
   },
   {
     icon: Calendar,
     title: "Agenda inteligente",
-    description: "Veja horarios disponiveis em tempo real e nunca perca seu jogo.",
+    description: "Veja hor\u00e1rios dispon\u00edveis em tempo real e nunca perca seu jogo.",
   },
   {
     icon: CreditCard,
     title: "Pagamento integrado",
-    description: "Pague via Pix, cartao ou boleto direto pela plataforma.",
+    description: "Pague via Pix, cart\u00e3o ou boleto direto pela plataforma.",
   },
   {
     icon: Star,
-    title: "Avaliacoes reais",
-    description: "Confira avaliacoes de outros jogadores antes de reservar.",
+    title: "Avalia\u00e7\u00f5es reais",
+    description: "Confira avalia\u00e7\u00f5es de outros jogadores antes de reservar.",
   },
   {
     icon: Users,
@@ -118,7 +125,7 @@ const landingFeatures = [
   {
     icon: BarChart3,
     title: "Painel do gestor",
-    description: "Gerencie reservas, receita e clientes em um so lugar.",
+    description: "Gerencie reservas, receita e clientes em um s\u00f3 lugar.",
   },
 ];
 
@@ -126,25 +133,25 @@ const landingSteps = [
   {
     step: "01",
     title: "Encontre",
-    description: "Busque quadras proximas a voce por esporte, localizacao ou horario.",
+    description: "Busque quadras pr\u00f3ximas a voc\u00ea por esporte, localiza\u00e7\u00e3o ou hor\u00e1rio.",
     icon: Search,
   },
   {
     step: "02",
     title: "Reserve",
-    description: "Escolha o horario ideal e confirme sua reserva em poucos cliques.",
+    description: "Escolha o hor\u00e1rio ideal e confirme sua reserva em poucos cliques.",
     icon: CalendarCheck,
   },
   {
     step: "03",
     title: "Pague",
-    description: "Realize o pagamento de forma segura via Pix, cartao ou boleto.",
+    description: "Realize o pagamento de forma segura via Pix, cart\u00e3o ou boleto.",
     icon: CreditCard,
   },
   {
     step: "04",
     title: "Jogue",
-    description: "Compareca no horario, aproveite o jogo e avalie a experiencia.",
+    description: "Compare\u00e7a no hor\u00e1rio, aproveite o jogo e avalie a experi\u00eancia.",
     icon: Trophy,
   },
 ];
@@ -152,7 +159,7 @@ const landingSteps = [
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"];
 
 function formatWeekdays(days: number[]): string {
-  if (!Array.isArray(days) || days.length === 0) return "Sem informacao";
+  if (!Array.isArray(days) || days.length === 0) return "Sem informa\u00e7\u00e3o";
   const sorted = [...days].sort((a, b) => a - b);
   return sorted.map((d) => WEEKDAYS[d] ?? "?").join(", ");
 }
@@ -163,11 +170,28 @@ function firstNonEmpty(list?: Array<string | null> | null): string | null {
   return found ? found : null;
 }
 
+function isExternalUrl(url: string): boolean {
+  return /^https?:\/\//i.test(url);
+}
+
 export function SearchClient(props: Props) {
-  const heroTitle = props.hero?.title ?? "Sua quadra. Seu horario. Sem complicacao.";
+  const heroTitle = props.hero?.title ?? "Sua quadra. Seu hor\u00e1rio. Sem complica\u00e7\u00e3o.";
   const heroDescription =
     props.hero?.description ??
-    "Agende quadras de futebol, padel, tenis e muito mais em segundos. Sem ligacoes, sem espera - tudo online e na palma da mao.";
+    "Agende quadras de futebol, padel, t\u00eanis e muito mais em segundos. Sem liga\u00e7\u00f5es, sem espera - tudo online e na palma da m\u00e3o.";
+
+  const footerSettings = props.footer ?? {};
+  const contactEmail = (footerSettings.contactEmail ?? "contato@platzgo.com").trim();
+  const contactInstagram = (footerSettings.contactInstagram ?? "@platzgo").trim();
+  const contactWhatsapp = (footerSettings.contactWhatsapp ?? "WhatsApp").trim();
+  const termsUrl = (footerSettings.termsUrl ?? "/").trim() || "/";
+  const privacyUrl = (footerSettings.privacyUrl ?? "/").trim() || "/";
+
+  const instagramUrl = contactInstagram
+    ? (isExternalUrl(contactInstagram)
+      ? contactInstagram
+      : `https://instagram.com/${contactInstagram.replace(/^@/, "")}`)
+    : "";
 
   const [lat, setLat] = useState(props.initial.lat);
   const [lng, setLng] = useState(props.initial.lng);
@@ -473,7 +497,7 @@ export function SearchClient(props: Props) {
             >
               <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-sm font-medium mb-6">
                 <span className="w-2 h-2 rounded-full bg-primary animate-pulse-glow" />
-                Quadras disponiveis agora
+                Quadras dispon\u00edveis agora
               </span>
             </motion.div>
 
@@ -489,9 +513,9 @@ export function SearchClient(props: Props) {
                 <>
                   Sua quadra.
                   <br />
-                  <span className="gradient-text glow-text">Seu horario.</span>
+                  <span className="gradient-text glow-text">Seu hor\u00e1rio.</span>
                   <br />
-                  Sem complicacao.
+                  Sem complica\u00e7\u00e3o.
                 </>
               )}
             </motion.h1>
@@ -564,7 +588,7 @@ export function SearchClient(props: Props) {
               Encontre a quadra ideal
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              Use os filtros para encontrar o horario perfeito e agendar em segundos.
+              Use os filtros para encontrar o hor\u00e1rio perfeito e agendar em segundos.
             </p>
           </motion.div>
 
@@ -573,7 +597,7 @@ export function SearchClient(props: Props) {
               <div className="lg:col-span-5">
                 <PlacesLocationPicker
                   apiKey={props.apiKey}
-                  label="Sua localizacao"
+                  label="Sua localiza\u00e7\u00e3o"
                   labelStyle={{ marginBottom: 1 }}
                   variant="dark"
                   buttonPlacement="below"
@@ -629,7 +653,7 @@ export function SearchClient(props: Props) {
               </div>
 
               <div className="lg:col-span-2">
-                <label className="block text-xs font-bold text-muted-foreground">Horario</label>
+                <label className="block text-xs font-bold text-muted-foreground">Hor\u00e1rio</label>
                 <input
                   type="time"
                   step={1800}
@@ -651,7 +675,7 @@ export function SearchClient(props: Props) {
               </div>
 
               <div className="lg:col-span-2">
-                <label className="block text-xs font-bold text-muted-foreground">Preco max (R$/h)</label>
+                <label className="block text-xs font-bold text-muted-foreground">Pre\u00e7o m\u00e1x (R$/h)</label>
                 <input
                   type="number"
                   min={0}
@@ -681,13 +705,13 @@ export function SearchClient(props: Props) {
                     onChange={(e) => setSortBy(e.target.value as "distance" | "rating")}
                     className="rounded-xl bg-secondary px-3 py-2 text-xs text-foreground outline-none focus:ring-2 focus:ring-ring"
                   >
-                    <option value="distance">Distancia</option>
+                    <option value="distance">Dist\u00e2ncia</option>
                     <option value="rating">Recomendados</option>
                   </select>
                 </label>
 
                 <p className="text-xs text-muted-foreground">
-                  Dica: digite a cidade/rua ou use o botao "Usar minha localizacao".
+                  Dica: digite a cidade/rua ou use o bot\u00e3o "Usar minha localiza\u00e7\u00e3o".
                 </p>
               </div>
             </div>
@@ -723,7 +747,7 @@ export function SearchClient(props: Props) {
 
               {!props.viewer.isLoggedIn ? (
                 <span className="text-xs text-muted-foreground">
-                  Faca login para ver precos, contatos e mapa.
+                  Fa\u00e7a login para ver pre\u00e7os, contatos e mapa.
                 </span>
               ) : null}
             </div>
@@ -798,7 +822,9 @@ export function SearchClient(props: Props) {
                             ) : null}
                           </div>
                           <div className="mt-1 text-xs text-muted-foreground">
-                            {c.reviewsCount > 0 ? `${c.avgRating.toFixed(1)} ★ • ${c.reviewsCount} avaliacoes` : "Sem avaliacoes"}
+                            {c.reviewsCount > 0
+                              ? `${c.avgRating.toFixed(1)} ★ • ${c.reviewsCount} avalia\u00e7\u00f5es`
+                              : "Sem avalia\u00e7\u00f5es"}
                           </div>
                           <p className={"mt-1 truncate text-xs text-muted-foreground " + blurClass}>
                             Quadra: <span className="font-semibold text-foreground">{c.highlightCourtName}</span>
@@ -807,8 +833,8 @@ export function SearchClient(props: Props) {
 
                           <p className="mt-2 text-xs text-muted-foreground">
                             {c.requiresBookingConfirmation
-                              ? "Exige confirmacao do horario pelo estabelecimento"
-                              : "Nao exige confirmacao de horario pelo estabelecimento"}
+                              ? "Exige confirma\u00e7\u00e3o do hor\u00e1rio pelo estabelecimento"
+                              : "N\u00e3o exige confirma\u00e7\u00e3o de hor\u00e1rio pelo estabelecimento"}
                           </p>
 
                           <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -823,13 +849,13 @@ export function SearchClient(props: Props) {
                             </div>
                             <div className={blurClass}>WhatsApp: {c.whatsappNumber}</div>
                             {c.contactNumber ? <div className={blurClass}>Contato: {c.contactNumber}</div> : null}
-                            <div className={blurClass}>Endereco: {c.addressText}</div>
+                            <div className={blurClass}>Endere\u00e7o: {c.addressText}</div>
                           </div>
 
                           {showPrivate ? (
                             <div className="mt-4 flex flex-wrap gap-2">
                               <span className="inline-flex items-center justify-center rounded-xl gradient-primary text-primary-foreground px-4 py-2 text-xs font-bold">
-                                Ver horarios
+                                Ver hor\u00e1rios
                               </span>
                               <button
                                 type="button"
@@ -843,7 +869,7 @@ export function SearchClient(props: Props) {
                               </button>
                             </div>
                           ) : (
-                            <div className="mt-4 text-xs text-muted-foreground">Entre para ver preco, contato e agendar.</div>
+                            <div className="mt-4 text-xs text-muted-foreground">Entre para ver pre\u00e7o, contato e agendar.</div>
                           )}
                         </div>
                       </Link>
@@ -893,10 +919,10 @@ export function SearchClient(props: Props) {
                 Funcionalidades
               </span>
               <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">
-                Tudo que voce precisa para jogar
+                Tudo que voc\u00ea precisa para jogar
               </h2>
               <p className="text-muted-foreground max-w-xl mx-auto">
-                Do agendamento ao pagamento, tudo integrado para uma experiencia perfeita - seja jogador ou dono de quadra.
+                Do agendamento ao pagamento, tudo integrado para uma experi\u00eancia perfeita - seja jogador ou dono de quadra.
               </p>
             </motion.div>
 
@@ -934,7 +960,7 @@ export function SearchClient(props: Props) {
               Como funciona
             </span>
             <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">Simples como deve ser</h2>
-            <p className="text-muted-foreground max-w-lg mx-auto">Em 4 passos rapidos, voce sai do sofa para a quadra.</p>
+            <p className="text-muted-foreground max-w-lg mx-auto">Em 4 passos r\u00e1pidos, voc\u00ea sai do sof\u00e1 para a quadra.</p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -980,7 +1006,7 @@ export function SearchClient(props: Props) {
                 Pronto para <span className="gradient-text">entrar em quadra</span>?
               </h2>
               <p className="text-muted-foreground max-w-lg mx-auto mb-8 text-lg">
-                Junte-se a milhares de jogadores que ja agendam suas quadras de forma rapida e segura com PlatzGo!
+                Junte-se a milhares de jogadores que j\u00e1 agendam suas quadras de forma r\u00e1pida e segura com PlatzGo!
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
@@ -1024,8 +1050,10 @@ export function SearchClient(props: Props) {
                 <h4 className="font-display font-semibold mb-4 text-sm uppercase tracking-wider">Plataforma</h4>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li><Link href="#busca" className="hover:text-foreground transition-colors">Agendar quadra</Link></li>
+                  <li><Link href="/sorteio-times" className="hover:text-foreground transition-colors">Sorteio de times</Link></li>
+                  <li><Link href="/torneios/novo" className="hover:text-foreground transition-colors">Criar torneio interno</Link></li>
                   <li><Link href="/dashboard" className="hover:text-foreground transition-colors">Painel do gestor</Link></li>
-                  <li><Link href="/" className="hover:text-foreground transition-colors">Precos</Link></li>
+                  <li><Link href="/" className="hover:text-foreground transition-colors">Pre\u00e7os</Link></li>
                 </ul>
               </div>
 
@@ -1035,26 +1063,57 @@ export function SearchClient(props: Props) {
                   <li>Futebol Society</li>
                   <li>Beach Tennis</li>
                   <li>Padel</li>
-                  <li>Tenis</li>
+                  <li>T\u00eanis</li>
+                  <li>E muito mais</li>
                 </ul>
               </div>
 
               <div>
                 <h4 className="font-display font-semibold mb-4 text-sm uppercase tracking-wider">Contato</h4>
                 <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li>contato@platzgo.com</li>
-                  <li>Instagram: @platzgo</li>
-                  <li>WhatsApp</li>
+                  {contactEmail ? (
+                    <li>
+                      <a href={`mailto:${contactEmail}`} className="hover:text-foreground transition-colors">
+                        {contactEmail}
+                      </a>
+                    </li>
+                  ) : null}
+                  {contactInstagram ? (
+                    <li>
+                      <a href={instagramUrl} className="hover:text-foreground transition-colors" target="_blank" rel="noreferrer">
+                        Instagram: {contactInstagram}
+                      </a>
+                    </li>
+                  ) : null}
+                  {contactWhatsapp ? <li>WhatsApp: {contactWhatsapp}</li> : null}
+                  {isExternalUrl(termsUrl) ? (
+                    <li>
+                      <a href={termsUrl} className="hover:text-foreground transition-colors" target="_blank" rel="noreferrer">
+                        Termos de uso
+                      </a>
+                    </li>
+                  ) : (
+                    <li>
+                      <Link href={termsUrl} className="hover:text-foreground transition-colors">Termos de uso</Link>
+                    </li>
+                  )}
+                  {isExternalUrl(privacyUrl) ? (
+                    <li>
+                      <a href={privacyUrl} className="hover:text-foreground transition-colors" target="_blank" rel="noreferrer">
+                        Privacidade
+                      </a>
+                    </li>
+                  ) : (
+                    <li>
+                      <Link href={privacyUrl} className="hover:text-foreground transition-colors">Privacidade</Link>
+                    </li>
+                  )}
                 </ul>
               </div>
             </div>
 
             <div className="border-t border-border pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-              <p>(c) {new Date().getFullYear()} PlatzGo! Todos os direitos reservados.</p>
-              <div className="flex gap-6">
-                <Link href="/" className="hover:text-foreground transition-colors">Termos de uso</Link>
-                <Link href="/" className="hover:text-foreground transition-colors">Privacidade</Link>
-              </div>
+              <p>(c) 2026 PlatzGo! Todos os direitos reservados.</p>
             </div>
           </div>
         </footer>

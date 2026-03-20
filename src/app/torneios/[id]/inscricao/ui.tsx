@@ -76,8 +76,8 @@ export function TournamentRegistrationClient(props: Props) {
 
   const canAdvance = useMemo(() => {
     if (step === 0) {
-      const hasLevel = tournament.levels.length === 0 || Boolean(level.trim());
-      return teamName.trim().length > 2 && teamSize >= tournament.team_size_min && hasLevel;
+          const hasLevel = tournament.levels.length === 0 || Boolean(level.trim());
+          return teamName.trim().length > 2 && teamSize >= tournament.team_size_min && hasLevel;
     }
     if (step === 1) return players.every((p) => p.fullName.trim() && p.documentId.trim());
     if (step === 2) return tournament.entry_fee_cents === 0 || Boolean(pixPayload);
@@ -87,7 +87,7 @@ export function TournamentRegistrationClient(props: Props) {
   function nextStep() {
     setError(null);
     if (!canAdvance) {
-      setError("Preencha os campos obrigatorios para continuar.");
+            setError("Preencha os campos obrigat\u00f3rios para continuar.");
       return;
     }
     setStep((current) => Math.min(2, current + 1));
@@ -132,7 +132,7 @@ export function TournamentRegistrationClient(props: Props) {
           setIsConfirmed(true);
         }
       } catch (err) {
-        const message = err instanceof Error ? err.message : "Nao foi possivel gerar o pagamento";
+        const message = err instanceof Error ? err.message : "N\u00e3o foi poss\u00edvel gerar o pagamento";
         setError(message);
       }
     });
@@ -144,7 +144,7 @@ export function TournamentRegistrationClient(props: Props) {
       await navigator.clipboard.writeText(pixPayload);
       setPixCopied("Payload copiado");
     } catch {
-      setPixCopied("Nao foi possivel copiar");
+      setPixCopied("N\u00e3o foi poss\u00edvel copiar");
     }
   }
 
@@ -153,7 +153,7 @@ export function TournamentRegistrationClient(props: Props) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Inscricao do time
+            Inscri\u00e7\u00e3o do time
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {tournament.name} · {(tournament.location_name ?? tournament.city ?? "-")}
@@ -209,7 +209,7 @@ export function TournamentRegistrationClient(props: Props) {
 
             {tournament.levels.length ? (
               <label className="text-xs font-semibold text-muted-foreground">
-                Nivel
+                N\u00edvel
                 <select
                   value={level}
                   onChange={(e) => setLevel(e.target.value)}
@@ -237,14 +237,14 @@ export function TournamentRegistrationClient(props: Props) {
                 disabled={isLocked}
               />
               <span className="mt-1 block text-[11px] text-muted-foreground">
-                Minimo {tournament.team_size_min} · Maximo {tournament.team_size_max}
+                M\u00ednimo {tournament.team_size_min} · M\u00e1ximo {tournament.team_size_max}
               </span>
             </label>
 
             <div className="rounded-2xl border border-border bg-card/80 p-4 text-xs text-muted-foreground">
               <p className="font-semibold text-foreground">Requisitos do torneio</p>
               <p className="mt-2">Todos os jogadores devem informar nome completo e documento.</p>
-              <p className="mt-2">O pagamento confirma a inscricao do time.</p>
+              <p className="mt-2">O pagamento confirma a inscri\u00e7\u00e3o do time.</p>
             </div>
           </div>
         ) : null}
@@ -287,7 +287,7 @@ export function TournamentRegistrationClient(props: Props) {
             <div className="rounded-3xl border border-border bg-card/80 p-5">
               <h2 className="text-sm font-semibold text-foreground">Pagamento via PIX (Asaas)</h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                {isFree ? "Inscricao gratuita. Confirme o cadastro do time." : "Gere o payload para liberar o cadastro do time."}
+                {isFree ? "Inscri\u00e7\u00e3o gratuita. Confirme o cadastro do time." : "Gere o payload para liberar o cadastro do time."}
               </p>
 
               <div className="mt-4 flex flex-wrap gap-3">
@@ -297,7 +297,7 @@ export function TournamentRegistrationClient(props: Props) {
                   onClick={handleGeneratePix}
                   disabled={isPending || Boolean(registrationId)}
                 >
-                  {isFree ? "Confirmar inscricao" : "Gerar payload"}
+                  {isFree ? "Confirmar inscri\u00e7\u00e3o" : "Gerar payload"}
                 </button>
                 {pixPayload ? (
                   <button type="button" className="ph-button-secondary-sm" onClick={handleCopyPix}>
@@ -350,7 +350,7 @@ export function TournamentRegistrationClient(props: Props) {
                 </p>
                 {tournament.levels.length ? (
                   <p>
-                    <span className="font-semibold">Nivel:</span> {level}
+                    <span className="font-semibold">N\u00edvel:</span> {level}
                   </p>
                 ) : null}
                 <p>
@@ -367,12 +367,12 @@ export function TournamentRegistrationClient(props: Props) {
                 disabled={isFree ? !registrationId : !pixPayload}
                 onClick={() => setIsConfirmed(true)}
               >
-                Confirmar inscricao
+                Confirmar inscri\u00e7\u00e3o
               </button>
 
               {isConfirmed ? (
                 <div className="mt-4 rounded-2xl border border-emerald-500/30 bg-primary/100/10 p-3 text-xs text-primary">
-                  Inscricao confirmada. O time sera liberado apos validacao do pagamento.
+                  Inscri\u00e7\u00e3o confirmada. O time ser\u00e1 liberado ap\u00f3s valida\u00e7\u00e3o do pagamento.
                 </div>
               ) : null}
             </div>
@@ -390,7 +390,7 @@ export function TournamentRegistrationClient(props: Props) {
           </button>
           {step < 2 ? (
             <button type="button" className="ph-button-sm" onClick={nextStep} disabled={isPending}>
-              Proximo
+              Pr\u00f3ximo
             </button>
           ) : null}
         </div>

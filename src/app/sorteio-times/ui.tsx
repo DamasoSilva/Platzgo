@@ -589,7 +589,7 @@ export function TeamDrawClient(props: { isLoggedIn: boolean }) {
           </div>
           {!isLoggedIn ? (
             <p className="mt-2 text-[11px] text-muted-foreground/80 dark:text-muted-foreground">
-              Para gerar o sorteio, faca login. Seus dados serao mantidos.
+              Para gerar o sorteio, fa\u00e7a login. Seus dados ser\u00e3o mantidos.
             </p>
           ) : null}
         </div>

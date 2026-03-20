@@ -139,6 +139,40 @@ export const SMTP_SETTING_KEYS = {
   pass: "smtp.pass",
 } as const;
 
+export const SITE_SETTING_KEYS = {
+  contactEmail: "site.contact.email",
+  contactInstagram: "site.contact.instagram",
+  contactWhatsapp: "site.contact.whatsapp",
+  termsUrl: "site.terms.url",
+  privacyUrl: "site.privacy.url",
+} as const;
+
+export type PublicSiteSettings = {
+  contactEmail: string;
+  contactInstagram: string;
+  contactWhatsapp: string;
+  termsUrl: string;
+  privacyUrl: string;
+};
+
+export async function getPublicSiteSettings(): Promise<PublicSiteSettings> {
+  const [contactEmailRaw, contactInstagramRaw, contactWhatsappRaw, termsUrlRaw, privacyUrlRaw] = await Promise.all([
+    getSystemSetting(SITE_SETTING_KEYS.contactEmail),
+    getSystemSetting(SITE_SETTING_KEYS.contactInstagram),
+    getSystemSetting(SITE_SETTING_KEYS.contactWhatsapp),
+    getSystemSetting(SITE_SETTING_KEYS.termsUrl),
+    getSystemSetting(SITE_SETTING_KEYS.privacyUrl),
+  ]);
+
+  return {
+    contactEmail: (contactEmailRaw ?? "contato@platzgo.com").trim(),
+    contactInstagram: (contactInstagramRaw ?? "@platzgo").trim(),
+    contactWhatsapp: (contactWhatsappRaw ?? "WhatsApp").trim(),
+    termsUrl: (termsUrlRaw ?? "/").trim(),
+    privacyUrl: (privacyUrlRaw ?? "/").trim(),
+  };
+}
+
 export async function getEffectiveSmtpConfig(): Promise<SmtpConfig | null> {
   const [hostDb, portDb, fromDb, userDb, passDb] = await Promise.all([
     getSystemSetting(SMTP_SETTING_KEYS.host),

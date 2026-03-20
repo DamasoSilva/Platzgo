@@ -41,7 +41,7 @@ type FeeFilter = "ANY" | "FREE" | "UP_TO_50" | "UP_TO_100";
 type StatusFilter = "ANY" | "OPEN" | "RUNNING" | "FINISHED";
 
 function statusLabel(status: string) {
-  if (status === "OPEN") return "Inscricoes abertas";
+  if (status === "OPEN") return "Inscri\u00e7\u00f5es abertas";
   if (status === "RUNNING") return "Em andamento";
   if (status === "FINISHED") return "Finalizado";
   if (status === "CANCELLED") return "Cancelado";
@@ -71,8 +71,8 @@ function formatFee(entryFeeCents: number) {
 function formatFormatLabel(value: string) {
   if (value === "GROUPS_KO") return "Grupos + mata-mata";
   if (value === "LEAGUE") return "Pontos corridos";
-  if (value === "SINGLE_ELIM") return "Eliminatoria simples";
-  if (value === "DOUBLE_ELIM") return "Eliminatoria dupla";
+  if (value === "SINGLE_ELIM") return "Elimina\u00e7\u00e3o simples";
+  if (value === "DOUBLE_ELIM") return "Elimina\u00e7\u00e3o dupla";
   return "Formato customizado";
 }
 
@@ -184,7 +184,7 @@ export function TournamentsListClient(props: Props) {
               Status
               <select value={status} onChange={(event) => setStatus(event.target.value as StatusFilter)} className="ph-select mt-2">
                 <option value="ANY">Todos</option>
-                <option value="OPEN">Inscricoes abertas</option>
+                <option value="OPEN">Inscri\u00e7\u00f5es abertas</option>
                 <option value="RUNNING">Em andamento</option>
                 <option value="FINISHED">Finalizado</option>
               </select>
@@ -194,9 +194,9 @@ export function TournamentsListClient(props: Props) {
               Taxa
               <select value={fee} onChange={(event) => setFee(event.target.value as FeeFilter)} className="ph-select mt-2">
                 <option value="ANY">Qualquer</option>
-                <option value="FREE">Gratis</option>
-                <option value="UP_TO_50">Ate R$ 50</option>
-                <option value="UP_TO_100">Ate R$ 100</option>
+                <option value="FREE">Gr\u00e1tis</option>
+                <option value="UP_TO_50">At\u00e9 R$ 50</option>
+                <option value="UP_TO_100">At\u00e9 R$ 100</option>
               </select>
             </label>
           </div>
@@ -206,11 +206,11 @@ export function TournamentsListClient(props: Props) {
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Resumo</p>
           <div className="mt-4 space-y-3 text-sm text-muted-foreground">
             <div className="flex items-center justify-between">
-              <span>Publicos</span>
+              <span>P\u00fablicos</span>
               <span className="font-semibold">{publicTournaments.length}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span>Inscricoes abertas</span>
+              <span>Inscri\u00e7\u00f5es abertas</span>
               <span className="font-semibold">{publicTournaments.filter((t) => t.status === "OPEN").length}</span>
             </div>
             <div className="flex items-center justify-between">
@@ -223,14 +223,14 @@ export function TournamentsListClient(props: Props) {
             </div>
           </div>
           <p className="mt-4 text-xs text-muted-foreground">
-            Torneios internos sao privados e usam convites para liberar os times.
+            Torneios internos s\u00e3o privados e usam convites para liberar os times.
           </p>
         </div>
       </div>
 
       <div className="mt-8">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-foreground">Torneios publicos</h2>
+          <h2 className="text-lg font-semibold text-foreground">Torneios p\u00fablicos</h2>
           <span className="text-xs text-muted-foreground">{filteredPublic.length} resultados</span>
         </div>
 

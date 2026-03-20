@@ -11,6 +11,8 @@ import {
   changeMyPassword,
   getNotificationSettingsForSysadmin,
   saveNotificationSettingsForSysadmin,
+  getSiteSettingsForSysadmin,
+  saveSiteSettingsForSysadmin,
   getPaymentSettingsForSysadmin,
   savePaymentSettingsForSysadmin,
   clearPaymentSecretsForSysadmin,
@@ -27,7 +29,9 @@ export default async function SysadminSettingsPage(props: {
 
   const searchParams = props.searchParams ? await Promise.resolve(props.searchParams) : undefined;
   const rawTab = (searchParams?.tab ?? "").toString();
-  const tab = rawTab === "payments" || rawTab === "notifications" || rawTab === "password" ? rawTab : "smtp";
+  const tab = rawTab === "payments" || rawTab === "notifications" || rawTab === "password" || rawTab === "site"
+    ? rawTab
+    : "smtp";
   const tabParam = `tab=${tab}`;
   const ok = searchParams?.ok === "1";
   const err = (searchParams?.err ?? "").trim();
@@ -35,10 +39,11 @@ export default async function SysadminSettingsPage(props: {
   const walletErr = (searchParams?.walletErr ?? "").trim();
   const walletList = (searchParams?.walletList ?? "").trim();
 
-  const [smtp, notifications, payments] = await Promise.all([
+  const [smtp, notifications, payments, site] = await Promise.all([
     getSmtpSettingsForSysadmin(),
     getNotificationSettingsForSysadmin(),
     getPaymentSettingsForSysadmin(),
+    getSiteSettingsForSysadmin(),
   ]);
 
   return (
@@ -82,6 +87,7 @@ export default async function SysadminSettingsPage(props: {
           { key: "smtp", label: "SMTP" },
           { key: "payments", label: "Pagamentos" },
           { key: "notifications", label: "Notificações" },
+          { key: "site", label: "Site" },
           { key: "password", label: "Senha" },
         ] as const).map((item) => (
           <Link
@@ -604,6 +610,63 @@ export default async function SysadminSettingsPage(props: {
             </div>
 
             <FormSubmitButton label="Salvar notificações" pendingLabel="Salvando..." className="ph-button" />
+          </form>
+        </div>
+      ) : null}
+
+      {tab === "site" ? (
+        <div className="ph-card p-6">
+          <h2 className="text-lg font-semibold text-foreground">Site (rodap\u00e9)</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Atualize os dados exibidos no rodap\u00e9 do site.
+          </p>
+
+          <form
+            className="mt-4 space-y-4"
+            action={async (formData) => {
+              "use server";
+              try {
+                await saveSiteSettingsForSysadmin({
+                  contactEmail: String(formData.get("contactEmail") ?? ""),
+                  contactInstagram: String(formData.get("contactInstagram") ?? ""),
+                  contactWhatsapp: String(formData.get("contactWhatsapp") ?? ""),
+                  termsUrl: String(formData.get("termsUrl") ?? ""),
+                  privacyUrl: String(formData.get("privacyUrl") ?? ""),
+                });
+                redirect(`/sysadmin/settings?${tabParam}&ok=1`);
+              } catch (e) {
+                if ((e as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) throw e;
+                const msg = e instanceof Error ? e.message : "Erro ao salvar";
+                redirect(`/sysadmin/settings?${tabParam}&err=${encodeURIComponent(msg)}`);
+              }
+            }}
+          >
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground">Email de contato</label>
+              <input name="contactEmail" defaultValue={site.contactEmail} className="ph-input mt-2" placeholder="contato@platzgo.com" />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground">Instagram</label>
+              <input name="contactInstagram" defaultValue={site.contactInstagram} className="ph-input mt-2" placeholder="@platzgo" />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground">WhatsApp</label>
+              <input name="contactWhatsapp" defaultValue={site.contactWhatsapp} className="ph-input mt-2" placeholder="WhatsApp" />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground">URL Termos de uso</label>
+              <input name="termsUrl" defaultValue={site.termsUrl} className="ph-input mt-2" placeholder="/" />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground">URL Privacidade</label>
+              <input name="privacyUrl" defaultValue={site.privacyUrl} className="ph-input mt-2" placeholder="/" />
+            </div>
+
+            <FormSubmitButton label="Salvar site" pendingLabel="Salvando..." className="ph-button" />
           </form>
         </div>
       ) : null}

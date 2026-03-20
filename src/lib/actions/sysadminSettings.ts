@@ -14,6 +14,7 @@ import {
   SMTP_SETTING_KEYS,
   getSystemSecret,
   getEffectiveSmtpConfig,
+  SITE_SETTING_KEYS,
 } from "@/lib/systemSettings";
 import { PAYMENT_SETTING_KEYS } from "@/lib/payments";
 
@@ -73,6 +74,46 @@ export async function getNotificationSettingsForSysadmin() {
 export async function saveNotificationSettingsForSysadmin(input: NotificationSettingsInput) {
   await requireRole("SYSADMIN");
   await saveNotificationSettings(input);
+  return { ok: true };
+}
+
+export async function getSiteSettingsForSysadmin() {
+  await requireRole("SYSADMIN");
+
+  const [contactEmail, contactInstagram, contactWhatsapp, termsUrl, privacyUrl] = await Promise.all([
+    getSystemSetting(SITE_SETTING_KEYS.contactEmail),
+    getSystemSetting(SITE_SETTING_KEYS.contactInstagram),
+    getSystemSetting(SITE_SETTING_KEYS.contactWhatsapp),
+    getSystemSetting(SITE_SETTING_KEYS.termsUrl),
+    getSystemSetting(SITE_SETTING_KEYS.privacyUrl),
+  ]);
+
+  return {
+    contactEmail: contactEmail ?? "",
+    contactInstagram: contactInstagram ?? "",
+    contactWhatsapp: contactWhatsapp ?? "",
+    termsUrl: termsUrl ?? "",
+    privacyUrl: privacyUrl ?? "",
+  };
+}
+
+export async function saveSiteSettingsForSysadmin(input: {
+  contactEmail: string;
+  contactInstagram: string;
+  contactWhatsapp: string;
+  termsUrl: string;
+  privacyUrl: string;
+}) {
+  await requireRole("SYSADMIN");
+
+  await Promise.all([
+    setSystemSetting(SITE_SETTING_KEYS.contactEmail, input.contactEmail),
+    setSystemSetting(SITE_SETTING_KEYS.contactInstagram, input.contactInstagram),
+    setSystemSetting(SITE_SETTING_KEYS.contactWhatsapp, input.contactWhatsapp),
+    setSystemSetting(SITE_SETTING_KEYS.termsUrl, input.termsUrl),
+    setSystemSetting(SITE_SETTING_KEYS.privacyUrl, input.privacyUrl),
+  ]);
+
   return { ok: true };
 }
 
