@@ -171,6 +171,7 @@ export default async function EstablishmentSlugPage(props: {
   const coverUrl = (est.photo_urls ?? []).find((u) => (u ?? "").trim()) ?? null;
   const waLink = toWaMeLink(est.whatsapp_number);
   const instagramUrl = (est.instagram_url ?? "").trim() || null;
+  const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(est.address_text)}`;
 
   return (
     <div className="ph-page">
@@ -190,19 +191,31 @@ export default async function EstablishmentSlugPage(props: {
 
         <div className="mx-auto max-w-6xl px-6 pb-12 pt-20">
           <div className="ph-card p-6 sm:p-8">
-            <p className="text-xs text-muted-foreground dark:text-muted-foreground">Selecione a quadra para ver os horários disponíveis</p>
+            <p className="text-xs text-muted-foreground dark:text-muted-foreground">Escolha sua quadra e horário em poucos cliques</p>
             <h1 className="mt-1 text-3xl font-semibold tracking-tight text-foreground dark:text-foreground">{est.name}</h1>
             <p className="mt-2 text-sm text-muted-foreground dark:text-muted-foreground">{est.address_text}</p>
-            {instagramUrl ? (
-              <a
-                href={instagramUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-2 inline-flex items-center text-sm font-semibold text-foreground underline decoration-border underline-offset-4 dark:text-foreground dark:decoration-border"
-              >
-                Instagram
-              </a>
+            {est.description ? (
+              <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground dark:text-muted-foreground">{est.description}</p>
             ) : null}
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <a href={waLink} target="_blank" rel="noreferrer" className="ph-button-sm">WhatsApp</a>
+              <a href={mapsHref} target="_blank" rel="noreferrer" className="ph-button-secondary-sm">Ver no mapa</a>
+              {instagramUrl ? (
+                <a
+                  href={instagramUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="ph-button-secondary-sm"
+                >
+                  Instagram
+                </a>
+              ) : null}
+            </div>
+
+            <div className="mt-4 inline-flex items-center rounded-full border border-border bg-card/60 px-3 py-1 text-xs text-muted-foreground dark:border-border dark:bg-card/60 dark:text-muted-foreground">
+              Funcionamento: {est.opening_time} às {est.closing_time}
+            </div>
           </div>
 
           <SearchPrefillClient hasDayParam={hasDayParam} hasTimeParam={hasTimeParam} basePath={basePath} />

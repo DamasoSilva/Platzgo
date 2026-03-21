@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { motion } from "framer-motion";
 import {
@@ -33,6 +34,7 @@ import { SportType } from "@/generated/prisma/enums";
 type NearbyEstablishment = Awaited<ReturnType<typeof getNearbyEstablishments>>[number];
 
 type Props = {
+  mode?: "home" | "search";
   apiKey: string;
   viewer: { userId: string | null; isLoggedIn: boolean; role?: import("@/generated/prisma/enums").Role | null; name?: string | null; image?: string | null };
   hero?: {
@@ -175,6 +177,8 @@ function isExternalUrl(url: string): boolean {
 }
 
 export function SearchClient(props: Props) {
+  const router = useRouter();
+  const isSearchPage = props.mode === "search";
   const heroTitle = props.hero?.title ?? "Sua quadra. Seu horário. Sem complicação.";
   const heroDescription =
     props.hero?.description ??
@@ -204,7 +208,7 @@ export function SearchClient(props: Props) {
   const [maxPrice, setMaxPrice] = useState(props.initial.maxPrice ?? 0);
   const [onlyFavorites, setOnlyFavorites] = useState(Boolean(props.initial.onlyFavorites));
   const [sortBy, setSortBy] = useState<"distance" | "rating">("distance");
-  const [hasSearched, setHasSearched] = useState(props.initial.locationSource === "query");
+  const [hasSearched, setHasSearched] = useState(isSearchPage || props.initial.locationSource === "query");
   const [cards, setCards] = useState<Card[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -218,6 +222,13 @@ export function SearchClient(props: Props) {
 
   const [mapReady, setMapReady] = useState(false);
   const [sportSelectOptions, setSportSelectOptions] = useState<Array<{ sport_type: SportType; label: string }>>([]);
+  const todayYmd = useMemo(() => {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -266,7 +277,7 @@ export function SearchClient(props: Props) {
     if (Number.isFinite(maxPrice) && maxPrice > 0) params.set("maxPrice", String(maxPrice));
     if (onlyFavorites) params.set("onlyFavorites", "1");
     const qs = params.toString();
-    return qs ? `/?${qs}` : "/";
+    return qs ? `/search?${qs}` : "/search";
   }, [lat, lng, radiusKm, effectiveSport, day, dayTouched, time, q, maxPrice, onlyFavorites]);
 
   useEffect(() => {
@@ -359,9 +370,9 @@ export function SearchClient(props: Props) {
   );
 
   useEffect(() => {
-    if (props.initial.locationSource !== "query") return;
+    if (!isSearchPage && props.initial.locationSource !== "query") return;
     fetchNearby({ userLat: lat, userLng: lng, radiusKm: effectiveRadiusKm });
-  }, [props.initial.locationSource, fetchNearby, lat, lng, effectiveRadiusKm]);
+  }, [isSearchPage, props.initial.locationSource, fetchNearby, lat, lng, effectiveRadiusKm]);
 
   useEffect(() => {
     if (!hasSearched || !resultsRef.current) return;
@@ -369,7 +380,6 @@ export function SearchClient(props: Props) {
   }, [hasSearched, cards.length]);
 
   useEffect(() => {
-    if (!props.viewer.isLoggedIn) return;
     if (!props.apiKey) return;
     let cancelled = false;
 
@@ -386,7 +396,7 @@ export function SearchClient(props: Props) {
     return () => {
       cancelled = true;
     };
-  }, [props.apiKey, props.viewer.isLoggedIn]);
+  }, [props.apiKey]);
 
   useEffect(() => {
     if (!mapReady || !mapDivRef.current || !window.google?.maps) return;
@@ -476,6 +486,7 @@ export function SearchClient(props: Props) {
         }
       />
 
+      {!isSearchPage ? (
       <section className="relative min-h-screen flex items-center overflow-hidden">
         <div className="absolute inset-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -536,7 +547,7 @@ export function SearchClient(props: Props) {
               className="flex flex-col sm:flex-row gap-4 mb-12"
             >
               <Link
-                href="#busca"
+                href="/search"
                 className="gradient-primary text-primary-foreground font-bold text-base px-8 py-4 rounded-xl inline-flex items-center justify-center gap-2 hover:opacity-90 transition-opacity glow-box"
               >
                 Agendar agora
@@ -572,6 +583,7 @@ export function SearchClient(props: Props) {
           </div>
         </div>
       </section>
+      ) : null}
 
       <section id="busca" className="py-24 bg-card/30">
         <div className="container">
@@ -582,13 +594,15 @@ export function SearchClient(props: Props) {
             className="text-center mb-12"
           >
             <span className="text-primary text-sm font-semibold uppercase tracking-widest mb-3 block">
-              Buscar quadras
+              {isSearchPage ? "Resultados da busca" : "Buscar quadras"}
             </span>
             <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">
-              Encontre a quadra ideal
+              {isSearchPage ? "Quadras encontradas para você" : "Encontre a quadra ideal"}
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              Use os filtros para encontrar o horário perfeito e agendar em segundos.
+              {isSearchPage
+                ? "Ajuste os filtros e veja os resultados atualizados com mapa e distância em tempo real."
+                : "Use os filtros para encontrar o horário perfeito e agendar em segundos."}
             </p>
           </motion.div>
 
@@ -644,6 +658,7 @@ export function SearchClient(props: Props) {
                 <input
                   type="date"
                   value={day}
+                  min={todayYmd}
                   onChange={(e) => {
                     setDayTouched(true);
                     setDay(e.target.value);
@@ -729,11 +744,15 @@ export function SearchClient(props: Props) {
                   } catch {
                     // ignora
                   }
+                  if (!isSearchPage) {
+                    router.push(searchHref);
+                    return;
+                  }
                   fetchNearby({ userLat: lat, userLng: lng, radiusKm: effectiveRadiusKm });
                 }}
                 className="gradient-primary text-primary-foreground font-bold text-base px-8 py-4 rounded-xl inline-flex items-center justify-center gap-2 hover:opacity-90 transition-opacity glow-box disabled:opacity-60"
               >
-                {isPending ? "Buscando..." : "Buscar quadras"}
+                {isPending ? "Buscando..." : isSearchPage ? "Atualizar busca" : "Ver quadras"}
               </button>
 
               {!props.viewer.isLoggedIn && props.showOwnerCtaOnLoggedOut ? (
@@ -755,7 +774,7 @@ export function SearchClient(props: Props) {
         </div>
       </section>
 
-      {hasSearched ? (
+      {hasSearched && isSearchPage ? (
         <section ref={resultsRef} className="py-16">
           <div className="container">
             <div className="grid gap-6 lg:grid-cols-12">
@@ -884,29 +903,33 @@ export function SearchClient(props: Props) {
                 ) : null}
               </div>
 
-              {props.viewer.isLoggedIn ? (
-                <aside className="lg:col-span-4">
-                  <div className="sticky top-24">
-                    {props.apiKey ? (
-                      <div className="p-2 rounded-2xl bg-card border border-border">
+              <aside className="lg:col-span-4">
+                <div className="sticky top-24">
+                  {props.apiKey ? (
+                    <div className="p-2 rounded-2xl bg-card border border-border">
+                      {mapReady ? (
                         <div ref={mapDivRef} className="h-[380px] lg:h-[520px] w-full rounded-xl" />
-                      </div>
-                    ) : (
-                      <div className="p-6 rounded-2xl bg-card border border-border">
-                        <p className="text-sm text-muted-foreground">
-                          Defina <span className="font-mono">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</span> para habilitar o mapa.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </aside>
-              ) : null}
+                      ) : (
+                        <div className="flex h-[380px] lg:h-[520px] items-center justify-center rounded-xl bg-secondary/60 text-sm text-muted-foreground">
+                          Carregando mapa...
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="p-6 rounded-2xl bg-card border border-border">
+                      <p className="text-sm text-muted-foreground">
+                        Defina <span className="font-mono">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</span> para habilitar o mapa.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </aside>
             </div>
           </div>
         </section>
       ) : null}
 
-      {props.showMarketingCardsOnLoggedOut || props.viewer.isLoggedIn ? (
+      {!isSearchPage && (props.showMarketingCardsOnLoggedOut || props.viewer.isLoggedIn) ? (
         <section className="py-24 relative">
           <div className="container">
             <motion.div
@@ -948,6 +971,7 @@ export function SearchClient(props: Props) {
         </section>
       ) : null}
 
+      {!isSearchPage ? (
       <section id="como-funciona" className="py-24 bg-card/30">
         <div className="container">
           <motion.div
@@ -989,7 +1013,9 @@ export function SearchClient(props: Props) {
           </div>
         </div>
       </section>
+      ) : null}
 
+      {!isSearchPage ? (
       <section id="contato" className="py-24">
         <div className="container">
           <motion.div
@@ -1010,7 +1036,7 @@ export function SearchClient(props: Props) {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
-                  href="#busca"
+                  href="/search"
                   className="gradient-primary text-primary-foreground font-bold text-base px-8 py-4 rounded-xl inline-flex items-center justify-center gap-2 hover:opacity-90 transition-opacity glow-box"
                 >
                   Agendar minha quadra
@@ -1027,8 +1053,9 @@ export function SearchClient(props: Props) {
           </motion.div>
         </div>
       </section>
+      ) : null}
 
-      {props.showFooter ? (
+      {!isSearchPage && props.showFooter ? (
         <footer className="border-t border-border py-12 bg-card/30">
           <div className="container">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
@@ -1049,7 +1076,7 @@ export function SearchClient(props: Props) {
               <div>
                 <h4 className="font-display font-semibold mb-4 text-sm uppercase tracking-wider">Plataforma</h4>
                 <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li><Link href="#busca" className="hover:text-foreground transition-colors">Agendar quadra</Link></li>
+                  <li><Link href="/search" className="hover:text-foreground transition-colors">Agendar quadra</Link></li>
                   <li><Link href="/sorteio-times" className="hover:text-foreground transition-colors">Sorteio de times</Link></li>
                   <li><Link href="/torneios" className="hover:text-foreground transition-colors">Torneios</Link></li>
                   <li><Link href="/dashboard" className="hover:text-foreground transition-colors">Painel do gestor</Link></li>

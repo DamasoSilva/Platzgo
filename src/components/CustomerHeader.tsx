@@ -41,6 +41,7 @@ export function CustomerHeader(props: Props) {
   const isLoggedIn = Boolean(props.viewer?.isLoggedIn);
   const role = props.viewer?.role ?? null;
   const isOwner = role === "ADMIN";
+  const isCustomerFacing = !isOwner && role !== "SYSADMIN";
   const router = useRouter();
 
   // Protecao contra BFCache (voltar do navegador apos logout).
@@ -121,13 +122,27 @@ export function CustomerHeader(props: Props) {
 
   const links = isOwner
     ? [{ label: "Dashboard", href: "/dashboard" }]
-    : [
-        { label: "Início", href: "/" },
-        { label: "Agendar", href: "/#busca" },
-        { label: "Como funciona", href: "/#como-funciona" },
-        { label: "Contato", href: "/#contato" },
-      ];
-  const ctaHref = isOwner ? "/dashboard" : "/#busca";
+    : isCustomerFacing
+      ? [
+          { label: "Início", href: "/" },
+          { label: "Como funciona", href: "/#como-funciona" },
+          { label: "Contato", href: "/#contato" },
+          { label: "Sorteio de times", href: "/sorteio-times" },
+          { label: "Torneios", href: "/torneios" },
+          { label: "Agendar agora", href: "/search" },
+          {
+            label: "Perfil",
+            href: isLoggedIn
+              ? "/perfil"
+              : `/signin?callbackUrl=${encodeURIComponent(signInCallbackUrl)}`,
+          },
+        ]
+      : [
+          { label: "Início", href: "/" },
+          { label: "Como funciona", href: "/#como-funciona" },
+          { label: "Contato", href: "/#contato" },
+        ];
+  const ctaHref = isOwner ? "/dashboard" : "/search";
   const ctaLabel = isOwner ? "Ir para dashboard" : "Agendar agora";
 
   const headerClass =
@@ -147,9 +162,17 @@ export function CustomerHeader(props: Props) {
           </span>
         </Link>
 
-        <div className="hidden md:flex items-center gap-8">
+        <div className="hidden md:flex items-center gap-6">
           {links.map((link) => (
-            <Link key={link.label} href={link.href} className={pill}>
+            <Link
+              key={link.label}
+              href={link.href}
+              className={
+                link.label === "Agendar agora"
+                  ? "inline-flex rounded-lg gradient-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+                  : pill
+              }
+            >
               {link.label}
             </Link>
           ))}
@@ -158,32 +181,25 @@ export function CustomerHeader(props: Props) {
         <div className="flex items-center gap-3">
           {props.rightSlot ? <div className="hidden items-center gap-3 sm:flex">{props.rightSlot}</div> : null}
 
-          {!isOwner ? (
-            <div className="hidden lg:flex items-center gap-3">
-              <Link href="/sorteio-times" className={pill}>
-                Sorteio de times
-              </Link>
-              <Link href="/torneios" className={pill}>
-                Torneios
-              </Link>
-            </div>
+          {isOwner ? (
+            <Link
+              href={ctaHref}
+              className="hidden sm:inline-flex gradient-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity"
+            >
+              {ctaLabel}
+            </Link>
           ) : null}
 
-          <Link
-            href={ctaHref}
-            className="hidden sm:inline-flex gradient-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity"
-          >
-            {ctaLabel}
-          </Link>
-
-          {!isLoggedIn ? (
+          {!isCustomerFacing && !isLoggedIn ? (
             <Link
               href={`/signin?callbackUrl=${encodeURIComponent(signInCallbackUrl)}`}
               className="hidden sm:inline-flex border border-border bg-card/50 text-foreground font-medium text-sm px-5 py-2.5 rounded-lg hover:bg-card transition-colors"
             >
               Entrar
             </Link>
-          ) : (
+          ) : null}
+
+          {!isCustomerFacing && isLoggedIn ? (
             <div className="relative hidden sm:block">
               <button
                 type="button"
@@ -240,7 +256,7 @@ export function CustomerHeader(props: Props) {
                 </div>
               ) : null}
             </div>
-          )}
+          ) : null}
 
           <button
             type="button"
@@ -266,7 +282,11 @@ export function CustomerHeader(props: Props) {
                   key={link.label}
                   href={link.href}
                   onClick={() => setMenuOpen(false)}
-                  className={pill}
+                  className={
+                    link.label === "Agendar agora"
+                      ? "gradient-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-lg text-center"
+                      : pill
+                  }
                 >
                   {link.label}
                 </Link>
@@ -286,7 +306,7 @@ export function CustomerHeader(props: Props) {
                 </>
               ) : null}
 
-              {isLoggedIn ? (
+              {!isCustomerFacing && isLoggedIn ? (
                 <>
                   <Link href="/perfil" className={pill} onClick={() => setMenuOpen(false)}>
                     Meu perfil
@@ -302,7 +322,7 @@ export function CustomerHeader(props: Props) {
                     Sair
                   </button>
                 </>
-              ) : (
+              ) : !isCustomerFacing ? (
                 <Link
                   href={`/signin?callbackUrl=${encodeURIComponent(signInCallbackUrl)}`}
                   onClick={() => setMenuOpen(false)}
@@ -310,7 +330,7 @@ export function CustomerHeader(props: Props) {
                 >
                   Entrar
                 </Link>
-              )}
+              ) : null}
             </div>
           </motion.div>
         ) : null}

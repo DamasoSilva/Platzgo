@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { motion } from "framer-motion";
-import { Check } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Star } from "lucide-react";
 
 import { CustomerHeader } from "@/components/CustomerHeader";
 import { createBooking, getMyBookingStatus } from "@/lib/actions/bookings";
@@ -203,6 +203,7 @@ export function CourtDetailsClient(props: {
   const [cpfPromptOpen, setCpfPromptOpen] = useState(false);
   const [cpfPromptError, setCpfPromptError] = useState<string | null>(null);
   const [cpfPromptNext, setCpfPromptNext] = useState(false);
+  const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const repeatRef = useRef<HTMLDetailsElement | null>(null);
 
   const monthKey = useMemo(() => day.slice(0, 7), [day]);
@@ -234,7 +235,12 @@ export function CourtDetailsClient(props: {
       const d = new Date(start);
       d.setDate(start.getDate() + i);
       const value = formatYmd(d);
+      if (value < todayYmd) continue;
       options.push({ value, label: formatDateOptionLabel(d, value === todayYmd) });
+    }
+
+    if (options.length === 0) {
+      options.push({ value: todayYmd, label: formatDateOptionLabel(asLocalDayDate(todayYmd), true) });
     }
 
     return options;
@@ -764,6 +770,26 @@ export function CourtDetailsClient(props: {
 
   const establishmentCover = (data.court.establishment.photo_urls ?? []).find((u) => (u ?? "").trim()) ?? null;
   const courtPhotos = data.court.photo_urls?.length ? data.court.photo_urls : establishmentCover ? [establishmentCover] : [];
+  const establishmentView = data.court.establishment as (typeof data.court.establishment & {
+    avgRating?: number | null;
+    reviewsCount?: number | null;
+  });
+  const avgRating = typeof establishmentView.avgRating === "number" ? establishmentView.avgRating : null;
+  const reviewsCount = typeof establishmentView.reviewsCount === "number" ? establishmentView.reviewsCount : null;
+
+  useEffect(() => {
+    setActivePhotoIndex(0);
+  }, [props.courtId]);
+
+  useEffect(() => {
+    if (!courtPhotos.length) {
+      setActivePhotoIndex(0);
+      return;
+    }
+    if (activePhotoIndex >= courtPhotos.length) {
+      setActivePhotoIndex(0);
+    }
+  }, [activePhotoIndex, courtPhotos.length]);
 
   const bookingStep = bookingAlert ? 3 : selectedStart ? 2 : 1;
   const bookingSteps = [
@@ -990,49 +1016,109 @@ export function CourtDetailsClient(props: {
           ))}
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="mb-10"
-        >
-          <h1 className="text-3xl md:text-4xl font-display font-bold mb-2">{data.court.name}</h1>
-          <p className="text-muted-foreground">
-            {data.court.establishment.name} • {formatSportLabel(data.court.sport_type)} • {formatBRLFromCents(data.court.price_per_hour)}/h
-          </p>
-        </motion.div>
+        <div className="grid gap-6 lg:grid-cols-12 lg:items-start">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="lg:col-span-5"
+          >
+            <div className="rounded-2xl border border-border bg-card p-5">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {data.court.establishment.name}
+              </p>
+              <h1 className="mt-1 text-2xl font-display font-bold text-foreground">{data.court.name}</h1>
 
-        <div className="grid gap-8 md:grid-cols-12 md:items-start">
-          <div className="md:col-span-7 space-y-4">
-            {courtPhotos.length ? (
-              <div className="h-72 overflow-hidden rounded-2xl border border-border bg-card shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={courtPhotos[0]!}
-                  alt={`Foto da quadra ${data.court.name}`}
-                  className="h-full w-full object-cover"
-                />
+              <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                <Star size={14} className="text-primary" />
+                {avgRating != null ? (
+                  <>
+                    <span className="font-semibold text-foreground">{avgRating.toFixed(1)}</span>
+                    <span>•</span>
+                    <span>{reviewsCount ?? 0} avaliações</span>
+                  </>
+                ) : (
+                  <span>Sem avaliações registradas</span>
+                )}
               </div>
-            ) : null}
 
-            {courtPhotos.length > 1 ? (
-              <div className="grid grid-cols-2 gap-3">
-                {courtPhotos.slice(1, 5).map((url, idx) => (
-                  <div
-                    key={url}
-                    className="h-34 overflow-hidden rounded-2xl border border-border bg-card"
-                  >
+              <div className="mt-4 space-y-2 border-t border-border pt-4 text-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Esporte</span>
+                  <span className="font-semibold text-foreground">{formatSportLabel(data.court.sport_type)}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Preço/hora</span>
+                  <span className="font-semibold text-foreground">{formatBRLFromCents(data.court.price_per_hour)}</span>
+                </div>
+              </div>
+
+              <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-secondary/30">
+                {courtPhotos.length ? (
+                  <div className="relative h-64 w-full">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={url} alt={`Foto da quadra ${data.court.name} ${idx + 2}`} className="h-full w-full object-cover" />
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </div>
+                    <img
+                      src={courtPhotos[activePhotoIndex]!}
+                      alt={`Foto da quadra ${data.court.name}`}
+                      className="h-full w-full object-cover"
+                    />
+                    {courtPhotos.length > 1 ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setActivePhotoIndex((prev) =>
+                              prev === 0 ? courtPhotos.length - 1 : prev - 1
+                            )
+                          }
+                          className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full border border-border bg-card/80 p-2 text-foreground backdrop-blur"
+                          aria-label="Imagem anterior"
+                        >
+                          <ChevronLeft size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setActivePhotoIndex((prev) =>
+                              prev === courtPhotos.length - 1 ? 0 : prev + 1
+                            )
+                          }
+                          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full border border-border bg-card/80 p-2 text-foreground backdrop-blur"
+                          aria-label="Próxima imagem"
+                        >
+                          <ChevronRight size={16} />
+                        </button>
 
-          <div className="md:col-span-5">
-            <div className="md:sticky md:top-24 rounded-2xl bg-card border border-border p-6">
-              <h2 className="text-lg font-semibold">{isOwnerPreview ? "Preview" : "Agendar"}</h2>
+                        <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-border bg-card/70 px-2 py-1 backdrop-blur">
+                          {courtPhotos.map((_, idx) => (
+                            <button
+                              key={`${idx}`}
+                              type="button"
+                              onClick={() => setActivePhotoIndex(idx)}
+                              className={
+                                idx === activePhotoIndex
+                                  ? "h-1.5 w-5 rounded-full bg-primary"
+                                  : "h-1.5 w-1.5 rounded-full bg-muted-foreground/60"
+                              }
+                              aria-label={`Ver imagem ${idx + 1}`}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+                    Sem imagens cadastradas para esta quadra.
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+
+          <div className="lg:col-span-7">
+            <div className="rounded-2xl bg-card border border-border p-6">
+              <h2 className="text-2xl font-display font-bold text-foreground">Escolha data e horário</h2>
 
               {hasMonthly ? (
                 <div className="mt-4 rounded-2xl border border-border bg-card p-4 text-sm text-foreground">
@@ -1211,7 +1297,8 @@ export function CourtDetailsClient(props: {
                           }}
                           className="mt-2 w-full rounded-xl border border-input bg-secondary px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                         />
-                        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        <div className="mt-3 overflow-x-auto pb-1">
+                          <div className="flex min-w-max gap-2">
                           {dateOptions.map((opt) => {
                             const active = day === opt.value;
                             return (
@@ -1224,14 +1311,16 @@ export function CourtDetailsClient(props: {
                                 }}
                                 className={
                                   active
-                                    ? "rounded-xl border border-primary/40 bg-primary/15 px-3 py-2 text-xs font-semibold text-primary"
-                                    : "rounded-xl border border-border bg-card px-3 py-2 text-xs font-medium text-foreground hover:bg-secondary"
+                                    ? "rounded-2xl border border-primary/40 bg-primary/15 px-4 py-2 text-left text-xs font-semibold text-primary shadow-[0_0_0_1px_rgba(0,0,0,0.04)]"
+                                    : "rounded-2xl border border-border bg-card px-4 py-2 text-left text-xs font-medium text-foreground transition-colors hover:bg-secondary"
                                 }
                               >
-                                {opt.label}
+                                <span className="block whitespace-nowrap">{opt.label}</span>
+                                <span className="mt-0.5 block text-[10px] font-medium text-muted-foreground">{opt.value.split("-").reverse().join("/")}</span>
                               </button>
                             );
                           })}
+                          </div>
                         </div>
                       </div>
 

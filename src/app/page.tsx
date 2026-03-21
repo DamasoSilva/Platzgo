@@ -18,7 +18,12 @@ function parseNumber(v: unknown, fallback: number): number {
 }
 
 function parseDay(v: unknown): string {
-  if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v)) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const parsed = new Date(`${v}T00:00:00`);
+    if (!Number.isNaN(parsed.getTime()) && parsed >= today) return v;
+  }
   const d = new Date();
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -105,6 +110,7 @@ export default async function Home(props: {
 
   return (
     <SearchClient
+      mode="home"
       apiKey={apiKey}
       showOwnerCtaOnLoggedOut={!isLoggedIn}
       showMarketingCardsOnLoggedOut={!isLoggedIn}

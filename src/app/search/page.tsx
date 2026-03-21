@@ -1,15 +1,142 @@
-import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+import { getServerSession } from "next-auth";
+
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { getPublicSiteSettings } from "@/lib/systemSettings";
+import { SearchClient } from "@/components/SearchClient";
+import { SportType } from "@/generated/prisma/enums";
+
+export const metadata: Metadata = {
+  title: "Buscar quadras • PlatzGo!",
+  description: "Aplique filtros, visualize no mapa e escolha a melhor quadra para seu jogo.",
+};
+
+function parseNumber(v: unknown, fallback: number): number {
+  const n = typeof v === "string" ? Number(v) : NaN;
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function parseDay(v: unknown): string {
+  if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v)) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const parsed = new Date(`${v}T00:00:00`);
+    if (!Number.isNaN(parsed.getTime()) && parsed >= today) return v;
+  }
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function parseTime(v: unknown): string | null {
+  if (typeof v === "string" && /^\d{2}:\d{2}$/.test(v)) return v;
+  return null;
+}
+
+function parseSport(v: unknown): SportType | "ALL" {
+  if (v === "ALL") return "ALL";
+  if (typeof v !== "string") return "ALL";
+  return (Object.values(SportType) as string[]).includes(v) ? (v as SportType) : "ALL";
+}
 
 export default async function SearchPage(props: {
   searchParams?:
-    | Record<string, string | string[] | undefined>
-    | Promise<Record<string, string | string[] | undefined>>;
+    | {
+        lat?: string;
+        lng?: string;
+        radiusKm?: string;
+        sport?: string;
+        day?: string;
+        time?: string;
+        q?: string;
+        maxPrice?: string;
+        onlyFavorites?: string;
+      }
+    | Promise<{
+        lat?: string;
+        lng?: string;
+        radiusKm?: string;
+        sport?: string;
+        day?: string;
+        time?: string;
+        q?: string;
+        maxPrice?: string;
+        onlyFavorites?: string;
+      }>;
 }) {
-  const sp = props.searchParams ? await Promise.resolve(props.searchParams) : undefined;
-  const params = new URLSearchParams();
-  for (const [k, v] of Object.entries(sp ?? {})) {
-    if (typeof v === "string") params.set(k, v);
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
+
+  const session = await getServerSession(authOptions);
+  const viewerUserId = session?.user?.id ?? null;
+  const isLoggedIn = Boolean(viewerUserId);
+
+  const searchParams = props.searchParams ? await Promise.resolve(props.searchParams) : undefined;
+  const latFromQuery = typeof searchParams?.lat === "string" ? parseNumber(searchParams.lat, NaN) : NaN;
+  const lngFromQuery = typeof searchParams?.lng === "string" ? parseNumber(searchParams.lng, NaN) : NaN;
+
+  let userLat: number | null = null;
+  let userLng: number | null = null;
+  let userAddress: string | null = null;
+  let userName: string | null = null;
+  let userImage: string | null = null;
+  if (viewerUserId) {
+    const user = await prisma.user.findUnique({
+      where: { id: viewerUserId },
+      select: { latitude: true, longitude: true, address_text: true, name: true, image: true },
+    });
+    userLat = typeof user?.latitude === "number" ? user.latitude : null;
+    userLng = typeof user?.longitude === "number" ? user.longitude : null;
+    userAddress = typeof user?.address_text === "string" ? user.address_text : null;
+    userName = typeof user?.name === "string" ? user.name : null;
+    userImage = typeof user?.image === "string" ? user.image : null;
   }
-  const qs = params.toString();
-  redirect(qs ? `/?${qs}` : "/");
+
+  const hasCoordsFromQuery = Number.isFinite(latFromQuery) && Number.isFinite(lngFromQuery);
+  const hasCoordsFromUser = typeof userLat === "number" && typeof userLng === "number";
+
+  const lat = hasCoordsFromQuery ? latFromQuery : hasCoordsFromUser ? (userLat ?? -23.55052) : -23.55052;
+  const lng = hasCoordsFromQuery ? lngFromQuery : hasCoordsFromUser ? (userLng ?? -46.633308) : -46.633308;
+  const radiusKm = parseNumber(searchParams?.radiusKm, 10);
+  const sport = parseSport(searchParams?.sport);
+  const dayFromQuery = typeof searchParams?.day === "string" && searchParams.day.trim().length > 0;
+  const day = parseDay(searchParams?.day);
+  const time = parseTime(searchParams?.time);
+  const maxPrice = parseNumber(searchParams?.maxPrice, 0);
+  const onlyFavorites = searchParams?.onlyFavorites === "1";
+  const footer = await getPublicSiteSettings();
+
+  return (
+    <SearchClient
+      mode="search"
+      apiKey={apiKey}
+      showOwnerCtaOnLoggedOut={!isLoggedIn}
+      showMarketingCardsOnLoggedOut={!isLoggedIn}
+      showFooter={false}
+      footer={footer}
+      viewer={{
+        userId: viewerUserId,
+        isLoggedIn,
+        role: session?.user?.role ?? null,
+        name: session?.user?.name ?? userName,
+        image: session?.user?.image ?? userImage,
+      }}
+      initial={{
+        lat,
+        lng,
+        address: userAddress ?? undefined,
+        radiusKm,
+        sport,
+        day,
+        dayFromQuery,
+        time,
+        q: searchParams?.q,
+        maxPrice: maxPrice > 0 ? maxPrice : null,
+        onlyFavorites,
+        locationSource: hasCoordsFromQuery ? "query" : hasCoordsFromUser ? "user" : "default",
+      }}
+    />
+  );
 }
