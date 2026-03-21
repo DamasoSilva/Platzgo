@@ -124,8 +124,6 @@ export function CustomerHeader(props: Props) {
     : [
         { label: "Início", href: "/" },
         { label: "Agendar", href: "/#busca" },
-        { label: "Sorteio de times", href: "/sorteio-times" },
-        { label: "Torneios", href: "/torneios" },
         { label: "Como funciona", href: "/#como-funciona" },
         { label: "Contato", href: "/#contato" },
       ];
@@ -159,6 +157,17 @@ export function CustomerHeader(props: Props) {
 
         <div className="flex items-center gap-3">
           {props.rightSlot ? <div className="hidden items-center gap-3 sm:flex">{props.rightSlot}</div> : null}
+
+          {!isOwner ? (
+            <div className="hidden lg:flex items-center gap-3">
+              <Link href="/sorteio-times" className={pill}>
+                Sorteio de times
+              </Link>
+              <Link href="/torneios" className={pill}>
+                Torneios
+              </Link>
+            </div>
+          ) : null}
 
           <Link
             href={ctaHref}

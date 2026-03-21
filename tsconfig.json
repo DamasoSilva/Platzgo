@@ -33,6 +33,7 @@
   ],
   "exclude": [
     "node_modules",
-    "good-evening-project-main1.1"
+    "good-evening-project-main1.1",
+    "good-evening-project-main"
   ]
 }

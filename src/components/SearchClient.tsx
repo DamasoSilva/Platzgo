@@ -110,7 +110,7 @@ const landingFeatures = [
   {
     icon: CreditCard,
     title: "Pagamento integrado",
-    description: "Pague via Pix, cartão ou boleto direto pela plataforma.",
+    description: "Pague com PIX direto pela plataforma.",
   },
   {
     icon: Star,
@@ -145,7 +145,7 @@ const landingSteps = [
   {
     step: "03",
     title: "Pague",
-    description: "Realize o pagamento de forma segura via Pix, cartão ou boleto.",
+    description: "Realize o pagamento de forma segura via PIX.",
     icon: CreditCard,
   },
   {
@@ -178,7 +178,7 @@ export function SearchClient(props: Props) {
   const heroTitle = props.hero?.title ?? "Sua quadra. Seu horário. Sem complicação.";
   const heroDescription =
     props.hero?.description ??
-    "Agende quadras de futebol, padel, tênis e muito mais em segundos. Sem ligações, sem espera - tudo online e na palma da mão.";
+    "Agende quadras de futebol, padel, tênis e muito mais em segundos. Sem ligações, sem espera, tudo online e na palma da mão.";
 
   const footerSettings = props.footer ?? {};
   const contactEmail = (footerSettings.contactEmail ?? "contato@platzgo.com").trim();
@@ -922,7 +922,7 @@ export function SearchClient(props: Props) {
                 Tudo que você precisa para jogar
               </h2>
               <p className="text-muted-foreground max-w-xl mx-auto">
-                Do agendamento ao pagamento, tudo integrado para uma experiência perfeita - seja jogador ou dono de quadra.
+                Do agendamento ao pagamento, tudo integrado para uma experiência perfeita, seja jogador ou dono de quadra.
               </p>
             </motion.div>
 

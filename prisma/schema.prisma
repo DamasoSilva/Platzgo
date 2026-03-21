@@ -346,7 +346,6 @@ model MonthlyPass {
   customer User  @relation(fields: [customerId], references: [id])
   payments Payment[]
 
-  @@unique([courtId, customerId, month])
   @@index([courtId, month])
   @@index([courtId, month, weekday])
   @@index([customerId, month])

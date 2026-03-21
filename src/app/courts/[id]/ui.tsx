@@ -96,6 +96,15 @@ function formatDateOptionLabel(date: Date, isToday: boolean): string {
   return `${weekday} ${ddmm}`;
 }
 
+function startOfWeekMonday(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 
 const COURT_FILTERS_KEY = "ph:lastCourtFilters";
 
@@ -217,20 +226,15 @@ export function CourtDetailsClient(props: {
     return `${yyyy}-${mm}-${dd}`;
   }, []);
   const dateOptions = useMemo(() => {
-    const start = asLocalDayDate(todayYmd);
+    const anchor = isYmd(day) ? asLocalDayDate(day) : asLocalDayDate(todayYmd);
+    const start = startOfWeekMonday(anchor);
     const options: Array<{ value: string; label: string }> = [];
 
-    for (let i = 0; i < 12; i += 1) {
+    for (let i = 0; i < 7; i += 1) {
       const d = new Date(start);
       d.setDate(start.getDate() + i);
       const value = formatYmd(d);
-      options.push({ value, label: formatDateOptionLabel(d, i === 0) });
-    }
-
-    if (isYmd(day) && day > todayYmd && !options.some((opt) => opt.value === day)) {
-      const d = asLocalDayDate(day);
-      options.push({ value: day, label: formatDateOptionLabel(d, false) });
-      options.sort((a, b) => a.value.localeCompare(b.value));
+      options.push({ value, label: formatDateOptionLabel(d, value === todayYmd) });
     }
 
     return options;
@@ -356,7 +360,7 @@ export function CourtDetailsClient(props: {
   const monthlyStatus = data.monthlyPass?.status ?? null;
   const monthlyIsPending = monthlyStatus === "PENDING";
   const monthlyIsActive = monthlyStatus === "ACTIVE";
-  const canRequestMonthly = hasMonthly && !monthlyIsPending && !monthlyIsActive;
+  const canRequestMonthly = hasMonthly;
   const canRequestMonthlyFinal = canRequestMonthly && !monthlyBlockedReason;
 
   const paymentProvider =
@@ -369,9 +373,8 @@ export function CourtDetailsClient(props: {
     if (!selectedStart || !selectedEnd) return false;
     if (!data.paymentsEnabled || payAtCourt) return false;
     if (paymentProvider !== "asaas") return false;
-    if (monthlyIsActive) return false;
     return (totalPriceCents ?? 0) > 0;
-  }, [data.paymentsEnabled, monthlyIsActive, payAtCourt, paymentProvider, props.userId, selectedEnd, selectedStart, totalPriceCents]);
+  }, [data.paymentsEnabled, payAtCourt, paymentProvider, props.userId, selectedEnd, selectedStart, totalPriceCents]);
 
   function openCpfPrompt(continueAfterSave: boolean, message?: string | null) {
     setCpfPromptError(message ?? null);
@@ -729,7 +732,20 @@ export function CourtDetailsClient(props: {
           setMessage({ type: "error", text: res.error });
           return;
         }
-        setMessage({ type: "success", text: res.status === "PENDING" ? "Solicitação de mensalidade enviada. Aguarde aprovação do estabelecimento." : "Mensalidade ativa." });
+        if (res.pixPayload || res.pixQrBase64) {
+          setPixPayload(res.pixPayload ?? null);
+          setPixQrBase64(res.pixQrBase64 ?? null);
+          setPixExpiresAt(parsePixExpiresAt(res.pixExpiresAt ?? null));
+          setPixAmountCents(typeof res.amountCents === "number" ? res.amountCents : null);
+          setPixModalOpen(true);
+          setMessage({ type: "success", text: "Renovação iniciada. Finalize o PIX para concluir a mensalidade do novo mês." });
+        } else {
+          setMessage({ type: "success", text: res.status === "PENDING" ? "Solicitação de mensalidade enviada. Aguarde aprovação do estabelecimento." : "Mensalidade ativa." });
+        }
+
+        if (res.warning) {
+          setAlertMessage({ type: "info", text: res.warning });
+        }
       } catch (e) {
         setMessage({ type: "error", text: e instanceof Error ? e.message : "Erro ao solicitar mensalidade" });
       }
@@ -1183,7 +1199,19 @@ export function CourtDetailsClient(props: {
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div>
                         <label className="block text-xs font-medium text-muted-foreground">Data</label>
-                        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                        <input
+                          type="date"
+                          value={day}
+                          min={todayYmd}
+                          onChange={(e) => {
+                            const next = e.target.value;
+                            if (!next) return;
+                            setDay(next);
+                            refreshDay(next);
+                          }}
+                          className="mt-2 w-full rounded-xl border border-input bg-secondary px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+                        />
+                        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
                           {dateOptions.map((opt) => {
                             const active = day === opt.value;
                             return (

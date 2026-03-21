@@ -129,14 +129,14 @@ export async function getCourtBookingsForDay(params: { courtId: string; day: Dat
     }),
 
     customerId
-      ? prisma.monthlyPass.findUnique({
+      ? prisma.monthlyPass.findFirst({
           where: {
-            courtId_customerId_month: {
-              courtId: params.courtId,
-              customerId,
-              month: monthKey,
-            },
+            courtId: params.courtId,
+            customerId,
+            month: monthKey,
+            status: { in: ["PENDING", "ACTIVE"] },
           },
+          orderBy: { createdAt: "desc" },
           select: { id: true, status: true, month: true },
         })
       : Promise.resolve(null),

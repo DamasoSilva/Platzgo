@@ -4,10 +4,12 @@ import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/authz";
-import { MonthlyPassStatus, NotificationType } from "@/generated/prisma/enums";
+import { MonthlyPassStatus, NotificationType, PaymentProvider, PaymentStatus } from "@/generated/prisma/enums";
 import { enqueueEmail } from "@/lib/emailQueue";
 import { buildBlockingBookingWhere } from "@/lib/utils/bookingAvailability";
 import { fromTimeZoneDate } from "@/lib/utils/time";
+import { getPaymentConfig, extractAsaasErrorMessage } from "@/lib/payments";
+import { isValidCpfCnpj, normalizeCpfCnpj } from "@/lib/utils/cpfCnpj";
 import {
   getAppUrl,
   monthlyPassCancelledEmailToCustomer,
@@ -64,6 +66,168 @@ function compareTimes(start: string, end: string): boolean {
   const [sh, sm] = start.split(":").map(Number);
   const [eh, em] = end.split(":").map(Number);
   return eh > sh || (eh === sh && em > sm);
+}
+
+function timesOverlap(aStart: string, aEnd: string, bStart: string, bEnd: string): boolean {
+  return aStart < bEnd && aEnd > bStart;
+}
+
+function parseAsaasExpiration(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const raw = value.trim();
+  if (!raw) return null;
+  const normalized = raw.includes("T") ? raw : raw.replace(" ", "T");
+  const parsed = new Date(normalized);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toISOString();
+}
+
+async function ensureAsaasCustomerForMonthly(userId: string, apiKey: string, baseUrl: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, name: true, email: true, whatsapp_number: true, cpf_cnpj: true, asaas_customer_id: true },
+  });
+
+  if (!user) throw new Error("Usuário não encontrado");
+
+  const cpfCnpj = normalizeCpfCnpj(user.cpf_cnpj ?? "");
+  if (!cpfCnpj) throw new Error("CPF/CNPJ é obrigatório para pagamento de mensalidade.");
+  if (!isValidCpfCnpj(cpfCnpj)) throw new Error("CPF/CNPJ inválido para pagamento de mensalidade.");
+
+  if (user.asaas_customer_id) {
+    const checkRes = await fetch(`${baseUrl}/customers/${user.asaas_customer_id}`, {
+      headers: { access_token: apiKey },
+    }).catch(() => null);
+
+    if (checkRes?.ok) {
+      return user.asaas_customer_id;
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { asaas_customer_id: null },
+      select: { id: true },
+    });
+  }
+
+  const payload = {
+    name: user.name ?? user.email,
+    email: user.email,
+    phone: (user.whatsapp_number ?? "").replace(/\D/g, "") || undefined,
+    cpfCnpj,
+  };
+
+  const res = await fetch(`${baseUrl}/customers`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      access_token: apiKey,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json().catch(() => null);
+  const detail = extractAsaasErrorMessage(data);
+  if (!res.ok || !data?.id) {
+    throw new Error(detail ? `Falha ao criar cliente no Asaas: ${detail}` : "Falha ao criar cliente no Asaas");
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { asaas_customer_id: String(data.id) },
+    select: { id: true },
+  });
+
+  return String(data.id);
+}
+
+async function createMonthlyPassPix(params: {
+  passId: string;
+  customerId: string;
+  amountCents: number;
+  courtName: string;
+  month: string;
+}) {
+  const config = await getPaymentConfig();
+  if (!config.enabled || !config.asaas.apiKey) {
+    return { ok: false as const, reason: "Pagamento PIX indisponível no momento." };
+  }
+
+  const baseUrl = config.asaas.baseUrl ?? "https://sandbox.asaas.com/api/v3";
+  const customer = await ensureAsaasCustomerForMonthly(params.customerId, config.asaas.apiKey, baseUrl);
+
+  const dueDate = new Date().toISOString().slice(0, 10);
+  const chargeRes = await fetch(`${baseUrl}/payments`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      access_token: config.asaas.apiKey,
+    },
+    body: JSON.stringify({
+      customer,
+      billingType: "PIX",
+      value: Math.round(params.amountCents) / 100,
+      dueDate,
+      description: `Mensalidade ${params.month} • ${params.courtName}`,
+      externalReference: `monthly-pass:${params.passId}`,
+    }),
+  });
+
+  const chargeData = await chargeRes.json().catch(() => null);
+  const chargeError = extractAsaasErrorMessage(chargeData);
+  if (!chargeRes.ok || !chargeData?.id) {
+    return {
+      ok: false as const,
+      reason: chargeError ? `Falha ao gerar PIX da renovação: ${chargeError}` : "Falha ao gerar PIX da renovação.",
+    };
+  }
+
+  const pixRes = await fetch(`${baseUrl}/payments/${chargeData.id}/pixQrCode`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      access_token: config.asaas.apiKey,
+    },
+  });
+
+  const pixData = await pixRes.json().catch(() => null);
+  if (!pixRes.ok || !pixData?.payload) {
+    return { ok: false as const, reason: "PIX criado sem payload de cópia/QR. Tente novamente." };
+  }
+
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+  const pixExpiresAt =
+    parseAsaasExpiration(pixData.expirationDate) ||
+    parseAsaasExpiration(pixData.expirationDateTime) ||
+    parseAsaasExpiration(pixData.expiresAt) ||
+    expiresAt.toISOString();
+
+  await prisma.payment.create({
+    data: {
+      monthlyPassId: params.passId,
+      provider: PaymentProvider.ASAAS,
+      status: PaymentStatus.PENDING,
+      amount_cents: params.amountCents,
+      provider_payment_id: String(chargeData.id),
+      checkout_url: chargeData.invoiceUrl ?? chargeData.paymentLink ?? null,
+      expires_at: new Date(pixExpiresAt),
+      metadata: {
+        pix_payload: String(pixData.payload),
+        pix_qr_base64: typeof pixData.encodedImage === "string" ? pixData.encodedImage : undefined,
+        pix_expires_at: pixExpiresAt,
+        month: params.month,
+      },
+    },
+    select: { id: true },
+  });
+
+  return {
+    ok: true as const,
+    pixPayload: String(pixData.payload),
+    pixQrBase64: typeof pixData.encodedImage === "string" ? pixData.encodedImage : null,
+    pixExpiresAt,
+    amountCents: params.amountCents,
+  };
 }
 
 function toDateTime(day: Date, timeHHMM: string): Date {
@@ -217,7 +381,19 @@ export async function requestMonthlyPass(input: {
   weekday: number;
   startTime: string;
   endTime: string;
-}): Promise<{ ok: true; id: string; status: MonthlyPassStatus } | { ok: false; error: string }> {
+}): Promise<
+  | {
+      ok: true;
+      id: string;
+      status: MonthlyPassStatus;
+      pixPayload?: string | null;
+      pixQrBase64?: string | null;
+      pixExpiresAt?: string | null;
+      amountCents?: number | null;
+      warning?: string;
+    }
+  | { ok: false; error: string }
+> {
   try {
     const session = await requireRole("CUSTOMER");
     if (!input.courtId) throw new Error("courtId é obrigatório");
@@ -256,7 +432,7 @@ export async function requestMonthlyPass(input: {
         is_active: true,
         monthly_price_cents: true,
         monthly_terms: true,
-        establishment: { select: { ownerId: true } },
+        establishment: { select: { id: true, ownerId: true } },
       },
     });
 
@@ -271,23 +447,49 @@ export async function requestMonthlyPass(input: {
     const terms = (court.monthly_terms ?? "").trim();
     if (terms && !input.acceptTerms) throw new Error("Você precisa aceitar os termos da mensalidade.");
 
-    const existing = await prisma.monthlyPass.findUnique({
+    const existingSameSlot = await prisma.monthlyPass.findFirst({
       where: {
-        courtId_customerId_month: {
-          courtId: input.courtId,
-          customerId: session.user.id,
-          month,
-        },
+        courtId: input.courtId,
+        customerId: session.user.id,
+        month,
+        weekday,
+        start_time: startTime,
+        end_time: endTime,
+        status: { in: [MonthlyPassStatus.PENDING, MonthlyPassStatus.ACTIVE] },
       },
-      select: { id: true, status: true, weekday: true, start_time: true, end_time: true },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, status: true },
     });
 
-    if (existing?.status === MonthlyPassStatus.ACTIVE) {
-      throw new Error("Você já possui mensalidade ativa para este mês.");
+    if (existingSameSlot?.status === MonthlyPassStatus.ACTIVE) {
+      throw new Error("Você já possui mensalidade ativa nesse mesmo horário.");
     }
 
-    if (existing?.status === MonthlyPassStatus.PENDING) {
-      return { ok: true, id: existing.id, status: existing.status };
+    if (existingSameSlot?.status === MonthlyPassStatus.PENDING) {
+      return { ok: true, id: existingSameSlot.id, status: existingSameSlot.status };
+    }
+
+    const crossEstablishmentConflicts = await prisma.monthlyPass.findMany({
+      where: {
+        customerId: session.user.id,
+        month,
+        weekday,
+        status: { in: [MonthlyPassStatus.PENDING, MonthlyPassStatus.ACTIVE] },
+        court: { establishmentId: { not: court.establishment.id } },
+      },
+      select: {
+        id: true,
+        start_time: true,
+        end_time: true,
+      },
+    });
+
+    const hasCrossConflict = crossEstablishmentConflicts.some(
+      (pass) => pass.start_time && pass.end_time && timesOverlap(startTime, endTime, pass.start_time, pass.end_time)
+    );
+
+    if (hasCrossConflict) {
+      throw new Error("Conflito de mensalidade: esse horário já foi reservado em outro estabelecimento.");
     }
 
     if (month === nextMonth) {
@@ -324,31 +526,20 @@ export async function requestMonthlyPass(input: {
       endTime,
     });
 
-    const pass = existing
-      ? await prisma.monthlyPass.update({
-          where: { id: existing.id },
-          data: {
-            status: MonthlyPassStatus.PENDING,
-            weekday,
-            start_time: startTime,
-            end_time: endTime,
-          },
-          select: { id: true, status: true },
-        })
-      : await prisma.monthlyPass.create({
-          data: {
-            courtId: input.courtId,
-            customerId: session.user.id,
-            month,
-            status: MonthlyPassStatus.PENDING,
-            price_cents: price,
-            terms_snapshot: terms || null,
-            weekday,
-            start_time: startTime,
-            end_time: endTime,
-          },
-          select: { id: true, status: true },
-        });
+    const pass = await prisma.monthlyPass.create({
+      data: {
+        courtId: input.courtId,
+        customerId: session.user.id,
+        month,
+        status: MonthlyPassStatus.PENDING,
+        price_cents: price,
+        terms_snapshot: terms || null,
+        weekday,
+        start_time: startTime,
+        end_time: endTime,
+      },
+      select: { id: true, status: true },
+    });
 
     await prisma.notification.create({
       data: {
@@ -384,9 +575,44 @@ export async function requestMonthlyPass(input: {
       });
     }
 
+    let renewalPixWarning: string | undefined;
+    let renewalPix:
+      | { pixPayload: string | null; pixQrBase64: string | null; pixExpiresAt: string | null; amountCents: number | null }
+      | null = null;
+
+    if (month === nextMonth) {
+      const pix = await createMonthlyPassPix({
+        passId: pass.id,
+        customerId: session.user.id,
+        amountCents: price,
+        courtName: court.name,
+        month,
+      });
+
+      if (pix.ok) {
+        renewalPix = {
+          pixPayload: pix.pixPayload ?? null,
+          pixQrBase64: pix.pixQrBase64 ?? null,
+          pixExpiresAt: pix.pixExpiresAt ?? null,
+          amountCents: pix.amountCents ?? null,
+        };
+      } else {
+        renewalPixWarning = pix.reason;
+      }
+    }
+
     revalidatePath(`/courts/${input.courtId}`);
     revalidatePath("/meus-agendamentos");
-    return { ok: true, id: pass.id, status: pass.status };
+    return {
+      ok: true,
+      id: pass.id,
+      status: pass.status,
+      pixPayload: renewalPix?.pixPayload ?? null,
+      pixQrBase64: renewalPix?.pixQrBase64 ?? null,
+      pixExpiresAt: renewalPix?.pixExpiresAt ?? null,
+      amountCents: renewalPix?.amountCents ?? null,
+      warning: renewalPixWarning,
+    };
   } catch (e) {
     const message = e instanceof Error ? e.message : "Erro ao solicitar mensalidade";
     return { ok: false, error: message };
