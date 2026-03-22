@@ -86,14 +86,13 @@ function formatYmd(date: Date): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-function formatDateOptionLabel(date: Date, isToday: boolean): string {
-  if (isToday) return "Hoje";
-  const weekday = date
-    .toLocaleDateString("pt-BR", { weekday: "short" })
-    .replace(".", "")
-    .trim();
-  const ddmm = date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-  return `${weekday} ${ddmm}`;
+function formatWeekdayHeader(date: Date): string {
+  const weekday = date.toLocaleDateString("pt-BR", { weekday: "short" }).trim();
+  return weekday.charAt(0).toUpperCase() + weekday.slice(1);
+}
+
+function formatDdMm(date: Date): string {
+  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 }
 
 function startOfWeekMonday(date: Date): Date {
@@ -205,6 +204,8 @@ export function CourtDetailsClient(props: {
   const [cpfPromptNext, setCpfPromptNext] = useState(false);
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const repeatRef = useRef<HTMLDetailsElement | null>(null);
+  const dayCacheRef = useRef<Map<string, DayData>>(new Map([[props.day, props.initial]]));
+  const refreshSeqRef = useRef(0);
 
   const monthKey = useMemo(() => day.slice(0, 7), [day]);
   const initialTime = useMemo(() => {
@@ -229,22 +230,28 @@ export function CourtDetailsClient(props: {
   const dateOptions = useMemo(() => {
     const anchor = isYmd(day) ? asLocalDayDate(day) : asLocalDayDate(todayYmd);
     const start = startOfWeekMonday(anchor);
-    const options: Array<{ value: string; label: string }> = [];
+    const openWeekdaysRaw = (data.court.establishment as { open_weekdays?: number[] }).open_weekdays;
+    const openWeekdays = Array.isArray(openWeekdaysRaw) && openWeekdaysRaw.length > 0
+      ? new Set(openWeekdaysRaw)
+      : null;
+    const options: Array<{ value: string; weekday: string; ddmm: string; isToday: boolean }> = [];
 
     for (let i = 0; i < 7; i += 1) {
       const d = new Date(start);
       d.setDate(start.getDate() + i);
       const value = formatYmd(d);
       if (value < todayYmd) continue;
-      options.push({ value, label: formatDateOptionLabel(d, value === todayYmd) });
-    }
-
-    if (options.length === 0) {
-      options.push({ value: todayYmd, label: formatDateOptionLabel(asLocalDayDate(todayYmd), true) });
+      if (openWeekdays && !openWeekdays.has(d.getDay())) continue;
+      options.push({
+        value,
+        weekday: formatWeekdayHeader(d),
+        ddmm: formatDdMm(d),
+        isToday: value === todayYmd,
+      });
     }
 
     return options;
-  }, [day, todayYmd]);
+  }, [data.court.establishment, day, todayYmd]);
   const now = useMemo(() => new Date(), []);
   const currentMonthKey = useMemo(
     () => `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`,
@@ -507,16 +514,27 @@ export function CourtDetailsClient(props: {
     }
     setSelectedStart(null);
     const safeDay = nextDay < todayYmd ? todayYmd : nextDay;
+    setDay(safeDay);
     if (safeDay !== nextDay) {
       setMessage({ type: "info", text: "Selecione uma data atual ou futura para agendar." });
     }
+
+    const cached = dayCacheRef.current.get(safeDay);
+    if (cached) {
+      setData(cached);
+      setAlertTime(cached.dayInfo.opening_time);
+    }
+
+    const requestId = ++refreshSeqRef.current;
     startTransition(async () => {
       try {
         const next = await getCourtBookingsForDay({ courtId: props.courtId, day: safeDay });
+        if (requestId !== refreshSeqRef.current) return;
+        dayCacheRef.current.set(safeDay, next);
         setData(next);
         setAlertTime(next.dayInfo.opening_time);
-        setDay(safeDay);
       } catch (e) {
+        if (requestId !== refreshSeqRef.current) return;
         setMessage({ type: "error", text: e instanceof Error ? e.message : "Erro ao carregar agenda" });
       }
     });
@@ -1113,94 +1131,64 @@ export function CourtDetailsClient(props: {
                   </div>
                 )}
               </div>
+
+              <div className="mt-5 border-t border-border pt-5">
+                <h2 className="text-lg font-semibold">Sobre</h2>
+                <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                  {data.court.establishment.description ?? "Sem descrição."}
+                </p>
+
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-border bg-secondary/50 p-4">
+                    <p className="text-xs font-medium text-muted-foreground">Endereço</p>
+                    <p className="mt-1 text-sm text-foreground">
+                      {data.court.establishment.address_text}
+                    </p>
+                    <a
+                      href={mapsHref}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-2 inline-block text-sm text-foreground underline"
+                    >
+                      Ver no mapa
+                    </a>
+
+                    <div className="mt-3 overflow-hidden rounded-2xl border border-border bg-card">
+                      <iframe
+                        title="Mapa"
+                        src={mapsEmbedSrc}
+                        className="h-56 w-full"
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-border bg-secondary/50 p-4">
+                    <p className="text-xs font-medium text-muted-foreground">Comodidades</p>
+                    <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                      {(data.court.amenities ?? []).length ? (
+                        (data.court.amenities ?? []).map((t) => (
+                          <span
+                            key={t}
+                            className="rounded-full border border-border bg-card px-3 py-1 text-foreground"
+                          >
+                            {t}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Sem comodidades informadas.</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </motion.div>
 
           <div className="lg:col-span-7">
             <div className="rounded-2xl bg-card border border-border p-6">
               <h2 className="text-2xl font-display font-bold text-foreground">Escolha data e horário</h2>
-
-              {hasMonthly ? (
-                <div className="mt-4 rounded-2xl border border-border bg-card p-4 text-sm text-foreground">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">Mensalidade</p>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        Valor: {formatBRLFromCents(data.court.monthly_price_cents!)} / mês ({monthKey})
-                      </p>
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        {monthlyIsActive ? (
-                          <span className="inline-flex rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Ativa</span>
-                        ) : monthlyIsPending ? (
-                          <span className="inline-flex rounded-full border border-border bg-secondary/60 px-3 py-1 text-xs font-semibold text-muted-foreground">Pendente</span>
-                        ) : (
-                          <span className="inline-flex rounded-full border border-border bg-card/50 px-3 py-1 text-xs font-semibold text-foreground">Disponível</span>
-                        )}
-                      </div>
-
-                      {monthlyTerms ? (
-                        <details className="mt-3">
-                          <summary className="cursor-pointer text-xs font-semibold text-foreground underline">Ver termos</summary>
-                          <p className="mt-2 whitespace-pre-wrap text-xs leading-6 text-muted-foreground">{monthlyTerms}</p>
-                        </details>
-                      ) : (
-                        <p className="mt-2 text-xs leading-6 text-muted-foreground">
-                          Mensalidade sem termos configurados. Fale com o estabelecimento.
-                        </p>
-                      )}
-
-                      {!isOwnerPreview && monthlyTerms && canRequestMonthly ? (
-                        <label className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
-                          <input
-                            type="checkbox"
-                            checked={monthlyAccepted}
-                            onChange={(e) => setMonthlyAccepted(e.target.checked)}
-                            className="mt-0.5 h-4 w-4"
-                          />
-                          <span>Li e aceito os termos da mensalidade.</span>
-                        </label>
-                      ) : null}
-
-                      {monthlyBlockedReason ? (
-                        <div className="mt-3 rounded-2xl border border-primary/30 bg-primary/10 p-3 text-xs text-foreground">
-                          <p className="font-semibold text-primary">Mensalidade indisponível</p>
-                          <p className="mt-1">{monthlyBlockedReason}</p>
-                          {monthKey === nextMonthKey ? (
-                            <p className="mt-1">Liberado a partir de {penultimateWeekLabel}.</p>
-                          ) : null}
-                          {monthlyBlockedMidMonth ? (
-                            <button
-                              type="button"
-                              onClick={focusRepeat}
-                              className="mt-2 inline-flex rounded-full border border-primary/30 px-3 py-1 text-[11px] font-semibold text-primary"
-                            >
-                              Usar repetição semanal
-                            </button>
-                          ) : null}
-                        </div>
-                      ) : monthKey === nextMonthKey ? (
-                        <p className="mt-3 text-xs text-muted-foreground">
-                          Mensalidade do próximo mês abre na penúltima semana do mês anterior (a partir de {penultimateWeekLabel}).
-                        </p>
-                      ) : null}
-
-                      <p className="mt-3 text-xs text-muted-foreground">
-                        Duração selecionada: {durationMinutes} min.
-                      </p>
-                    </div>
-                    {!isOwnerPreview ? (
-                      <button
-                        type="button"
-                        disabled={isPending || !canRequestMonthlyFinal || (monthlyTerms ? !monthlyAccepted : false)}
-                        onClick={onRequestMonthlyPass}
-                        className="shrink-0 rounded-full gradient-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
-                      >
-                        {monthlyIsActive ? "Ativa" : monthlyIsPending ? "Solicitada" : "Solicitar"}
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-              ) : null}
 
               {isOwnerPreview ? (
                 <div className="mt-4 rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">
@@ -1292,13 +1280,11 @@ export function CourtDetailsClient(props: {
                           onChange={(e) => {
                             const next = e.target.value;
                             if (!next) return;
-                            setDay(next);
                             refreshDay(next);
                           }}
                           className="mt-2 w-full rounded-xl border border-input bg-secondary px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                         />
-                        <div className="mt-3 overflow-x-auto pb-1">
-                          <div className="flex min-w-max gap-2">
+                        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
                           {dateOptions.map((opt) => {
                             const active = day === opt.value;
                             return (
@@ -1306,22 +1292,52 @@ export function CourtDetailsClient(props: {
                                 key={opt.value}
                                 type="button"
                                 onClick={() => {
-                                  setDay(opt.value);
                                   refreshDay(opt.value);
                                 }}
                                 className={
                                   active
-                                    ? "rounded-2xl border border-primary/40 bg-primary/15 px-4 py-2 text-left text-xs font-semibold text-primary shadow-[0_0_0_1px_rgba(0,0,0,0.04)]"
-                                    : "rounded-2xl border border-border bg-card px-4 py-2 text-left text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+                                    ? "h-16 w-full rounded-2xl border border-[#8ac200] bg-[#b9f51f] px-2 py-2 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_8px_20px_rgba(138,194,0,0.28)] transition-all"
+                                    : "h-16 w-full rounded-2xl border border-[#222d3c] bg-[#141d2b] px-2 py-2 text-center transition-all hover:-translate-y-0.5 hover:border-[#2d3b50] hover:bg-[#182436]"
                                 }
                               >
-                                <span className="block whitespace-nowrap">{opt.label}</span>
-                                <span className="mt-0.5 block text-[10px] font-medium text-muted-foreground">{opt.value.split("-").reverse().join("/")}</span>
+                                <span
+                                  className={
+                                    active
+                                      ? "block text-xs font-bold tracking-wide text-[#19220f]"
+                                      : "block text-xs font-semibold tracking-wide text-[#8ea0bc]"
+                                  }
+                                >
+                                  {opt.weekday}
+                                </span>
+                                <span
+                                  className={
+                                    active
+                                      ? "mt-0.5 block text-xl font-black leading-none text-[#12180a]"
+                                      : "mt-0.5 block text-xl font-black leading-none text-[#dbe4f0]"
+                                  }
+                                >
+                                  {opt.ddmm}
+                                </span>
+                                {opt.isToday ? (
+                                  <span
+                                    className={
+                                      active
+                                        ? "mt-0.5 block text-[10px] font-semibold uppercase tracking-[0.08em] text-[#2d3d12]"
+                                        : "mt-0.5 block text-[10px] font-semibold uppercase tracking-[0.08em] text-[#8ea0bc]"
+                                    }
+                                  >
+                                    Hoje
+                                  </span>
+                                ) : null}
                               </button>
                             );
                           })}
-                          </div>
                         </div>
+                        {dateOptions.length === 0 ? (
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            Nenhum dia aberto nesta semana. Escolha outra data no calendário.
+                          </p>
+                        ) : null}
                       </div>
 
                       <div>
@@ -1340,6 +1356,92 @@ export function CourtDetailsClient(props: {
                         </select>
                       </div>
                     </div>
+
+                    <details
+                      className="rounded-2xl border border-border bg-card p-4 text-sm text-foreground"
+                    >
+                      {hasMonthly ? (
+                        <>
+                          <summary className="cursor-pointer text-sm font-semibold">Mensalidade</summary>
+                          <div className="mt-3">
+                            <p className="text-sm text-muted-foreground">
+                              Valor: {formatBRLFromCents(data.court.monthly_price_cents!)} / mês ({monthKey})
+                            </p>
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                              {monthlyIsActive ? (
+                                <span className="inline-flex rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Ativa</span>
+                              ) : monthlyIsPending ? (
+                                <span className="inline-flex rounded-full border border-border bg-secondary/60 px-3 py-1 text-xs font-semibold text-muted-foreground">Pendente</span>
+                              ) : (
+                                <span className="inline-flex rounded-full border border-border bg-card/50 px-3 py-1 text-xs font-semibold text-foreground">Disponível</span>
+                              )}
+                            </div>
+
+                            {monthlyTerms ? (
+                              <details className="mt-3">
+                                <summary className="cursor-pointer text-xs font-semibold text-foreground underline">Ver termos</summary>
+                                <p className="mt-2 whitespace-pre-wrap text-xs leading-6 text-muted-foreground">{monthlyTerms}</p>
+                              </details>
+                            ) : (
+                              <p className="mt-2 text-xs leading-6 text-muted-foreground">
+                                Mensalidade sem termos configurados. Fale com o estabelecimento.
+                              </p>
+                            )}
+
+                            {!isOwnerPreview && monthlyTerms && canRequestMonthly ? (
+                              <label className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
+                                <input
+                                  type="checkbox"
+                                  checked={monthlyAccepted}
+                                  onChange={(e) => setMonthlyAccepted(e.target.checked)}
+                                  className="mt-0.5 h-4 w-4"
+                                />
+                                <span>Li e aceito os termos da mensalidade.</span>
+                              </label>
+                            ) : null}
+
+                            {monthlyBlockedReason ? (
+                              <div className="mt-3 rounded-2xl border border-primary/30 bg-primary/10 p-3 text-xs text-foreground">
+                                <p className="font-semibold text-primary">Mensalidade indisponível</p>
+                                <p className="mt-1">{monthlyBlockedReason}</p>
+                                {monthKey === nextMonthKey ? (
+                                  <p className="mt-1">Liberado a partir de {penultimateWeekLabel}.</p>
+                                ) : null}
+                                {monthlyBlockedMidMonth ? (
+                                  <button
+                                    type="button"
+                                    onClick={focusRepeat}
+                                    className="mt-2 inline-flex rounded-full border border-primary/30 px-3 py-1 text-[11px] font-semibold text-primary"
+                                  >
+                                    Usar repetição semanal
+                                  </button>
+                                ) : null}
+                              </div>
+                            ) : monthKey === nextMonthKey ? (
+                              <p className="mt-3 text-xs text-muted-foreground">
+                                Mensalidade do próximo mês abre na penúltima semana do mês anterior (a partir de {penultimateWeekLabel}).
+                              </p>
+                            ) : null}
+
+                            {!isOwnerPreview ? (
+                              <button
+                                type="button"
+                                disabled={isPending || !canRequestMonthlyFinal || (monthlyTerms ? !monthlyAccepted : false)}
+                                onClick={onRequestMonthlyPass}
+                                className="mt-3 w-full rounded-xl gradient-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
+                              >
+                                {monthlyIsActive ? "Ativa" : monthlyIsPending ? "Solicitada" : "Solicitar mensalidade"}
+                              </button>
+                            ) : null}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <summary className="cursor-pointer text-sm font-semibold">Mensalidade</summary>
+                          <p className="mt-3 text-xs text-muted-foreground">Esta quadra não possui mensalidade configurada.</p>
+                        </>
+                      )}
+                    </details>
 
                     <details
                       ref={repeatRef}
@@ -1518,60 +1620,6 @@ export function CourtDetailsClient(props: {
                       {isPending ? "Processando..." : "Confirmar Agendamento"}
                     </button>
                   </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-12">
-          <div className="relative overflow-hidden rounded-2xl bg-card border border-border p-6">
-            <h2 className="text-lg font-semibold">Sobre</h2>
-            <p className="mt-3 text-sm leading-7 text-muted-foreground">
-              {data.court.establishment.description ?? "Sem descrição."}
-            </p>
-
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-border bg-secondary/50 p-4">
-                <p className="text-xs font-medium text-muted-foreground">Endereço</p>
-                <p className="mt-1 text-sm text-foreground">
-                  {data.court.establishment.address_text}
-                </p>
-                <a
-                  href={mapsHref}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-2 inline-block text-sm text-foreground underline"
-                >
-                  Ver no mapa
-                </a>
-
-                <div className="mt-3 overflow-hidden rounded-2xl border border-border bg-card">
-                  <iframe
-                    title="Mapa"
-                    src={mapsEmbedSrc}
-                    className="h-56 w-full"
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                  />
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-border bg-secondary/50 p-4">
-                <p className="text-xs font-medium text-muted-foreground">Comodidades</p>
-                <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                  {(data.court.amenities ?? []).length ? (
-                    (data.court.amenities ?? []).map((t) => (
-                      <span
-                        key={t}
-                        className="rounded-full border border-border bg-card px-3 py-1 text-foreground"
-                      >
-                        {t}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-sm text-muted-foreground">Sem comodidades informadas.</span>
-                  )}
                 </div>
               </div>
             </div>

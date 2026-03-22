@@ -130,12 +130,6 @@ export function CustomerHeader(props: Props) {
           { label: "Sorteio de times", href: "/sorteio-times" },
           { label: "Torneios", href: "/torneios" },
           { label: "Agendar agora", href: "/search" },
-          {
-            label: "Perfil",
-            href: isLoggedIn
-              ? "/perfil"
-              : `/signin?callbackUrl=${encodeURIComponent(signInCallbackUrl)}`,
-          },
         ]
       : [
           { label: "Início", href: "/" },
@@ -162,7 +156,7 @@ export function CustomerHeader(props: Props) {
           </span>
         </Link>
 
-        <div className="hidden md:flex items-center gap-6">
+        <div className="hidden md:flex items-center gap-6 ml-auto">
           {links.map((link) => (
             <Link
               key={link.label}
@@ -190,7 +184,7 @@ export function CustomerHeader(props: Props) {
             </Link>
           ) : null}
 
-          {!isCustomerFacing && !isLoggedIn ? (
+          {!isLoggedIn ? (
             <Link
               href={`/signin?callbackUrl=${encodeURIComponent(signInCallbackUrl)}`}
               className="hidden sm:inline-flex border border-border bg-card/50 text-foreground font-medium text-sm px-5 py-2.5 rounded-lg hover:bg-card transition-colors"
@@ -199,7 +193,7 @@ export function CustomerHeader(props: Props) {
             </Link>
           ) : null}
 
-          {!isCustomerFacing && isLoggedIn ? (
+          {isLoggedIn ? (
             <div className="relative hidden sm:block">
               <button
                 type="button"
@@ -306,7 +300,7 @@ export function CustomerHeader(props: Props) {
                 </>
               ) : null}
 
-              {!isCustomerFacing && isLoggedIn ? (
+              {isLoggedIn ? (
                 <>
                   <Link href="/perfil" className={pill} onClick={() => setMenuOpen(false)}>
                     Meu perfil
@@ -322,7 +316,7 @@ export function CustomerHeader(props: Props) {
                     Sair
                   </button>
                 </>
-              ) : !isCustomerFacing ? (
+              ) : (
                 <Link
                   href={`/signin?callbackUrl=${encodeURIComponent(signInCallbackUrl)}`}
                   onClick={() => setMenuOpen(false)}
@@ -330,7 +324,7 @@ export function CustomerHeader(props: Props) {
                 >
                   Entrar
                 </Link>
-              ) : null}
+              )}
             </div>
           </motion.div>
         ) : null}
