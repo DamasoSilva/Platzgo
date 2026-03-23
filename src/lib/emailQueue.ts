@@ -165,3 +165,117 @@ export async function processEmailQueueBatch(input?: { limit?: number }) {
 
   return { processed: candidates.length, sent, failed, skipped };
 }
+
+export async function processEmailQueueItemNow(emailId: string) {
+  const email = await prisma.outboundEmail.findUnique({
+    where: { id: emailId },
+    select: {
+      id: true,
+      to: true,
+      subject: true,
+      text: true,
+      html: true,
+      attempts: true,
+      maxAttempts: true,
+      status: true,
+    },
+  });
+
+  if (!email) {
+    return { processed: false, sent: false, reason: "not_found" as const };
+  }
+
+  if (email.status === OutboundEmailStatus.SENT) {
+    return { processed: false, sent: true, reason: "already_sent" as const };
+  }
+
+  if (email.attempts >= email.maxAttempts) {
+    await prisma.outboundEmail.update({
+      where: { id: email.id },
+      data: {
+        status: OutboundEmailStatus.FAILED,
+        lastError: "Max attempts atingido",
+      },
+      select: { id: true },
+    });
+    return { processed: false, sent: false, reason: "max_attempts" as const };
+  }
+
+  const locked = await prisma.outboundEmail.updateMany({
+    where: {
+      id: email.id,
+      status: { in: [OutboundEmailStatus.PENDING, OutboundEmailStatus.FAILED] },
+    },
+    data: {
+      status: OutboundEmailStatus.SENDING,
+      lastError: null,
+      nextAttemptAt: new Date(),
+    },
+  });
+
+  if (locked.count === 0) {
+    const current = await prisma.outboundEmail.findUnique({
+      where: { id: email.id },
+      select: { status: true },
+    });
+    return {
+      processed: false,
+      sent: current?.status === OutboundEmailStatus.SENT,
+      reason: "locked" as const,
+    };
+  }
+
+  try {
+    const result = await sendEmailNow({
+      to: email.to,
+      subject: email.subject,
+      text: email.text,
+      html: email.html ?? undefined,
+    });
+
+    if ("skipped" in result && result.skipped) {
+      await prisma.outboundEmail.update({
+        where: { id: email.id },
+        data: {
+          status: OutboundEmailStatus.SENT,
+          sentAt: new Date(),
+          attempts: email.attempts + 1,
+          lastError: "SMTP não configurado (skipped)",
+        },
+        select: { id: true },
+      });
+      return { processed: true, sent: true, reason: "skipped" as const };
+    }
+
+    await prisma.outboundEmail.update({
+      where: { id: email.id },
+      data: {
+        status: OutboundEmailStatus.SENT,
+        sentAt: new Date(),
+        attempts: email.attempts + 1,
+        providerMessageId: result.ok ? result.messageId ?? null : null,
+      },
+      select: { id: true },
+    });
+
+    return { processed: true, sent: true, reason: "sent" as const };
+  } catch (e) {
+    const nextAttempts = email.attempts + 1;
+    const delay = computeBackoffSeconds(nextAttempts);
+    const nextAttemptAt = new Date(Date.now() + delay * 1000);
+    const exhausted = nextAttempts >= email.maxAttempts;
+
+    await prisma.outboundEmail.update({
+      where: { id: email.id },
+      data: {
+        status: OutboundEmailStatus.FAILED,
+        attempts: nextAttempts,
+        nextAttemptAt,
+        lastError: (e instanceof Error ? e.message : "Erro ao enviar email") + (exhausted ? " (exhausted)" : ""),
+      },
+      select: { id: true },
+    });
+
+    return { processed: true, sent: false, reason: "failed" as const };
+  }
+}

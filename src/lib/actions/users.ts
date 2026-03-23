@@ -7,7 +7,7 @@ import { checkRateLimit, clearAttempts, recordFailure } from "@/lib/antifraud";
 import { Role } from "@/generated/prisma/enums";
 import crypto from "crypto";
 
-import { enqueueEmail, processEmailQueueBatch } from "@/lib/emailQueue";
+import { enqueueEmail, processEmailQueueItemNow } from "@/lib/emailQueue";
 import {
   emailVerificationCodeEmail,
   getAppUrl,
@@ -321,7 +321,7 @@ async function createAndSendEmailVerificationCode(params: {
     dedupeKey: `email-verify:${params.userId}:${code_hash}`,
   });
 
-  await processEmailQueueBatch({ limit: 10 });
+  await processEmailQueueItemNow(queued.id);
 
   const sent = await prisma.outboundEmail.findUnique({
     where: { id: queued.id },
