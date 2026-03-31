@@ -129,6 +129,7 @@ export function CustomerHeader(props: Props) {
           { label: "Contato", href: "/#contato" },
           { label: "Sorteio de times", href: "/sorteio-times" },
           { label: "Torneios", href: "/torneios" },
+          ...(isLoggedIn ? [{ label: "Meus Agendamentos", href: "/meus-agendamentos" }] : []),
           { label: "Agendar agora", href: "/search" },
         ]
       : [
@@ -145,6 +146,7 @@ export function CustomerHeader(props: Props) {
       : "fixed top-0 left-0 right-0 z-50 glass";
 
   return (
+    <>
     <header className={headerClass}>
       <nav className="container flex items-center justify-between h-16">
         <Link href={homeHref} onClick={onHomeClick} className="flex items-center gap-2">
@@ -237,6 +239,11 @@ export function CustomerHeader(props: Props) {
                       Ir para dashboard
                     </Link>
                   ) : null}
+                  {isCustomerFacing ? (
+                    <Link href="/meus-agendamentos" className={menuItem} onClick={() => setOpen(false)}>
+                      Meus agendamentos
+                    </Link>
+                  ) : null}
                   <Link href="/perfil" className={menuItem} onClick={() => setOpen(false)}>
                     Meu perfil
                   </Link>
@@ -302,6 +309,11 @@ export function CustomerHeader(props: Props) {
 
               {isLoggedIn ? (
                 <>
+                  {isCustomerFacing ? (
+                    <Link href="/meus-agendamentos" className={pill} onClick={() => setMenuOpen(false)}>
+                      Meus agendamentos
+                    </Link>
+                  ) : null}
                   <Link href="/perfil" className={pill} onClick={() => setMenuOpen(false)}>
                     Meu perfil
                   </Link>
@@ -330,5 +342,8 @@ export function CustomerHeader(props: Props) {
         ) : null}
       </AnimatePresence>
     </header>
+    {/* Spacer to prevent content from being hidden behind the fixed header */}
+    <div className="h-16" />
+    </>
   );
 }

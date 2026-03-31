@@ -1012,7 +1012,7 @@ export function CourtDetailsClient(props: {
         </div>
       ) : null}
 
-      <div className="container pt-24 pb-16">
+      <div className="container pt-8 pb-16">
         <div className="flex items-center justify-center gap-3 sm:gap-4 mb-10">
           {bookingSteps.map((s, i) => (
             <div key={s.n} className="flex items-center gap-2 sm:gap-3">

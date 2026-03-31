@@ -189,7 +189,7 @@ export default async function EstablishmentSlugPage(props: {
           rightSlot={null}
         />
 
-        <div className="mx-auto max-w-6xl px-6 pb-12 pt-20">
+        <div className="mx-auto max-w-6xl px-6 pb-12 pt-4">
           <div className="ph-card p-6 sm:p-8">
             <p className="text-xs text-muted-foreground dark:text-muted-foreground">Escolha sua quadra e horário em poucos cliques</p>
             <h1 className="mt-1 text-3xl font-semibold tracking-tight text-foreground dark:text-foreground">{est.name}</h1>

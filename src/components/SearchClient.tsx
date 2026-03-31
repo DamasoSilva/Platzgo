@@ -499,7 +499,7 @@ export function SearchClient(props: Props) {
           <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/60" />
         </div>
 
-        <div className="container relative z-10 pt-24 pb-16">
+        <div className="container relative z-10 pt-8 pb-16">
           <div className="max-w-2xl">
             <motion.div
               initial={{ opacity: 0, y: 20 }}

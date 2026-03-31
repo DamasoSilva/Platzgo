@@ -75,28 +75,30 @@ export default async function MyBookingsPage(props: { searchParams?: SearchParam
   const endDate = parseDateInput(endParam, true);
   const activePaymentWhere = buildActivePaymentWhere(now);
 
-  await prisma.booking.updateMany({
-    where: {
-      customerId: userId,
-      status: BookingStatus.PENDING,
-      start_time: { lt: now },
-      payments: { some: { status: { in: [PaymentStatus.PENDING, PaymentStatus.AUTHORIZED] } } },
-    },
-    data: { status: BookingStatus.CANCELLED, cancel_reason: "Pagamento pendente expirado." },
-  });
-
-  await prisma.payment.updateMany({
-    where: {
-      status: { in: [PaymentStatus.PENDING, PaymentStatus.AUTHORIZED] },
-      booking: {
+  // Expire stale bookings + payments in parallel
+  await Promise.all([
+    prisma.booking.updateMany({
+      where: {
         customerId: userId,
-        status: BookingStatus.CANCELLED,
+        status: BookingStatus.PENDING,
         start_time: { lt: now },
-        cancel_reason: "Pagamento pendente expirado.",
+        payments: { some: { status: { in: [PaymentStatus.PENDING, PaymentStatus.AUTHORIZED] } } },
       },
-    },
-    data: { status: PaymentStatus.CANCELLED },
-  });
+      data: { status: BookingStatus.CANCELLED, cancel_reason: "Pagamento pendente expirado." },
+    }),
+    prisma.payment.updateMany({
+      where: {
+        status: { in: [PaymentStatus.PENDING, PaymentStatus.AUTHORIZED] },
+        booking: {
+          customerId: userId,
+          status: BookingStatus.CANCELLED,
+          start_time: { lt: now },
+          cancel_reason: "Pagamento pendente expirado.",
+        },
+      },
+      data: { status: PaymentStatus.CANCELLED },
+    }),
+  ]);
 
   const where: any = { customerId: userId };
   if (startDate || endDate) {
@@ -122,61 +124,64 @@ export default async function MyBookingsPage(props: { searchParams?: SearchParam
     where.status = BookingStatus.CANCELLED;
   }
 
-  const bookings = await prisma.booking.findMany({
-    where,
-    orderBy: { start_time: "desc" },
-    select: {
-      id: true,
-      status: true,
-      start_time: true,
-      end_time: true,
-      total_price_cents: true,
-      cancel_reason: true,
-      cancel_fee_cents: true,
-      rescheduledFromId: true,
-      rescheduledTo: { select: { id: true } },
-      payments: {
-        where: activePaymentWhere,
-        orderBy: { createdAt: "desc" },
-        take: 1,
-        select: { id: true },
-      },
-      court: {
-        select: {
-          id: true,
-          name: true,
-          sport_type: true,
-          establishment: {
-            select: {
-              id: true,
-              name: true,
-              whatsapp_number: true,
-              opening_time: true,
-              closing_time: true,
-              open_weekdays: true,
+  const [bookings, notifications, unreadCount] = await Promise.all([
+    prisma.booking.findMany({
+      where,
+      orderBy: { start_time: "desc" },
+      take: 50,
+      select: {
+        id: true,
+        status: true,
+        start_time: true,
+        end_time: true,
+        total_price_cents: true,
+        cancel_reason: true,
+        cancel_fee_cents: true,
+        rescheduledFromId: true,
+        rescheduledTo: { select: { id: true } },
+        payments: {
+          where: activePaymentWhere,
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: { id: true },
+        },
+        court: {
+          select: {
+            id: true,
+            name: true,
+            sport_type: true,
+            establishment: {
+              select: {
+                id: true,
+                name: true,
+                whatsapp_number: true,
+                opening_time: true,
+                closing_time: true,
+                open_weekdays: true,
+              },
             },
           },
         },
       },
-    },
-  });
-
-  const notifications = await prisma.notification.findMany({
-    where: { userId, deletedAt: null },
-    orderBy: { createdAt: "desc" },
-    take: 20,
-    select: {
-      id: true,
-      type: true,
-      title: true,
-      body: true,
-      createdAt: true,
-      bookingId: true,
-      readAt: true,
-    },
-  });
-
-  const unreadCount = notifications.filter((n) => !n.readAt).length;
+    }),
+    prisma.notification.findMany({
+      where: { userId, deletedAt: null },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      select: {
+        id: true,
+        type: true,
+        title: true,
+        body: true,
+        createdAt: true,
+        bookingId: true,
+        readAt: true,
+      },
+    }),
+    prisma.notification.count({
+      where: { userId, deletedAt: null, readAt: null },
+    }),
+  ]);
 
   return (
     <div className="ph-page">
