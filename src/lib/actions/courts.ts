@@ -47,8 +47,16 @@ export async function getCourtBookingsForDay(params: { courtId: string; day: Dat
 
   const now = new Date();
   const blockingWhere = buildBlockingBookingWhere(now);
+  const dayKey = toDayKey(day);
 
-  const [court, bookings, blocks, monthlyPass, paymentConfig] = await Promise.all([
+  // Lookup establishmentId first so holiday can run in parallel
+  const courtRef = await prisma.court.findUnique({
+    where: { id: params.courtId },
+    select: { establishmentId: true },
+  });
+  if (!courtRef) throw new Error("Quadra não encontrada");
+
+  const [court, bookings, blocks, monthlyPass, paymentConfig, holiday] = await Promise.all([
     prisma.court.findUnique({
       where: { id: params.courtId },
       select: {
@@ -141,23 +149,21 @@ export async function getCourtBookingsForDay(params: { courtId: string; day: Dat
         })
       : Promise.resolve(null),
     getPaymentConfig(),
+    prisma.establishmentHoliday.findUnique({
+      where: { establishmentId_date: { establishmentId: courtRef.establishmentId, date: dayKey } },
+      select: {
+        id: true,
+        date: true,
+        is_open: true,
+        opening_time: true,
+        closing_time: true,
+        note: true,
+      },
+    }),
   ]);
 
   if (!court) throw new Error("Quadra não encontrada");
   if (!court.is_active) throw new Error("COURT_INACTIVE");
-
-  const dayKey = toDayKey(day);
-  const holiday = await prisma.establishmentHoliday.findUnique({
-    where: { establishmentId_date: { establishmentId: court.establishment.id, date: dayKey } },
-    select: {
-      id: true,
-      date: true,
-      is_open: true,
-      opening_time: true,
-      closing_time: true,
-      note: true,
-    },
-  });
 
   const weekday = day.getDay();
   const weekdayOpen = court.establishment.open_weekdays.includes(weekday);

@@ -34,9 +34,20 @@ export type TournamentDetailView = {
     round: string;
     group_label: string | null;
     start_time: string;
+    status: string;
     court_name: string | null;
     team_a: string;
     team_b: string;
+    score_a: number | null;
+    score_b: number | null;
+  }>;
+  standings: Array<{
+    teamId: string;
+    teamName: string;
+    points: number;
+    wins: number;
+    losses: number;
+    goals: number;
   }>;
 };
 
@@ -45,7 +56,7 @@ type Props = {
   isLoggedIn: boolean;
 };
 
-type TabKey = "overview" | "agenda" | "teams" | "rules";
+type TabKey = "overview" | "agenda" | "teams" | "standings" | "rules";
 
 function formatDateLong(dateStr: string) {
   return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "long", year: "numeric" }).format(
@@ -255,6 +266,17 @@ export function TournamentDetailClient(props: Props) {
         <button
           type="button"
           className={
+            tab === "standings"
+              ? "ph-button-secondary-sm"
+              : "rounded-full border border-border px-4 py-2 text-xs text-muted-foreground hover:text-foreground"
+          }
+          onClick={() => setTab("standings")}
+        >
+          Classificacao
+        </button>
+        <button
+          type="button"
+          className={
             tab === "rules"
               ? "ph-button-secondary-sm"
               : "rounded-full border border-border px-4 py-2 text-xs text-muted-foreground hover:text-foreground"
@@ -324,7 +346,7 @@ export function TournamentDetailClient(props: Props) {
 
         {tab === "agenda" ? (
           <div className="rounded-3xl ph-surface p-6">
-            <h3 className="text-sm font-semibold text-foreground">Agenda inicial</h3>
+            <h3 className="text-sm font-semibold text-foreground">Agenda</h3>
             <div className="mt-4 space-y-3">
               {schedule.map((item) => (
                 <div
@@ -333,16 +355,15 @@ export function TournamentDetailClient(props: Props) {
                 >
                   <div>
                     <p className="font-semibold text-foreground">
-                      {item.team_a} x {item.team_b}
+                      {item.team_a} {item.score_a != null ? item.score_a : ""} x {item.score_b != null ? item.score_b : ""} {item.team_b}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {item.round} {item.group_label ? `· ${item.group_label}` : ""}
                       {item.court_name ? ` · ${item.court_name}` : ""}
                     </p>
                   </div>
-                  <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-foreground">
-                    {new Date(item.start_time).toLocaleDateString("pt-BR")} ·
-                    {new Date(item.start_time).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${item.status === "FINISHED" ? "bg-emerald-500/15 text-emerald-600" : "bg-secondary text-foreground"}`}>
+                    {item.status === "FINISHED" ? "Finalizada" : item.status === "CANCELLED" ? "Cancelada" : `${new Date(item.start_time).toLocaleDateString("pt-BR")} · ${new Date(item.start_time).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`}
                   </span>
                 </div>
               ))}
@@ -367,6 +388,42 @@ export function TournamentDetailClient(props: Props) {
               ))}
               {!teams.length ? <p className="text-xs text-muted-foreground">Nenhum time inscrito.</p> : null}
             </div>
+          </div>
+        ) : null}
+
+        {tab === "standings" ? (
+          <div className="rounded-3xl ph-surface p-6">
+            <h3 className="text-sm font-semibold text-foreground">Classificacao</h3>
+            {tournament.standings.length ? (
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
+                      <th className="pb-2 pr-4">#</th>
+                      <th className="pb-2 pr-4">Time</th>
+                      <th className="pb-2 pr-4 text-center">Pts</th>
+                      <th className="pb-2 pr-4 text-center">V</th>
+                      <th className="pb-2 pr-4 text-center">D</th>
+                      <th className="pb-2 text-center">Gols</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tournament.standings.map((s, idx) => (
+                      <tr key={s.teamId} className="border-b border-border/50">
+                        <td className="py-2 pr-4 font-semibold text-foreground">{idx + 1}</td>
+                        <td className="py-2 pr-4 text-foreground">{s.teamName}</td>
+                        <td className="py-2 pr-4 text-center font-semibold text-foreground">{s.points}</td>
+                        <td className="py-2 pr-4 text-center text-emerald-600">{s.wins}</td>
+                        <td className="py-2 pr-4 text-center text-red-500">{s.losses}</td>
+                        <td className="py-2 text-center text-muted-foreground">{s.goals}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-muted-foreground">Nenhum resultado registrado ainda.</p>
+            )}
           </div>
         ) : null}
 

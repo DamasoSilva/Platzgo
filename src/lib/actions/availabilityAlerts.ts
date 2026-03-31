@@ -6,8 +6,15 @@ import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { dateWithTime, fromTimeZoneDate, parseHHMM, toTimeZoneDate } from "@/lib/utils/time";
 import { buildBlockingBookingWhere } from "@/lib/utils/bookingAvailability";
+import { MonthlyPassStatus } from "@/generated/prisma/enums";
 
 const APP_TIME_ZONE = "America/Sao_Paulo";
+
+function toTimeHHMM(d: Date): string {
+  const h = String(d.getHours()).padStart(2, "0");
+  const m = String(d.getMinutes()).padStart(2, "0");
+  return `${h}:${m}`;
+}
 
 function addMinutes(d: Date, minutes: number): Date {
   return new Date(d.getTime() + minutes * 60000);
@@ -174,7 +181,27 @@ export async function createAvailabilityAlert(input: {
     select: { id: true },
   });
 
-  if (!blocked && !overlap) {
+  // Verificar mensalidade ativa que reserva o horário
+  const localStart = toTimeZoneDate(start, APP_TIME_ZONE);
+  const localEnd = toTimeZoneDate(end, APP_TIME_ZONE);
+  const alertMonth = `${localStart.getFullYear()}-${String(localStart.getMonth() + 1).padStart(2, "0")}`;
+  const alertWeekday = localStart.getDay();
+  const alertStartHHMM = toTimeHHMM(localStart);
+  const alertEndHHMM = toTimeHHMM(localEnd);
+
+  const monthlyPassConflict = await prisma.monthlyPass.findFirst({
+    where: {
+      courtId: input.courtId,
+      month: alertMonth,
+      status: MonthlyPassStatus.ACTIVE,
+      weekday: alertWeekday,
+      start_time: { lt: alertEndHHMM },
+      end_time: { gt: alertStartHHMM },
+    },
+    select: { id: true },
+  });
+
+  if (!blocked && !overlap && !monthlyPassConflict) {
     throw new Error("Este horário já está disponível. Você pode agendar normalmente.");
   }
 

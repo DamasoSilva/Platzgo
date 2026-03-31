@@ -15,6 +15,19 @@ const securityHeaders =
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "**.amazonaws.com" },
+      { protocol: "https", hostname: "lh3.googleusercontent.com" },
+      { protocol: "https", hostname: "images.unsplash.com" },
+      { protocol: "https", hostname: "**.digitaloceanspaces.com" },
+      ...(process.env.S3_PUBLIC_BASE_URL
+        ? [{ protocol: "https" as const, hostname: new URL(process.env.S3_PUBLIC_BASE_URL).hostname }]
+        : []),
+    ],
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 86400,
+  },
   headers: async () => [
     {
       source: "/:path*",

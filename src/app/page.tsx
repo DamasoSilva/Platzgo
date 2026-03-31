@@ -69,11 +69,15 @@ export default async function Home(props: {
 }) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
 
-  const session = await getServerSession(authOptions);
+  const [session, searchParams, footer] = await Promise.all([
+    getServerSession(authOptions),
+    props.searchParams ? Promise.resolve(props.searchParams) : Promise.resolve(undefined),
+    getPublicSiteSettings(),
+  ]);
+
   const viewerUserId = session?.user?.id ?? null;
   const isLoggedIn = Boolean(viewerUserId);
 
-  const searchParams = props.searchParams ? await Promise.resolve(props.searchParams) : undefined;
   const latFromQuery = typeof searchParams?.lat === "string" ? parseNumber(searchParams.lat, NaN) : NaN;
   const lngFromQuery = typeof searchParams?.lng === "string" ? parseNumber(searchParams.lng, NaN) : NaN;
 
@@ -106,7 +110,6 @@ export default async function Home(props: {
   const time = parseTime(searchParams?.time);
   const maxPrice = parseNumber(searchParams?.maxPrice, 0);
   const onlyFavorites = searchParams?.onlyFavorites === "1";
-  const footer = await getPublicSiteSettings();
 
   return (
     <SearchClient

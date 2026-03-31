@@ -58,6 +58,27 @@ export function TournamentRegistrationClient(props: Props) {
   const [pixCheckoutUrl, setPixCheckoutUrl] = useState<string | null>(null);
   const [pixCopied, setPixCopied] = useState<string | null>(null);
   const [isConfirmed, setIsConfirmed] = useState(false);
+  const [pixCountdown, setPixCountdown] = useState<string | null>(null);
+  const [pixExpired, setPixExpired] = useState(false);
+
+  useEffect(() => {
+    if (!pixExpiresAt) return;
+    const target = new Date(pixExpiresAt).getTime();
+    function tick() {
+      const diff = target - Date.now();
+      if (diff <= 0) {
+        setPixCountdown("00:00");
+        setPixExpired(true);
+        return;
+      }
+      const mins = Math.floor(diff / 60000);
+      const secs = Math.floor((diff % 60000) / 1000);
+      setPixCountdown(`${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`);
+    }
+    tick();
+    const iv = setInterval(tick, 1000);
+    return () => clearInterval(iv);
+  }, [pixExpiresAt]);
 
   const isLocked = Boolean(registrationId) || isPending;
 
@@ -312,8 +333,10 @@ export function TournamentRegistrationClient(props: Props) {
                 <div className="mt-4 rounded-2xl border border-border bg-muted p-4 text-xs text-muted-foreground">
                   <p className="font-semibold">Payload</p>
                   <p className="mt-2 break-all">{pixPayload}</p>
-                  {pixExpiresAt ? (
-                    <p className="mt-2 text-[11px] text-muted-foreground">Expira em: {pixExpiresAt}</p>
+                  {pixCountdown ? (
+                    <p className={`mt-2 text-xs font-semibold ${pixExpired ? "text-red-500" : "text-foreground"}`}>
+                      {pixExpired ? "PIX expirado — gere um novo pagamento" : `Expira em ${pixCountdown}`}
+                    </p>
                   ) : null}
                   {pixCheckoutUrl ? (
                     <p className="mt-2 text-[11px] text-muted-foreground">Checkout: {pixCheckoutUrl}</p>

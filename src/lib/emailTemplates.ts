@@ -677,6 +677,114 @@ export function customerInviteEmail(params: {
   return { subject, text, html };
 }
 
+// ──────────────────────────────────────────────
+// TOURNAMENT EMAILS
+// ──────────────────────────────────────────────
+
+export function tournamentRegistrationPendingEmailToOwner(params: {
+  ownerName?: string | null;
+  tournamentName: string;
+  teamName: string;
+  dashboardUrl: string;
+}) {
+  const subject = `Nova inscrição no torneio ${params.tournamentName}`;
+  const text =
+    `Olá${params.ownerName ? ", " + params.ownerName : ""}!\n\n` +
+    `O time "${params.teamName}" se inscreveu no torneio ${params.tournamentName}.\n` +
+    `Acesse o painel para revisar: ${params.dashboardUrl}\n`;
+  const html = layoutHtml({
+    title: subject,
+    bodyHtml: `
+      <p>Olá${params.ownerName ? ", <strong>" + escapeHtml(params.ownerName) + "</strong>" : ""}!</p>
+      <p>O time <strong>${escapeHtml(params.teamName)}</strong> se inscreveu no torneio <strong>${escapeHtml(params.tournamentName)}</strong>.</p>
+      <div style="margin-top:16px;">${buttonHtml(params.dashboardUrl, "Revisar inscrição")}</div>
+    `,
+  });
+  return { subject, text, html };
+}
+
+export function tournamentRegistrationApprovedEmail(params: {
+  customerName?: string | null;
+  tournamentName: string;
+  teamName: string;
+  detailsUrl: string;
+}) {
+  const subject = `Inscrição aprovada — ${params.tournamentName}`;
+  const text =
+    `Olá${params.customerName ? ", " + params.customerName : ""}!\n\n` +
+    `A inscrição do time "${params.teamName}" no torneio ${params.tournamentName} foi aprovada!\n` +
+    `Acompanhe: ${params.detailsUrl}\n`;
+  const html = layoutHtml({
+    title: subject,
+    bodyHtml: `
+      <p>Olá${params.customerName ? ", <strong>" + escapeHtml(params.customerName) + "</strong>" : ""}!</p>
+      <p>A inscrição do time <strong>${escapeHtml(params.teamName)}</strong> no torneio <strong>${escapeHtml(params.tournamentName)}</strong> foi aprovada!</p>
+      <div style="margin-top:16px;">${buttonHtml(params.detailsUrl, "Ver torneio")}</div>
+    `,
+  });
+  return { subject, text, html };
+}
+
+export function tournamentRegistrationRejectedEmail(params: {
+  customerName?: string | null;
+  tournamentName: string;
+  teamName: string;
+  detailsUrl: string;
+}) {
+  const subject = `Inscrição recusada — ${params.tournamentName}`;
+  const text =
+    `Olá${params.customerName ? ", " + params.customerName : ""}!\n\n` +
+    `A inscrição do time "${params.teamName}" no torneio ${params.tournamentName} foi recusada.\n` +
+    `Detalhes: ${params.detailsUrl}\n`;
+  const html = layoutHtml({
+    title: subject,
+    bodyHtml: `
+      <p>Olá${params.customerName ? ", <strong>" + escapeHtml(params.customerName) + "</strong>" : ""}!</p>
+      <p>A inscrição do time <strong>${escapeHtml(params.teamName)}</strong> no torneio <strong>${escapeHtml(params.tournamentName)}</strong> foi recusada.</p>
+      <div style="margin-top:16px;">${buttonHtml(params.detailsUrl, "Ver detalhes")}</div>
+    `,
+  });
+  return { subject, text, html };
+}
+
+export function tournamentInvitationEmail(params: {
+  tournamentName: string;
+  organizerName: string;
+  inviteUrl: string;
+}) {
+  const subject = `Convite para torneio — ${params.tournamentName}`;
+  const text =
+    `Você foi convidado para o torneio "${params.tournamentName}" por ${params.organizerName}.\n` +
+    `Aceitar convite: ${params.inviteUrl}\n`;
+  const html = layoutHtml({
+    title: subject,
+    bodyHtml: `
+      <p>Você foi convidado para o torneio <strong>${escapeHtml(params.tournamentName)}</strong> por <strong>${escapeHtml(params.organizerName)}</strong>!</p>
+      <div style="margin-top:16px;">${buttonHtml(params.inviteUrl, "Aceitar convite")}</div>
+    `,
+  });
+  return { subject, text, html };
+}
+
+export function tournamentCancelledEmail(params: {
+  customerName?: string | null;
+  tournamentName: string;
+}) {
+  const subject = `Torneio cancelado — ${params.tournamentName}`;
+  const text =
+    `Olá${params.customerName ? ", " + params.customerName : ""}!\n\n` +
+    `O torneio "${params.tournamentName}" foi cancelado.\n`;
+  const html = layoutHtml({
+    title: subject,
+    bodyHtml: `
+      <p>Olá${params.customerName ? ", <strong>" + escapeHtml(params.customerName) + "</strong>" : ""}!</p>
+      <p>O torneio <strong>${escapeHtml(params.tournamentName)}</strong> foi cancelado.</p>
+      <p style="color:#6b7280;">Se houver pagamentos pendentes, eles serão estornados.</p>
+    `,
+  });
+  return { subject, text, html };
+}
+
 export function courtValidatedEmailToOwner(params: {
   ownerName?: string | null;
   courtName: string;

@@ -60,6 +60,11 @@ enum NotificationType {
   BOOKING_AUTO_CANCELLED
   MONTHLY_PASS_PENDING
   AVAILABILITY_ALERT
+  TOURNAMENT_REGISTRATION_PENDING
+  TOURNAMENT_REGISTRATION_APPROVED
+  TOURNAMENT_REGISTRATION_REJECTED
+  TOURNAMENT_CANCELLED
+  TOURNAMENT_INVITATION
 }
 
 enum PaymentProvider {
@@ -327,6 +332,7 @@ model Court {
   tournamentMatches TournamentMatch[]
 
   @@index([establishmentId])
+  @@index([establishmentId, is_active])
 }
 
 model MonthlyPass {
@@ -364,6 +370,7 @@ model CourtBlock {
   createdBy User  @relation(fields: [createdById], references: [id])
 
   @@index([courtId, start_time])
+  @@index([courtId, start_time, end_time])
   @@index([createdById])
 }
 
@@ -466,6 +473,7 @@ model Booking {
   @@index([courtId, status, start_time])
   @@index([courtId, start_time, end_time])
   @@index([customerId, status, start_time])
+  @@index([customerId, start_time, end_time])
 }
 
 model Payment {

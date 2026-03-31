@@ -263,6 +263,9 @@ export async function createBooking(input: CreateBookingInput): Promise<CreateBo
     if (end <= start) throw new Error("endTime deve ser maior que startTime");
     if (repeatWeeksRaw > 3) throw new Error("Para mais de 3 semanas, utilize a mensalidade.");
     if (start <= now) throw new Error("Não é possível agendar horários retroativos.");
+    if (!isAlignedTo30Minutes(start) || !isAlignedTo30Minutes(end)) {
+      throw new Error("Selecione horários em intervalos de 30 minutos.");
+    }
 
     const paymentConfig = await getPaymentConfig();
     const paymentsEnabled = paymentConfig.enabled && paymentConfig.providersEnabled.length > 0;
@@ -385,15 +388,47 @@ export async function createBooking(input: CreateBookingInput): Promise<CreateBo
         occEnd.setDate(occEnd.getDate() + i * 7);
       }
 
-      const overlapCustomer = await tx.booking.findFirst({
-        where: {
-          customerId: input.userId,
-          start_time: { lt: occEnd },
-          end_time: { gt: occStart },
-          AND: [blockingWhere],
-        },
-        select: { id: true },
-      });
+      const bufferedRange = expandRangeWithBuffer(occStart, occEnd, bufferMinutes);
+      const month = `${occStart.getFullYear()}-${String(occStart.getMonth() + 1).padStart(2, "0")}`;
+
+      // Parallelize independent validation queries
+      const [overlapCustomer, blocked, overlap, hasMonthlyPass] = await Promise.all([
+        tx.booking.findFirst({
+          where: {
+            customerId: input.userId,
+            start_time: { lt: occEnd },
+            end_time: { gt: occStart },
+            AND: [blockingWhere],
+          },
+          select: { id: true },
+        }),
+        tx.courtBlock.findFirst({
+          where: {
+            courtId: input.courtId,
+            start_time: { lt: bufferedRange.end },
+            end_time: { gt: bufferedRange.start },
+          },
+          select: { id: true },
+        }),
+        tx.booking.findFirst({
+          where: {
+            courtId: input.courtId,
+            start_time: { lt: bufferedRange.end },
+            end_time: { gt: bufferedRange.start },
+            AND: [blockingWhere],
+          },
+          select: { id: true },
+        }),
+        tx.monthlyPass.findFirst({
+          where: {
+            courtId: input.courtId,
+            customerId: input.userId,
+            month,
+            status: "ACTIVE",
+          },
+          select: { id: true },
+        }),
+      ]);
 
       if (overlapCustomer) {
         throw new Error(
@@ -401,31 +436,9 @@ export async function createBooking(input: CreateBookingInput): Promise<CreateBo
         );
       }
 
-      const bufferedRange = expandRangeWithBuffer(occStart, occEnd, bufferMinutes);
-
-      const blocked = await tx.courtBlock.findFirst({
-        where: {
-          courtId: input.courtId,
-          start_time: { lt: bufferedRange.end },
-          end_time: { gt: bufferedRange.start },
-        },
-        select: { id: true },
-      });
-
       if (blocked) {
         throw new Error("Horário indisponível: este intervalo está bloqueado pela administração.");
       }
-
-      const overlap = await tx.booking.findFirst({
-        where: {
-          courtId: input.courtId,
-          // Overlap com buffer
-          start_time: { lt: bufferedRange.end },
-          end_time: { gt: bufferedRange.start },
-          AND: [blockingWhere],
-        },
-        select: { id: true },
-      });
 
       if (overlap) {
         throw new Error("Horário indisponível: já existe um agendamento nesse intervalo.");
@@ -449,17 +462,6 @@ export async function createBooking(input: CreateBookingInput): Promise<CreateBo
         closing_time: court.establishment.closing_time,
         opening_time_by_weekday: court.establishment.opening_time_by_weekday,
         closing_time_by_weekday: court.establishment.closing_time_by_weekday,
-      });
-
-      const month = `${occStart.getFullYear()}-${String(occStart.getMonth() + 1).padStart(2, "0")}`;
-      const hasMonthlyPass = await tx.monthlyPass.findFirst({
-        where: {
-          courtId: input.courtId,
-          customerId: input.userId,
-          month,
-          status: "ACTIVE",
-        },
-        select: { id: true },
       });
 
       // Se a mensalidade estiver ativa, o horário fica coberto pela mensalidade (total 0).
@@ -694,6 +696,27 @@ export async function createAdminBooking(input: CreateAdminBookingInput) {
 
       const bufferedRange = expandRangeWithBuffer(occStart, occEnd, court.establishment.booking_buffer_minutes ?? 0);
 
+      // Parallelize independent validation queries
+      const [blocked, overlap] = await Promise.all([
+        tx.courtBlock.findFirst({
+          where: {
+            courtId: input.courtId,
+            start_time: { lt: bufferedRange.end },
+            end_time: { gt: bufferedRange.start },
+          },
+          select: { id: true },
+        }),
+        tx.booking.findFirst({
+          where: {
+            courtId: input.courtId,
+            start_time: { lt: bufferedRange.end },
+            end_time: { gt: bufferedRange.start },
+            AND: [blockingWhere],
+          },
+          select: { id: true },
+        }),
+      ]);
+
       await assertOperatingHours({
         tx,
         establishmentId: court.establishment.id,
@@ -706,28 +729,9 @@ export async function createAdminBooking(input: CreateAdminBookingInput) {
         closing_time_by_weekday: court.establishment.closing_time_by_weekday,
       });
 
-      const blocked = await tx.courtBlock.findFirst({
-        where: {
-          courtId: input.courtId,
-          start_time: { lt: bufferedRange.end },
-          end_time: { gt: bufferedRange.start },
-        },
-        select: { id: true },
-      });
-
       if (blocked) {
         throw new Error("Horário indisponível: este intervalo está bloqueado.");
       }
-
-      const overlap = await tx.booking.findFirst({
-        where: {
-          courtId: input.courtId,
-          start_time: { lt: bufferedRange.end },
-          end_time: { gt: bufferedRange.start },
-          AND: [blockingWhere],
-        },
-        select: { id: true },
-      });
 
       if (overlap) {
         throw new Error("Horário indisponível: já existe um agendamento nesse intervalo.");
@@ -842,6 +846,14 @@ export async function confirmBookingAsOwner(input: { bookingId: string }) {
     if (overlapConfirmed) {
       throw new Error("Horário indisponível: já existe um agendamento confirmado nesse intervalo.");
     }
+
+    await assertNoMonthlyPassConflict({
+      tx,
+      courtId: b.courtId,
+      start: b.start_time,
+      end: b.end_time,
+      customerId: b.customerId ?? undefined,
+    });
 
     await tx.booking.update({
       where: { id: b.id },

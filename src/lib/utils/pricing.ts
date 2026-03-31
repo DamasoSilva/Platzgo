@@ -14,8 +14,9 @@ export function computeTotalPriceCents(params: {
 
   const baseTotal = Math.round((pricePerHourCents * durationMinutes) / 60);
 
-  const discount = durationMinutes >= 90 ? discountPercentOver90min : 0;
-  if (!Number.isFinite(discount) || discount < 0) return baseTotal;
+  const rawDiscount = durationMinutes >= 90 ? discountPercentOver90min : 0;
+  if (!Number.isFinite(rawDiscount) || rawDiscount < 0) return baseTotal;
+  const discount = Math.min(rawDiscount, 100);
 
   return discount > 0 ? Math.round((baseTotal * (100 - discount)) / 100) : baseTotal;
 }

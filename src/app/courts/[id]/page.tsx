@@ -46,34 +46,33 @@ export default async function CourtPage(props: {
   params: { id: string } | Promise<{ id: string }>;
   searchParams?: { day?: string; time?: string } | Promise<{ day?: string; time?: string }>;
 }) {
-  const session = await getServerSession(authOptions);
-  const userId = session?.user?.id ?? null;
-  const viewer = userId
-    ? await prisma.user.findUnique({
-        where: { id: userId },
-        select: { name: true, image: true, cpf_cnpj: true },
-      })
-    : null;
+  const [session, params, searchParams] = await Promise.all([
+    getServerSession(authOptions),
+    Promise.resolve(props.params),
+    props.searchParams ? Promise.resolve(props.searchParams) : Promise.resolve(undefined),
+  ]);
 
-  const params = await Promise.resolve(props.params);
-  const searchParams = props.searchParams ? await Promise.resolve(props.searchParams) : undefined;
+  const userId = session?.user?.id ?? null;
+
   const rawDay = searchParams?.day;
   const rawTime = searchParams?.time;
   const day = coerceDay(rawDay);
   const time = coerceTime(rawTime);
 
-  let data: Awaited<ReturnType<typeof getCourtBookingsForDay>>;
-  try {
-    data = await getCourtBookingsForDay({
-      courtId: params.id,
-      day,
-    });
-  } catch (e) {
-    if (e instanceof Error && e.message === "COURT_INACTIVE") {
-      notFound();
-    }
-    throw e;
-  }
+  const [viewer, data] = await Promise.all([
+    userId
+      ? prisma.user.findUnique({
+          where: { id: userId },
+          select: { name: true, image: true, cpf_cnpj: true },
+        })
+      : Promise.resolve(null),
+    getCourtBookingsForDay({ courtId: params.id, day }).catch((e) => {
+      if (e instanceof Error && e.message === "COURT_INACTIVE") return null;
+      throw e;
+    }),
+  ]);
+
+  if (!data) notFound();
 
   return (
     <CourtDetailsClient

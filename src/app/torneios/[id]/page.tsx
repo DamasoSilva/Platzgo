@@ -53,9 +53,11 @@ export default async function TournamentDetailPage({ params }: { params: { id: s
           round: true,
           group_label: true,
           start_time: true,
+          status: true,
           court: { select: { name: true } },
           teamA: { select: { name: true } },
           teamB: { select: { name: true } },
+          score: { select: { team_a_score: true, team_b_score: true } },
         },
         orderBy: { start_time: "asc" },
       },
@@ -68,6 +70,19 @@ export default async function TournamentDetailPage({ params }: { params: { id: s
   if (tournamentRow.visibility === "PRIVATE" && tournamentRow.organizer_user_id !== user?.id) {
     notFound();
   }
+
+  const standings = await prisma.tournamentStanding.findMany({
+    where: { tournamentId: tournamentRow.id },
+    select: {
+      teamId: true,
+      team: { select: { name: true } },
+      points: true,
+      wins: true,
+      losses: true,
+      goals: true,
+    },
+    orderBy: [{ points: "desc" }, { wins: "desc" }, { goals: "desc" }],
+  });
 
   const tournament: TournamentDetailView = {
     id: tournamentRow.id,
@@ -102,9 +117,20 @@ export default async function TournamentDetailPage({ params }: { params: { id: s
       round: match.round,
       group_label: match.group_label,
       start_time: match.start_time.toISOString(),
+      status: match.status,
       court_name: match.court?.name ?? null,
       team_a: match.teamA?.name ?? "A definir",
       team_b: match.teamB?.name ?? "A definir",
+      score_a: match.score?.team_a_score ?? null,
+      score_b: match.score?.team_b_score ?? null,
+    })),
+    standings: standings.map((s) => ({
+      teamId: s.teamId,
+      teamName: s.team.name,
+      points: s.points,
+      wins: s.wins,
+      losses: s.losses,
+      goals: s.goals,
     })),
   };
 

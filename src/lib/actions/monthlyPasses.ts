@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/generated/prisma/client";
 import { requireRole } from "@/lib/authz";
 import { MonthlyPassStatus, NotificationType, PaymentProvider, PaymentStatus } from "@/generated/prisma/enums";
 import { enqueueEmail } from "@/lib/emailQueue";
@@ -250,12 +251,14 @@ async function assertMonthlyPassAvailability(params: {
   startTime: string;
   endTime: string;
   excludePassId?: string;
+  tx?: Prisma.TransactionClient;
 }) {
-  const { courtId, month, weekday, startTime, endTime, excludePassId } = params;
+  const { courtId, month, weekday, startTime, endTime, excludePassId, tx } = params;
+  const db = tx ?? prisma;
   const monthStart = parseMonthStart(month);
   const nextMonthStart = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 1, 0, 0, 0, 0);
 
-  const court = await prisma.court.findUnique({
+  const court = await db.court.findUnique({
     where: { id: courtId },
     select: {
       id: true,
@@ -277,7 +280,7 @@ async function assertMonthlyPassAvailability(params: {
 
   const blockingWhere = buildBlockingBookingWhere(new Date());
   const [bookings, blocks, activePasses, holidays] = await Promise.all([
-    prisma.booking.findMany({
+    db.booking.findMany({
       where: {
         courtId,
         AND: [blockingWhere],
@@ -286,7 +289,7 @@ async function assertMonthlyPassAvailability(params: {
       },
       select: { id: true, start_time: true, end_time: true },
     }),
-    prisma.courtBlock.findMany({
+    db.courtBlock.findMany({
       where: {
         courtId,
         start_time: { lt: nextMonthStart },
@@ -294,7 +297,7 @@ async function assertMonthlyPassAvailability(params: {
       },
       select: { id: true, start_time: true, end_time: true },
     }),
-    prisma.monthlyPass.findMany({
+    db.monthlyPass.findMany({
       where: {
         courtId,
         month,
@@ -303,7 +306,7 @@ async function assertMonthlyPassAvailability(params: {
       },
       select: { id: true, weekday: true, start_time: true, end_time: true },
     }),
-    prisma.establishmentHoliday.findMany({
+    db.establishmentHoliday.findMany({
       where: {
         establishmentId: court.establishment.id,
         date: { gte: ymdFromDate(monthStart), lt: ymdFromDate(nextMonthStart) },
@@ -518,27 +521,33 @@ export async function requestMonthlyPass(input: {
       }
     }
 
-    await assertMonthlyPassAvailability({
-      courtId: input.courtId,
-      month,
-      weekday,
-      startTime,
-      endTime,
-    });
+    // Transação para evitar race condition entre verificação e criação
+    const pass = await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "Court" WHERE id = ${input.courtId} FOR UPDATE`;
 
-    const pass = await prisma.monthlyPass.create({
-      data: {
+      await assertMonthlyPassAvailability({
         courtId: input.courtId,
-        customerId: session.user.id,
         month,
-        status: MonthlyPassStatus.PENDING,
-        price_cents: price,
-        terms_snapshot: terms || null,
         weekday,
-        start_time: startTime,
-        end_time: endTime,
-      },
-      select: { id: true, status: true },
+        startTime,
+        endTime,
+        tx,
+      });
+
+      return tx.monthlyPass.create({
+        data: {
+          courtId: input.courtId,
+          customerId: session.user.id,
+          month,
+          status: MonthlyPassStatus.PENDING,
+          price_cents: price,
+          terms_snapshot: terms || null,
+          weekday,
+          start_time: startTime,
+          end_time: endTime,
+        },
+        select: { id: true, status: true },
+      });
     });
 
     await prisma.notification.create({
@@ -646,38 +655,42 @@ export async function confirmMonthlyPassAsOwner(input: { passId: string }) {
     throw new Error("Mensalidade sem horário definido.");
   }
 
-  await assertMonthlyPassAvailability({
-    courtId: pass.courtId,
-    month: pass.month,
-    weekday: pass.weekday,
-    startTime: pass.start_time,
-    endTime: pass.end_time,
-    excludePassId: pass.id,
-  });
+  await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "Court" WHERE id = ${pass.courtId} FOR UPDATE`;
 
-  await prisma.monthlyPass.update({
-    where: { id: pass.id },
-    data: { status: MonthlyPassStatus.ACTIVE },
-    select: { id: true },
-  });
-
-  const monthStart = parseMonthStart(pass.month);
-  const occurrences = listWeekdayDates(pass.month, pass.weekday).map((date) => ({
-    start_time: toDateTime(date, pass.start_time!),
-    end_time: toDateTime(date, pass.end_time!),
-  }));
-
-  if (occurrences.length) {
-    await prisma.courtBlock.createMany({
-      data: occurrences.map((occ) => ({
-        courtId: pass.courtId,
-        start_time: occ.start_time,
-        end_time: occ.end_time,
-        note: `Mensalidade${pass.customer?.name ? ` • ${pass.customer.name}` : ""}`,
-        createdById: session.user.id,
-      })),
+    await assertMonthlyPassAvailability({
+      courtId: pass.courtId,
+      month: pass.month,
+      weekday: pass.weekday!,
+      startTime: pass.start_time!,
+      endTime: pass.end_time!,
+      excludePassId: pass.id,
+      tx,
     });
-  }
+
+    await tx.monthlyPass.update({
+      where: { id: pass.id },
+      data: { status: MonthlyPassStatus.ACTIVE },
+      select: { id: true },
+    });
+
+    const occurrences = listWeekdayDates(pass.month, pass.weekday!).map((date) => ({
+      start_time: toDateTime(date, pass.start_time!),
+      end_time: toDateTime(date, pass.end_time!),
+    }));
+
+    if (occurrences.length) {
+      await tx.courtBlock.createMany({
+        data: occurrences.map((occ) => ({
+          courtId: pass.courtId,
+          start_time: occ.start_time,
+          end_time: occ.end_time,
+          note: `Mensalidade${pass.customer?.name ? ` • ${pass.customer.name}` : ""}`,
+          createdById: session.user.id,
+        })),
+      });
+    }
+  });
 
   // Email assíncrono ao cliente
   const customerEmail = pass.customer?.email;

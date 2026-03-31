@@ -12,32 +12,63 @@ export default async function TournamentsPage() {
   const user = session?.user;
   const isLoggedIn = Boolean(user?.id);
 
-  const publicRows = await prisma.tournament.findMany({
-    where: { visibility: "PUBLIC", status: { not: "DRAFT" } },
-    orderBy: { start_date: "asc" },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      sport_type: true,
-      start_date: true,
-      end_date: true,
-      location_name: true,
-      city: true,
-      entry_fee_cents: true,
-      team_size_min: true,
-      team_size_max: true,
-      max_teams: true,
-      status: true,
-      visibility: true,
-      organizer_type: true,
-      format: true,
-      organizer_user: { select: { name: true } },
-      establishment: { select: { name: true, address_text: true } },
-      categories: { select: { label: true } },
-      _count: { select: { registrations: true } },
-    },
-  });
+  const [publicRows, internalRows] = await Promise.all([
+    prisma.tournament.findMany({
+      where: { visibility: "PUBLIC", status: { not: "DRAFT" } },
+      orderBy: { start_date: "asc" },
+      take: 50,
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        sport_type: true,
+        start_date: true,
+        end_date: true,
+        location_name: true,
+        city: true,
+        entry_fee_cents: true,
+        team_size_min: true,
+        team_size_max: true,
+        max_teams: true,
+        status: true,
+        visibility: true,
+        organizer_type: true,
+        format: true,
+        organizer_user: { select: { name: true } },
+        establishment: { select: { name: true, address_text: true } },
+        categories: { select: { label: true } },
+        _count: { select: { registrations: true } },
+      },
+    }),
+    isLoggedIn && user?.role === "CUSTOMER"
+      ? prisma.tournament.findMany({
+          where: { visibility: "PRIVATE", organizer_user_id: user.id },
+          orderBy: { start_date: "desc" },
+          take: 50,
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            sport_type: true,
+            start_date: true,
+            end_date: true,
+            location_name: true,
+            city: true,
+            entry_fee_cents: true,
+            team_size_min: true,
+            team_size_max: true,
+            max_teams: true,
+            status: true,
+            visibility: true,
+            organizer_type: true,
+            format: true,
+            organizer_user: { select: { name: true } },
+            categories: { select: { label: true } },
+            _count: { select: { registrations: true } },
+          },
+        })
+      : Promise.resolve([]),
+  ]);
 
   const publicTournaments: TournamentListItem[] = publicRows.map((row) => ({
     id: row.id,
@@ -60,34 +91,6 @@ export default async function TournamentsPage() {
     format: row.format,
     categories: row.categories.map((cat) => cat.label),
   }));
-
-  const internalRows = isLoggedIn && user?.role === "CUSTOMER"
-    ? await prisma.tournament.findMany({
-        where: { visibility: "PRIVATE", organizer_user_id: user.id },
-        orderBy: { start_date: "desc" },
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          sport_type: true,
-          start_date: true,
-          end_date: true,
-          location_name: true,
-          city: true,
-          entry_fee_cents: true,
-          team_size_min: true,
-          team_size_max: true,
-          max_teams: true,
-          status: true,
-          visibility: true,
-          organizer_type: true,
-          format: true,
-          organizer_user: { select: { name: true } },
-          categories: { select: { label: true } },
-          _count: { select: { registrations: true } },
-        },
-      })
-    : [];
 
   const internalTournaments: TournamentListItem[] = internalRows.map((row) => ({
     id: row.id,

@@ -1040,11 +1040,12 @@ export function CourtDetailsClient(props: {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-12 lg:items-start">
+          {/* ── Quadra info (sempre primeiro) ── */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="lg:col-span-5"
+            className="order-1 lg:col-span-5 lg:row-span-2"
           >
             <div className="rounded-2xl border border-border bg-card p-5">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -1136,9 +1137,11 @@ export function CourtDetailsClient(props: {
                   </div>
                 )}
               </div>
+            </div>
 
-              <div className="mt-5 border-t border-border pt-5">
-                <h2 className="text-lg font-semibold">Sobre</h2>
+            {/* ── Sobre (abaixo no mobile, lateral no desktop) ── */}
+            <div className="mt-6 rounded-2xl border border-border bg-card p-5 hidden lg:block">
+              <h2 className="text-lg font-semibold">Sobre</h2>
                 <p className="mt-3 text-sm leading-7 text-muted-foreground">
                   {data.court.establishment.description ?? "Sem descrição."}
                 </p>
@@ -1187,11 +1190,11 @@ export function CourtDetailsClient(props: {
                     </div>
                   </div>
                 </div>
-              </div>
             </div>
           </motion.div>
 
-          <div className="lg:col-span-7">
+          {/* ── Agendamento (segundo no mobile, ao lado no desktop) ── */}
+          <div className="order-2 lg:col-span-7">
             <div className="rounded-2xl bg-card border border-border p-6">
               <h2 className="text-2xl font-display font-bold text-foreground">Escolha data e horário</h2>
 
@@ -1643,6 +1646,61 @@ export function CourtDetailsClient(props: {
                     </button>
                   </div>
                 </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Sobre (mobile only – aparece por último) ── */}
+          <div className="order-3 lg:hidden col-span-full">
+            <div className="rounded-2xl border border-border bg-card p-5">
+              <h2 className="text-lg font-semibold">Sobre</h2>
+              <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                {data.court.establishment.description ?? "Sem descrição."}
+              </p>
+
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-border bg-secondary/50 p-4">
+                  <p className="text-xs font-medium text-muted-foreground">Endereço</p>
+                  <p className="mt-1 text-sm text-foreground">
+                    {data.court.establishment.address_text}
+                  </p>
+                  <a
+                    href={mapsHref}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-2 inline-block text-sm text-foreground underline"
+                  >
+                    Ver no mapa
+                  </a>
+
+                  <div className="mt-3 overflow-hidden rounded-2xl border border-border bg-card">
+                    <iframe
+                      title="Mapa"
+                      src={mapsEmbedSrc}
+                      className="h-56 w-full"
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-border bg-secondary/50 p-4">
+                  <p className="text-xs font-medium text-muted-foreground">Comodidades</p>
+                  <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                    {(data.court.amenities ?? []).length ? (
+                      (data.court.amenities ?? []).map((t) => (
+                        <span
+                          key={t}
+                          className="rounded-full border border-border bg-card px-3 py-1 text-foreground"
+                        >
+                          {t}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-sm text-muted-foreground">Sem comodidades informadas.</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
