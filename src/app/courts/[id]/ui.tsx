@@ -1013,19 +1013,24 @@ export function CourtDetailsClient(props: {
       ) : null}
 
       <div className="container pt-24 pb-16">
-        <div className="flex items-center justify-center gap-4 mb-12">
+        <div className="flex items-center justify-center gap-3 sm:gap-4 mb-10">
           {bookingSteps.map((s, i) => (
-            <div key={s.n} className="flex items-center gap-3">
-              <div
+            <div key={s.n} className="flex items-center gap-2 sm:gap-3">
+              <motion.div
+                initial={false}
+                animate={{
+                  scale: bookingStep === s.n ? 1.1 : 1,
+                }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 className={
-                  "w-10 h-10 rounded-full flex items-center justify-center font-display font-bold text-sm transition-all " +
+                  "w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-display font-bold text-sm transition-colors " +
                   (bookingStep >= s.n
-                    ? "gradient-primary text-primary-foreground"
+                    ? "gradient-primary text-primary-foreground shadow-md shadow-primary/20"
                     : "bg-secondary text-muted-foreground")
                 }
               >
                 {bookingStep > s.n ? <Check size={16} /> : s.n}
-              </div>
+              </motion.div>
               <span className="hidden sm:block text-sm font-medium">{s.label}</span>
               {i < bookingSteps.length - 1 ? (
                 <div className={"w-12 h-px " + (bookingStep > s.n ? "bg-primary" : "bg-border")} />
@@ -1268,11 +1273,55 @@ export function CourtDetailsClient(props: {
               ) : null}
 
               <div className={"mt-5 " + (isOwnerPreview ? "opacity-60 pointer-events-none" : "")}>
-                <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+                <div className="space-y-6">
+                  {/* ── Selecione a Data ── */}
+                  <div>
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="text-sm font-semibold text-foreground">Selecione a data</span>
+                      <div className="h-px flex-1 bg-border" />
+                    </div>
+                    <div className="flex gap-2.5 overflow-x-auto pb-2 snap-x" style={{ scrollbarWidth: "thin" }}>
+                      {dateOptions.map((opt) => {
+                        const active = day === opt.value;
+                        return (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => refreshDay(opt.value)}
+                            className={
+                              "flex-shrink-0 w-[76px] rounded-2xl border px-2 py-2.5 text-center transition-all snap-start " +
+                              (active
+                                ? "border-primary bg-primary/15 shadow-lg shadow-primary/20 ring-2 ring-primary/40"
+                                : "border-border bg-card hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md")
+                            }
+                          >
+                            <span className={"block text-[11px] font-semibold uppercase tracking-wide " + (active ? "text-primary" : "text-muted-foreground")}>
+                              {opt.weekday}
+                            </span>
+                            <span className={"mt-0.5 block text-lg font-black leading-none " + (active ? "text-foreground" : "text-foreground/80")}>
+                              {opt.ddmm}
+                            </span>
+                            {opt.isToday ? (
+                              <span className={"mt-1 inline-block rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider " + (active ? "bg-primary/20 text-primary" : "bg-secondary text-muted-foreground")}>
+                                Hoje
+                              </span>
+                            ) : null}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {dateOptions.length === 0 ? (
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Nenhum dia aberto nesta semana. Escolha outra data no calendário.
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:items-start">
                   <div className="space-y-4">
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div>
-                        <label className="block text-xs font-medium text-muted-foreground">Data</label>
+                        <label className="block text-xs font-medium text-muted-foreground">Escolher no calendário</label>
                         <input
                           type="date"
                           value={day}
@@ -1284,60 +1333,6 @@ export function CourtDetailsClient(props: {
                           }}
                           className="mt-2 w-full rounded-xl border border-input bg-secondary px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                         />
-                        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-                          {dateOptions.map((opt) => {
-                            const active = day === opt.value;
-                            return (
-                              <button
-                                key={opt.value}
-                                type="button"
-                                onClick={() => {
-                                  refreshDay(opt.value);
-                                }}
-                                className={
-                                  active
-                                    ? "h-16 w-full rounded-2xl border border-[#8ac200] bg-[#b9f51f] px-2 py-2 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_8px_20px_rgba(138,194,0,0.28)] transition-all"
-                                    : "h-16 w-full rounded-2xl border border-[#222d3c] bg-[#141d2b] px-2 py-2 text-center transition-all hover:-translate-y-0.5 hover:border-[#2d3b50] hover:bg-[#182436]"
-                                }
-                              >
-                                <span
-                                  className={
-                                    active
-                                      ? "block text-xs font-bold tracking-wide text-[#19220f]"
-                                      : "block text-xs font-semibold tracking-wide text-[#8ea0bc]"
-                                  }
-                                >
-                                  {opt.weekday}
-                                </span>
-                                <span
-                                  className={
-                                    active
-                                      ? "mt-0.5 block text-xl font-black leading-none text-[#12180a]"
-                                      : "mt-0.5 block text-xl font-black leading-none text-[#dbe4f0]"
-                                  }
-                                >
-                                  {opt.ddmm}
-                                </span>
-                                {opt.isToday ? (
-                                  <span
-                                    className={
-                                      active
-                                        ? "mt-0.5 block text-[10px] font-semibold uppercase tracking-[0.08em] text-[#2d3d12]"
-                                        : "mt-0.5 block text-[10px] font-semibold uppercase tracking-[0.08em] text-[#8ea0bc]"
-                                    }
-                                  >
-                                    Hoje
-                                  </span>
-                                ) : null}
-                              </button>
-                            );
-                          })}
-                        </div>
-                        {dateOptions.length === 0 ? (
-                          <p className="mt-2 text-xs text-muted-foreground">
-                            Nenhum dia aberto nesta semana. Escolha outra data no calendário.
-                          </p>
-                        ) : null}
                       </div>
 
                       <div>
@@ -1514,72 +1509,99 @@ export function CourtDetailsClient(props: {
 
                   <div className="space-y-4">
                     <div>
-                      <p className="text-xs font-medium text-muted-foreground">Grade de Horários Disponíveis</p>
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="text-sm font-semibold text-foreground">Horários disponíveis</span>
+                        <div className="h-px flex-1 bg-border" />
+                        <span className="text-xs text-muted-foreground">{formatHHMM(openClose.open)} – {formatHHMM(openClose.close)}</span>
+                      </div>
                       {data.dayInfo.is_closed ? (
-                        <div className="mt-3 rounded-2xl border border-primary/30 bg-primary/10 p-3 text-sm text-foreground">
+                        <div className="rounded-2xl border border-primary/30 bg-primary/10 p-3 text-sm text-foreground">
                           {data.dayInfo.notice ?? "Fechado neste dia."}
                         </div>
                       ) : data.dayInfo.notice ? (
-                        <div className="mt-3 rounded-2xl border border-border bg-card p-3 text-sm text-muted-foreground">
+                        <div className="mb-3 rounded-2xl border border-border bg-card p-3 text-sm text-muted-foreground">
                           {data.dayInfo.notice}
                         </div>
                       ) : null}
-                      <div className="mt-3 flex flex-wrap gap-2">
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                         {slotOptions.map(({ start, blocked }) => {
                           const active = selectedStart?.getTime() === start.getTime();
                           const disabled = blocked;
                           return (
-                            <button
+                            <motion.button
                               key={start.toISOString()}
                               onClick={() => setSelectedStart(start)}
                               disabled={disabled}
                               type="button"
+                              whileTap={disabled ? undefined : { scale: 0.95 }}
                               className={
                                 disabled
-                                  ? "rounded-full bg-secondary/50 px-4 py-2 text-sm text-muted-foreground cursor-not-allowed"
+                                  ? "rounded-xl bg-secondary/30 py-2.5 text-sm text-muted-foreground/50 cursor-not-allowed line-through"
                                   : active
-                                    ? "rounded-full gradient-primary px-4 py-2 text-sm font-bold text-primary-foreground"
-                                    : "rounded-full border border-border bg-card px-4 py-2 text-sm text-foreground hover:bg-secondary"
+                                    ? "rounded-xl gradient-primary py-2.5 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25 ring-2 ring-primary/30"
+                                    : "rounded-xl border border-border bg-card py-2.5 text-sm font-medium text-foreground hover:border-primary/40 hover:bg-primary/5 transition-colors"
                               }
                             >
                               {formatHHMM(start)}
-                            </button>
+                            </motion.button>
                           );
                         })}
                         {slotOptions.length === 0 ? (
-                          <p className="text-sm text-muted-foreground">Sem horários disponíveis para essa duração.</p>
+                          <p className="col-span-full text-sm text-muted-foreground">Sem horários disponíveis para essa duração.</p>
                         ) : null}
                       </div>
-                      <p className="mt-3 text-xs text-muted-foreground">
-                        Janela: {formatHHMM(openClose.open)} - {formatHHMM(openClose.close)}
-                      </p>
                     </div>
 
-                    <div className="rounded-2xl border border-border bg-secondary/50 p-4">
-                      <p className="text-sm font-semibold">Resumo</p>
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        {selectedStart && selectedEnd
-                          ? `${formatHHMM(selectedStart)} → ${formatHHMM(selectedEnd)} (${durationMinutes} min)`
-                          : "Selecione um horário"}
-                      </p>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {monthlyIsActive && selectedStart && selectedEnd
-                          ? `Total: ${formatBRLFromCents(0)} (mensalidade)`
-                          : totalPriceCents != null
-                            ? `Total: ${formatBRLFromCents(totalPriceCents)}`
-                            : `Preço/h: ${formatBRLFromCents(data.court.price_per_hour)}`}
-                      </p>
-                      {repeatWeeks > 0 ? (
-                        <p className="mt-2 text-xs text-muted-foreground">
-                          Recorrência: semanal por {repeatWeeks} semanas (total {repeatWeeks + 1} agendamentos)
-                        </p>
-                      ) : null}
-                      <p className="mt-2 text-xs text-muted-foreground">
-                        Cancelamento: até {data.court.establishment.cancel_min_hours}h antes. Multa: {data.court.establishment.cancel_fee_fixed_cents > 0
-                          ? formatBRLFromCents(data.court.establishment.cancel_fee_fixed_cents)
-                          : `${data.court.establishment.cancel_fee_percent}%`}.
-                      </p>
-                    </div>
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: selectedStart ? 1 : 0.7, y: 0 }}
+                      className="rounded-2xl border border-border bg-secondary/50 p-5"
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold text-foreground">Resumo</p>
+                        {selectedStart && selectedEnd ? (
+                          <span className="rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-bold text-primary">
+                            {monthlyIsActive ? "Mensalista" : totalPriceCents != null ? formatBRLFromCents(totalPriceCents) : formatBRLFromCents(data.court.price_per_hour)}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="mt-3 space-y-1.5 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Horário</span>
+                          <span className="font-medium text-foreground">
+                            {selectedStart && selectedEnd
+                              ? `${formatHHMM(selectedStart)} → ${formatHHMM(selectedEnd)} (${durationMinutes} min)`
+                              : "Selecione um horário"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Valor</span>
+                          <span className="font-medium text-foreground">
+                            {monthlyIsActive && selectedStart && selectedEnd
+                              ? `${formatBRLFromCents(0)} (mensalidade)`
+                              : totalPriceCents != null
+                                ? formatBRLFromCents(totalPriceCents)
+                                : `${formatBRLFromCents(data.court.price_per_hour)}/h`}
+                          </span>
+                        </div>
+                        {repeatWeeks > 0 ? (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Recorrência</span>
+                            <span className="font-medium text-foreground">
+                              Semanal por {repeatWeeks} sem. ({repeatWeeks + 1} agendamentos)
+                            </span>
+                          </div>
+                        ) : null}
+                        <div className="flex justify-between text-xs pt-1.5 border-t border-border mt-2">
+                          <span className="text-muted-foreground">Cancelamento</span>
+                          <span className="text-muted-foreground">
+                            Até {data.court.establishment.cancel_min_hours}h antes · Multa: {data.court.establishment.cancel_fee_fixed_cents > 0
+                              ? formatBRLFromCents(data.court.establishment.cancel_fee_fixed_cents)
+                              : `${data.court.establishment.cancel_fee_percent}%`}
+                          </span>
+                        </div>
+                      </div>
+                    </motion.div>
 
                     {!data.paymentsEnabled && data.paymentsEnabledReason ? (
                       <div className="rounded-2xl border border-primary/30 bg-primary/10 p-3 text-xs text-foreground">
@@ -1615,11 +1637,12 @@ export function CourtDetailsClient(props: {
                     <button
                       onClick={confirmBooking}
                       disabled={isPending || isOwnerPreview}
-                      className="gradient-primary text-primary-foreground font-bold py-3 px-6 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-60 w-full"
+                      className="gradient-primary text-primary-foreground font-bold py-3.5 px-6 rounded-xl hover:opacity-90 transition-all disabled:opacity-60 w-full text-base shadow-lg shadow-primary/20"
                     >
                       {isPending ? "Processando..." : "Confirmar Agendamento"}
                     </button>
                   </div>
+                </div>
                 </div>
               </div>
             </div>

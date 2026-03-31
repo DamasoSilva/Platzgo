@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
 
+import { authOptions } from "@/lib/auth";
 import { assertPaymentsEnabled, extractAsaasErrorMessage, getPaymentConfig } from "@/lib/payments";
 
 function toCents(value: number): number {
@@ -13,6 +15,11 @@ function toAsaasValueFromCents(cents: number): number {
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ ok: false, error: "Autenticação necessária." }, { status: 401 });
+    }
+
     const config = await assertPaymentsEnabled();
     if (!config.providersEnabled.includes("asaas")) {
       return NextResponse.json({ ok: false, error: "Asaas não está ativo." }, { status: 501 });

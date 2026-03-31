@@ -1,7 +1,19 @@
+import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 
 import { getPaymentConfig } from "@/lib/payments";
 import { handleAsaasWebhook } from "@/lib/actions/payments";
+
+function timingSafeCompare(a: string, b: string): boolean {
+  try {
+    const bufA = Buffer.from(a, "utf8");
+    const bufB = Buffer.from(b, "utf8");
+    if (bufA.length !== bufB.length) return false;
+    return crypto.timingSafeEqual(bufA, bufB);
+  } catch {
+    return false;
+  }
+}
 
 export async function POST(req: NextRequest) {
   const config = await getPaymentConfig();
@@ -14,7 +26,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Webhook não configurado." }, { status: 400 });
   }
 
-  if (token !== config.asaas.webhookToken) {
+  if (!timingSafeCompare(token, config.asaas.webhookToken)) {
     return NextResponse.json({ ok: false, error: "Assinatura inválida." }, { status: 401 });
   }
 

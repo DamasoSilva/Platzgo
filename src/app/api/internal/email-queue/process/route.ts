@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { NextResponse } from "next/server";
 
 import { processEmailQueueBatch } from "@/lib/emailQueue";
@@ -8,7 +9,12 @@ function isAuthorized(req: Request): boolean {
   const secret = process.env.EMAIL_QUEUE_SECRET;
   if (!secret) return false;
   const provided = req.headers.get("x-email-queue-secret");
-  return Boolean(provided && provided === secret);
+  if (!provided) return false;
+  try {
+    return crypto.timingSafeEqual(Buffer.from(provided, "utf8"), Buffer.from(secret, "utf8"));
+  } catch {
+    return false;
+  }
 }
 
 export async function POST(req: Request) {

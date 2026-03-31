@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { NextResponse } from "next/server";
 
 import { cancelExpiredPendingBookings } from "@/lib/actions/bookings";
@@ -8,7 +9,12 @@ function isAuthorized(req: Request): boolean {
   const secret = process.env.CRON_SECRET;
   if (!secret) return false;
   const provided = req.headers.get("x-cron-secret");
-  return Boolean(provided && provided === secret);
+  if (!provided) return false;
+  try {
+    return crypto.timingSafeEqual(Buffer.from(provided, "utf8"), Buffer.from(secret, "utf8"));
+  } catch {
+    return false;
+  }
 }
 
 async function handleRequest(req: Request) {
