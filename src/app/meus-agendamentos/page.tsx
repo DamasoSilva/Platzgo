@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
+import { after } from "next/server";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -75,30 +76,32 @@ export default async function MyBookingsPage(props: { searchParams?: SearchParam
   const endDate = parseDateInput(endParam, true);
   const activePaymentWhere = buildActivePaymentWhere(now);
 
-  // Expire stale bookings + payments in parallel
-  await Promise.all([
-    prisma.booking.updateMany({
-      where: {
-        customerId: userId,
-        status: BookingStatus.PENDING,
-        start_time: { lt: now },
-        payments: { some: { status: { in: [PaymentStatus.PENDING, PaymentStatus.AUTHORIZED] } } },
-      },
-      data: { status: BookingStatus.CANCELLED, cancel_reason: "Pagamento pendente expirado." },
-    }),
-    prisma.payment.updateMany({
-      where: {
-        status: { in: [PaymentStatus.PENDING, PaymentStatus.AUTHORIZED] },
-        booking: {
+  // Expire stale bookings + payments AFTER response (non-blocking)
+  after(async () => {
+    await Promise.all([
+      prisma.booking.updateMany({
+        where: {
           customerId: userId,
-          status: BookingStatus.CANCELLED,
+          status: BookingStatus.PENDING,
           start_time: { lt: now },
-          cancel_reason: "Pagamento pendente expirado.",
+          payments: { some: { status: { in: [PaymentStatus.PENDING, PaymentStatus.AUTHORIZED] } } },
         },
-      },
-      data: { status: PaymentStatus.CANCELLED },
-    }),
-  ]);
+        data: { status: BookingStatus.CANCELLED, cancel_reason: "Pagamento pendente expirado." },
+      }),
+      prisma.payment.updateMany({
+        where: {
+          status: { in: [PaymentStatus.PENDING, PaymentStatus.AUTHORIZED] },
+          booking: {
+            customerId: userId,
+            status: BookingStatus.CANCELLED,
+            start_time: { lt: now },
+            cancel_reason: "Pagamento pendente expirado.",
+          },
+        },
+        data: { status: PaymentStatus.CANCELLED },
+      }),
+    ]);
+  });
 
   const where: any = { customerId: userId };
   if (startDate || endDate) {

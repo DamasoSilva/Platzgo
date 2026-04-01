@@ -239,11 +239,6 @@ export function CustomerHeader(props: Props) {
                       Ir para dashboard
                     </Link>
                   ) : null}
-                  {isCustomerFacing ? (
-                    <Link href="/meus-agendamentos" className={menuItem} onClick={() => setOpen(false)}>
-                      Meus agendamentos
-                    </Link>
-                  ) : null}
                   <Link href="/perfil" className={menuItem} onClick={() => setOpen(false)}>
                     Meu perfil
                   </Link>
@@ -309,11 +304,6 @@ export function CustomerHeader(props: Props) {
 
               {isLoggedIn ? (
                 <>
-                  {isCustomerFacing ? (
-                    <Link href="/meus-agendamentos" className={pill} onClick={() => setMenuOpen(false)}>
-                      Meus agendamentos
-                    </Link>
-                  ) : null}
                   <Link href="/perfil" className={pill} onClick={() => setMenuOpen(false)}>
                     Meu perfil
                   </Link>

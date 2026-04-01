@@ -1045,7 +1045,7 @@ export function CourtDetailsClient(props: {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="order-1 lg:col-span-5 lg:row-span-2"
+            className="order-1 lg:col-span-4 lg:row-span-2"
           >
             <div className="rounded-2xl border border-border bg-card p-5">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -1079,7 +1079,7 @@ export function CourtDetailsClient(props: {
 
               <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-secondary/30">
                 {courtPhotos.length ? (
-                  <div className="relative h-64 w-full">
+                  <div className="relative h-48 w-full">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={courtPhotos[activePhotoIndex]!}
@@ -1132,16 +1132,16 @@ export function CourtDetailsClient(props: {
                     ) : null}
                   </div>
                 ) : (
-                  <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+                  <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
                     Sem imagens cadastradas para esta quadra.
                   </div>
                 )}
               </div>
             </div>
 
-            {/* ── Sobre (abaixo no mobile, lateral no desktop) ── */}
-            <div className="mt-6 rounded-2xl border border-border bg-card p-5 hidden lg:block">
-              <h2 className="text-lg font-semibold">Sobre</h2>
+            {/* ── Sobre (collapsible no desktop) ── */}
+            <details className="mt-4 rounded-2xl border border-border bg-card p-5 hidden lg:block">
+              <summary className="cursor-pointer text-lg font-semibold">Sobre</summary>
                 <p className="mt-3 text-sm leading-7 text-muted-foreground">
                   {data.court.establishment.description ?? "Sem descrição."}
                 </p>
@@ -1190,11 +1190,11 @@ export function CourtDetailsClient(props: {
                     </div>
                   </div>
                 </div>
-            </div>
+            </details>
           </motion.div>
 
           {/* ── Agendamento (segundo no mobile, ao lado no desktop) ── */}
-          <div className="order-2 lg:col-span-7">
+          <div className="order-2 lg:col-span-8">
             <div className="rounded-2xl bg-card border border-border p-6">
               <h2 className="text-2xl font-display font-bold text-foreground">Escolha data e horário</h2>
 
@@ -1558,7 +1558,7 @@ export function CourtDetailsClient(props: {
                     <motion.div
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: selectedStart ? 1 : 0.7, y: 0 }}
-                      className="rounded-2xl border border-border bg-secondary/50 p-5"
+                      className="rounded-2xl border border-border bg-secondary/50 p-5 lg:sticky lg:top-20"
                     >
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-semibold text-foreground">Resumo</p>

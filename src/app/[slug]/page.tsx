@@ -223,11 +223,12 @@ export default async function EstablishmentSlugPage(props: {
           {coverUrl ? (
             <div className="mt-6 overflow-hidden rounded-3xl border border-border bg-card shadow-sm dark:border-border dark:bg-card">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={coverUrl} alt={`Foto de ${est.name}`} className="aspect-[16/6] h-full w-full object-cover" />
+              <img src={coverUrl} alt={`Foto de ${est.name}`} className="aspect-[16/9] max-h-64 w-full object-cover" />
             </div>
           ) : null}
 
-          <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          <h2 className="mt-8 text-2xl font-semibold tracking-tight text-foreground dark:text-foreground">Quadras</h2>
+          <div className="mt-4 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {est.courts.map((c) => {
               const courtCover = (c.photo_urls ?? []).find((u) => (u ?? "").trim()) ?? coverUrl;
               return (

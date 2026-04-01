@@ -78,11 +78,48 @@ export function SignInForm(props: {
   }
 
   return (
-    <div className="ph-page">
-      <div className="pointer-events-none absolute -top-48 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-primary/15 blur-3xl" />
-      <div className="relative mx-auto max-w-md px-6 py-16">
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground dark:text-foreground">Entrar</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Use seu email e senha para acessar.</p>
+    <div className="ph-page min-h-screen flex">
+      {/* Left visual panel - hidden on mobile */}
+      <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary via-emerald-600 to-emerald-800" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 rounded-full bg-primary/30 blur-2xl" />
+        <div className="relative z-10 max-w-md px-12 text-white">
+          <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center font-bold text-2xl mb-8">
+            P
+          </div>
+          <h2 className="text-4xl font-bold leading-tight">
+            Sua quadra.<br />
+            <span className="text-emerald-200">Seu horário.</span>
+          </h2>
+          <p className="mt-4 text-lg text-white/80 leading-relaxed">
+            Agende quadras de futebol, padel, tênis e mais em segundos. Sem ligações, sem espera.
+          </p>
+          <div className="mt-8 flex items-center gap-4 text-sm text-white/70">
+            <span className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-300" />
+              +50 quadras
+            </span>
+            <span className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-300" />
+              Pagamento seguro
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Right form panel */}
+      <div className="flex-1 flex items-center justify-center relative">
+        <div className="pointer-events-none absolute -top-48 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl lg:hidden" />
+        <div className="relative w-full max-w-md px-6 py-16">
+          <div className="lg:hidden mb-8">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center font-bold text-primary-foreground text-sm">P</div>
+              <span className="font-bold text-xl text-foreground">Platz<span className="text-primary">Go!</span></span>
+            </div>
+          </div>
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground dark:text-foreground">Entrar</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Use seu email e senha para acessar.</p>
 
         {props.success === "signup" ? (
           <div className="mt-4 rounded-2xl border border-primary/30 bg-primary/10 p-4 text-sm text-primary">
@@ -177,6 +214,7 @@ export function SignInForm(props: {
             </div>
           </div>
         </form>
+      </div>
       </div>
     </div>
   );

@@ -597,117 +597,57 @@ export function BookingDetailClient(props: {
         </div>
       ) : null}
 
-      <div className="mt-5 rounded-2xl border border-border bg-card/70 p-4 text-sm text-muted-foreground backdrop-blur dark:border-border dark:bg-card/50 dark:text-muted-foreground">
-        <p className="font-semibold text-foreground dark:text-foreground">Reagendamento</p>
-        <p className="mt-1">
-          Você pode reagendar <span className="font-semibold">apenas 1 vez</span> por agendamento. Ao reagendar, este agendamento será
-          cancelado e um novo agendamento será criado como <span className="font-semibold">Pendente</span>.
-        </p>
-        <p className="mt-2 text-xs text-muted-foreground dark:text-muted-foreground">
-          O dono do estabelecimento receberá uma solicitação de aprovação para o reagendamento.
-        </p>
-      </div>
+
 
       {payment ? (
-        <div className="mt-4 rounded-2xl border border-primary/30 bg-primary/10 p-4 text-sm text-primary dark:border-emerald-900/40 dark:bg-primary/20 dark:text-primary">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="font-semibold">Pagamento pendente</p>
-            <div className="flex flex-wrap items-center gap-2">
-              {countdownSeconds !== null ? (
-                <span className="text-xs text-primary dark:text-emerald-200">
-                  {countdownSeconds > 0 ? `Expira em ${formatCountdown(countdownSeconds)}` : "Expirado"}
-                </span>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => setPixModalOpen(true)}
-                className="rounded-full border border-primary/30 px-3 py-1 text-[11px] font-semibold text-primary dark:border-emerald-900/50 dark:text-emerald-100"
-              >
-                Abrir pagamento
-              </button>
-            </div>
-          </div>
-
-          {payment.pixPayload ? (
-            <div className="mt-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="font-semibold">PIX Copia e Cola</span>
-                <button
-                  type="button"
-                  className="rounded-full bg-emerald-700 px-3 py-1 text-[11px] font-bold text-white"
-                  onClick={async () => {
-                    try {
-                      await navigator.clipboard.writeText(payment.pixPayload!);
-                      setPixCopyStatus("Chave PIX copiada.");
-                    } catch {
-                      setPixCopyStatus("Nao foi possivel copiar.");
-                    }
-                  }}
-                >
-                  Copiar
-                </button>
-              </div>
-              <div className="mt-2 break-words rounded-xl bg-white px-3 py-2 text-[11px] text-foreground dark:bg-card dark:text-foreground">
-                {payment.pixPayload}
-              </div>
-              {pixCopyStatus ? <div className="mt-2 text-[11px]">{pixCopyStatus}</div> : null}
-              {payment.pixQrBase64 ? (
-                <div className="mt-3 flex justify-center">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={`data:image/png;base64,${payment.pixQrBase64}`}
-                    alt="QR Code PIX"
-                    className="h-40 w-40 rounded-lg border border-primary/30 bg-white p-2"
-                  />
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setPixModalOpen(true)}
+            className="rounded-full bg-emerald-700 px-4 py-2 text-xs font-bold text-white"
+          >
+            {countdownSeconds !== null && countdownSeconds > 0
+              ? `Pagar · ${formatCountdown(countdownSeconds)}`
+              : "Abrir pagamento"}
+          </button>
           {canRefreshPix ? (
-            <div className="mt-3">
-              <button
-                type="button"
-                className="rounded-full bg-emerald-700 px-4 py-2 text-xs font-bold text-white"
-                disabled={isPending}
-                onClick={() => {
-                  setPixCopyStatus(null);
-                  startTransition(async () => {
-                    try {
-                      const res = await refreshPixForBooking({ bookingId: props.booking.id });
-                      setPayment((prev) =>
-                        prev
-                          ? {
-                              ...prev,
-                              pixPayload: res.pixPayload,
-                              pixQrBase64: res.pixQrBase64,
-                              expiresAt: res.pixExpiresAt,
-                            }
-                          : prev
-                      );
-                      setPixCopyStatus("PIX atualizado.");
-                    } catch (e) {
-                      setPixCopyStatus(e instanceof Error ? e.message : "Nao foi possivel atualizar.");
-                    }
-                  });
-                }}
-              >
-                Atualizar PIX
-              </button>
-            </div>
+            <button
+              type="button"
+              className="rounded-full border border-primary/30 px-4 py-2 text-xs font-semibold text-primary dark:border-emerald-900/50 dark:text-emerald-100"
+              disabled={isPending}
+              onClick={() => {
+                setPixCopyStatus(null);
+                startTransition(async () => {
+                  try {
+                    const res = await refreshPixForBooking({ bookingId: props.booking.id });
+                    setPayment((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            pixPayload: res.pixPayload,
+                            pixQrBase64: res.pixQrBase64,
+                            expiresAt: res.pixExpiresAt,
+                          }
+                        : prev
+                    );
+                  } catch {
+                    // silently fail
+                  }
+                });
+              }}
+            >
+              Atualizar PIX
+            </button>
           ) : null}
-
           {!payment.pixPayload && payment.checkoutUrl ? (
-            <div className="mt-3">
-              <a
-                href={payment.checkoutUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
-              >
-                Ir para pagamento
-              </a>
-            </div>
+            <a
+              href={payment.checkoutUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-full border border-primary/30 px-4 py-2 text-xs font-semibold text-primary dark:border-emerald-900/50 dark:text-emerald-100"
+            >
+              Ir para pagamento
+            </a>
           ) : null}
         </div>
       ) : null}
@@ -724,43 +664,38 @@ export function BookingDetailClient(props: {
 
       {message ? <div className="mt-4 rounded-2xl bg-secondary px-4 py-3 text-sm text-foreground dark:bg-card dark:text-foreground">{message}</div> : null}
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-2xl ph-surface p-4">
-          <p className="text-sm font-semibold text-foreground dark:text-foreground">Cancelar</p>
-          <p className="mt-1 text-xs text-muted-foreground dark:text-muted-foreground">Disponível até o horário do agendamento.</p>
-          <button
-            type="button"
-            disabled={!canCancel || isPending}
-            onClick={() => {
-              if (!confirm("Cancelar este agendamento?") ) return;
-              void onCancel();
-            }}
-            className={
-              "mt-3 w-full rounded-full px-4 py-2 text-xs font-bold transition-all " +
-              (canCancel && !isPending ? "bg-rose-500 text-white hover:brightness-110" : "bg-secondary text-muted-foreground dark:bg-secondary dark:text-muted-foreground")
-            }
-          >
-            Cancelar agendamento
-          </button>
-        </div>
+      <div className="mt-5 flex flex-wrap gap-2">
+        <button
+          type="button"
+          disabled={!canCancel || isPending}
+          onClick={() => {
+            if (!confirm("Cancelar este agendamento?") ) return;
+            void onCancel();
+          }}
+          className={
+            "rounded-full px-5 py-2.5 text-xs font-bold transition-all " +
+            (canCancel && !isPending ? "bg-rose-500 text-white hover:brightness-110" : "bg-secondary text-muted-foreground dark:bg-secondary dark:text-muted-foreground")
+          }
+        >
+          Cancelar
+        </button>
 
-        <div className="rounded-2xl ph-surface p-4">
-          <p className="text-sm font-semibold text-foreground dark:text-foreground">Reagendar</p>
-          <p className="mt-1 text-xs text-muted-foreground dark:text-muted-foreground">Escolha um dia e um horário disponível (30 em 30).</p>
+        <button
+          type="button"
+          disabled={!canReschedule || isPending}
+          onClick={() => setShowReschedule((s) => !s)}
+          className={
+            "rounded-full px-5 py-2.5 text-xs font-bold transition-all " +
+            (canReschedule && !isPending ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground dark:bg-secondary dark:text-muted-foreground")
+          }
+        >
+          {showReschedule ? "Fechar reagendamento" : "Reagendar"}
+        </button>
+      </div>
 
-          <button
-            type="button"
-            disabled={!canReschedule || isPending}
-            onClick={() => setShowReschedule((s) => !s)}
-            className={
-              "mt-3 w-full rounded-full px-4 py-2 text-xs font-bold transition-all " +
-              (canReschedule && !isPending ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground dark:bg-secondary dark:text-muted-foreground")
-            }
-          >
-            {showReschedule ? "Fechar reagendamento" : "Abrir reagendamento"}
-          </button>
-          {showReschedule ? (
-            <div className="mt-3 grid gap-3">
+      {showReschedule ? (
+        <div className="mt-4 rounded-2xl ph-surface p-4">
+          <div className="grid gap-3">
             <div className="grid gap-2">
               <div className="flex items-center justify-between gap-3">
                 <label className="text-xs font-medium text-muted-foreground dark:text-muted-foreground">Dia</label>
@@ -890,47 +825,38 @@ export function BookingDetailClient(props: {
               </div>
             ) : null}
           </div>
-          ) : null}
 
-          {showReschedule ? (
-            <button
-              type="button"
-              disabled={!canReschedule || isPending}
-              onClick={() => void onReschedule()}
-              className={
-                "mt-3 w-full rounded-full px-4 py-2 text-xs font-bold transition-all " +
-                (canReschedule && !isPending ? "bg-primary text-primary-foreground hover:scale-[1.02]" : "bg-secondary text-muted-foreground dark:bg-secondary dark:text-muted-foreground")
-              }
-            >
-              Reagendar
-            </button>
-          ) : null}
+          <button
+            type="button"
+            disabled={!canReschedule || isPending}
+            onClick={() => void onReschedule()}
+            className={
+              "mt-3 w-full rounded-full px-4 py-2 text-xs font-bold transition-all " +
+              (canReschedule && !isPending ? "bg-primary text-primary-foreground hover:scale-[1.02]" : "bg-secondary text-muted-foreground dark:bg-secondary dark:text-muted-foreground")
+            }
+          >
+            Confirmar reagendamento
+          </button>
 
           {alreadyRescheduled ? (
             <p className="mt-2 text-xs text-muted-foreground dark:text-muted-foreground">
-              Este agendamento já foi reagendado. Para reagendar novamente, use o novo agendamento (limitado a 1 reagendamento por agendamento).
+              Este agendamento já foi reagendado.
             </p>
           ) : null}
         </div>
-      </div>
-
-      <div className="mt-5 text-xs text-muted-foreground dark:text-muted-foreground">
-        <p>
-          Dica: se você tiver uma mensalidade ativa para este mês nesta quadra, o valor do novo agendamento será {" "}
-          <span className="font-semibold">R$ 0</span>.
-        </p>
-        <p className="mt-1">O reagendamento gera uma nova solicitação pendente para o dono do estabelecimento.</p>
-      </div>
+      ) : null}
 
       {props.booking.notifications?.length ? (
         <div className="mt-6 rounded-3xl ph-surface p-6">
-          <h2 className="text-sm font-semibold text-foreground dark:text-foreground">Notificações deste agendamento</h2>
-          <div className="mt-4 space-y-3">
+          <h2 className="text-sm font-semibold text-foreground dark:text-foreground">Notificações</h2>
+          <div className="mt-3 space-y-2">
             {props.booking.notifications.map((n) => (
-              <div key={n.id} className="rounded-2xl border border-border bg-card p-4 dark:border-border dark:bg-card">
-                <p className="text-sm font-semibold text-foreground dark:text-foreground">{n.title}</p>
+              <div key={n.id} className="rounded-xl border border-border bg-card px-4 py-3 dark:border-border dark:bg-card">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-foreground dark:text-foreground">{n.title}</p>
+                  <p className="text-[11px] text-muted-foreground/80 dark:text-muted-foreground/80">{formatDateTimeBR(new Date(n.createdAt))}</p>
+                </div>
                 <p className="mt-1 text-xs text-muted-foreground dark:text-muted-foreground">{n.body}</p>
-                <p className="mt-2 text-[11px] text-muted-foreground/80 dark:text-muted-foreground/80">{formatDateTimeBR(new Date(n.createdAt))}</p>
               </div>
             ))}
           </div>

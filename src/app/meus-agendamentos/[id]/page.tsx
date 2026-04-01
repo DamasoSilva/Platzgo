@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
+import { after } from "next/server";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -91,10 +92,12 @@ export default async function BookingDetailPage({
     dayInfo: initial.dayInfo,
   };
 
-  // Ao abrir o detalhe, marcar como lidas as notificações desse agendamento.
-  await prisma.notification.updateMany({
-    where: { userId, bookingId: booking.id, readAt: null, deletedAt: null },
-    data: { readAt: new Date() },
+  // Marcar notificações como lidas APÓS o response (non-blocking)
+  after(async () => {
+    await prisma.notification.updateMany({
+      where: { userId, bookingId: booking.id, readAt: null, deletedAt: null },
+      data: { readAt: new Date() },
+    });
   });
 
   const bookingNotifications = await prisma.notification.findMany({

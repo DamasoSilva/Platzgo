@@ -6,7 +6,6 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 import { motion } from "framer-motion";
 import {
   ArrowRight,
-  BarChart3,
   Calendar,
   CalendarCheck,
   Clock,
@@ -123,11 +122,6 @@ const landingFeatures = [
     icon: Users,
     title: "Monte seu time",
     description: "Convide amigos e organize partidas com facilidade.",
-  },
-  {
-    icon: BarChart3,
-    title: "Painel do gestor",
-    description: "Gerencie reservas, receita e clientes em um só lugar.",
   },
 ];
 
@@ -370,9 +364,10 @@ export function SearchClient(props: Props) {
   );
 
   useEffect(() => {
-    if (!isSearchPage && props.initial.locationSource !== "query") return;
+    if (!isSearchPage && props.initial.locationSource !== "query" && !props.viewer.isLoggedIn) return;
+    setHasSearched(true);
     fetchNearby({ userLat: lat, userLng: lng, radiusKm: effectiveRadiusKm });
-  }, [isSearchPage, props.initial.locationSource, fetchNearby, lat, lng, effectiveRadiusKm]);
+  }, [isSearchPage, props.initial.locationSource, props.viewer.isLoggedIn, fetchNearby, lat, lng, effectiveRadiusKm]);
 
   useEffect(() => {
     if (!hasSearched || !resultsRef.current) return;
@@ -552,12 +547,6 @@ export function SearchClient(props: Props) {
               >
                 Agendar agora
                 <ArrowRight size={18} />
-              </Link>
-              <Link
-                href="/dashboard"
-                className="border border-border bg-card/50 text-foreground font-medium text-base px-8 py-4 rounded-xl inline-flex items-center justify-center gap-2 hover:bg-card transition-colors"
-              >
-                Sou dono de quadra
               </Link>
             </motion.div>
 
@@ -755,15 +744,6 @@ export function SearchClient(props: Props) {
                 {isPending ? "Buscando..." : isSearchPage ? "Atualizar busca" : "Ver quadras"}
               </button>
 
-              {!props.viewer.isLoggedIn && props.showOwnerCtaOnLoggedOut ? (
-                <Link
-                  href="/dashboard"
-                  className="border border-border bg-card/50 text-foreground font-medium text-base px-8 py-4 rounded-xl inline-flex items-center justify-center gap-2 hover:bg-card transition-colors"
-                >
-                  Sou dono de quadra
-                </Link>
-              ) : null}
-
               {!props.viewer.isLoggedIn ? (
                 <span className="text-xs text-muted-foreground">
                   Faça login para ver preços, contatos e mapa.
@@ -774,7 +754,7 @@ export function SearchClient(props: Props) {
         </div>
       </section>
 
-      {hasSearched && isSearchPage ? (
+      {hasSearched ? (
         <section ref={resultsRef} className="py-16">
           <div className="container">
             <div className="grid gap-6 lg:grid-cols-12">
@@ -1042,12 +1022,6 @@ export function SearchClient(props: Props) {
                   Agendar minha quadra
                   <ArrowRight size={18} />
                 </Link>
-                <Link
-                  href="/dashboard"
-                  className="border border-primary/30 bg-primary/5 text-foreground font-medium text-base px-8 py-4 rounded-xl inline-flex items-center justify-center gap-2 hover:bg-primary/10 transition-colors"
-                >
-                  Cadastrar minha quadra
-                </Link>
               </div>
             </div>
           </motion.div>
@@ -1079,7 +1053,6 @@ export function SearchClient(props: Props) {
                   <li><Link href="/search" className="hover:text-foreground transition-colors">Agendar quadra</Link></li>
                   <li><Link href="/sorteio-times" className="hover:text-foreground transition-colors">Sorteio de times</Link></li>
                   <li><Link href="/torneios" className="hover:text-foreground transition-colors">Torneios</Link></li>
-                  <li><Link href="/dashboard" className="hover:text-foreground transition-colors">Painel do gestor</Link></li>
                   <li><Link href="/" className="hover:text-foreground transition-colors">Preços</Link></li>
                 </ul>
               </div>
