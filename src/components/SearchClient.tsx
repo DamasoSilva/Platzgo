@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { motion } from "framer-motion";
+
 import {
   ArrowRight,
   Calendar,
@@ -202,12 +202,13 @@ export function SearchClient(props: Props) {
   const [maxPrice, setMaxPrice] = useState(props.initial.maxPrice ?? 0);
   const [onlyFavorites, setOnlyFavorites] = useState(Boolean(props.initial.onlyFavorites));
   const [sortBy, setSortBy] = useState<"distance" | "rating">("distance");
-  const [hasSearched, setHasSearched] = useState(isSearchPage || props.initial.locationSource === "query");
+  const [hasSearched, setHasSearched] = useState(true);
   const [cards, setCards] = useState<Card[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [isFavPending, startFavTransition] = useTransition();
   const [hoveredEstId, setHoveredEstId] = useState<string | null>(null);
+  const scrollOnNextUpdate = useRef(false);
 
   const resultsRef = useRef<HTMLElement | null>(null);
   const mapDivRef = useRef<HTMLDivElement | null>(null);
@@ -364,15 +365,14 @@ export function SearchClient(props: Props) {
   );
 
   useEffect(() => {
-    if (!isSearchPage && props.initial.locationSource !== "query" && !props.viewer.isLoggedIn) return;
-    setHasSearched(true);
     fetchNearby({ userLat: lat, userLng: lng, radiusKm: effectiveRadiusKm });
-  }, [isSearchPage, props.initial.locationSource, props.viewer.isLoggedIn, fetchNearby, lat, lng, effectiveRadiusKm]);
+  }, [fetchNearby, lat, lng, effectiveRadiusKm]);
 
   useEffect(() => {
-    if (!hasSearched || !resultsRef.current) return;
+    if (!scrollOnNextUpdate.current || !resultsRef.current) return;
+    scrollOnNextUpdate.current = false;
     resultsRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [hasSearched, cards.length]);
+  }, [cards.length]);
 
   useEffect(() => {
     if (!props.apiKey) return;
@@ -496,22 +496,15 @@ export function SearchClient(props: Props) {
 
         <div className="container relative z-10 pt-8 pb-16">
           <div className="max-w-2xl">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-sm font-medium mb-6">
                 <span className="w-2 h-2 rounded-full bg-primary animate-pulse-glow" />
                 Quadras disponíveis agora
               </span>
-            </motion.div>
+            </div>
 
-            <motion.h1
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.1 }}
-              className="text-5xl md:text-7xl font-display font-bold leading-[1.05] mb-6"
+            <h1
+              className="text-5xl md:text-7xl font-display font-bold leading-[1.05] mb-6 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100"
             >
               {props.hero ? (
                 <span className="gradient-text glow-text">{heroTitle}</span>
@@ -524,37 +517,28 @@ export function SearchClient(props: Props) {
                   Sem complicação.
                 </>
               )}
-            </motion.h1>
+            </h1>
 
-            <motion.p
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.2 }}
-              className="text-lg text-muted-foreground max-w-lg mb-8 leading-relaxed"
+            <p
+              className="text-lg text-muted-foreground max-w-lg mb-8 leading-relaxed animate-in fade-in slide-in-from-bottom-6 duration-700 delay-200"
             >
               {heroDescription}
-            </motion.p>
+            </p>
 
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.3 }}
-              className="flex flex-col sm:flex-row gap-4 mb-12"
+            <div
+              className="flex flex-col sm:flex-row gap-4 mb-12 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-300"
             >
               <Link
-                href="/search"
+                href="#busca"
                 className="gradient-primary text-primary-foreground font-bold text-base px-8 py-4 rounded-xl inline-flex items-center justify-center gap-2 hover:opacity-90 transition-opacity glow-box"
               >
-                Agendar agora
+                Ver quadras
                 <ArrowRight size={18} />
               </Link>
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.5 }}
-              className="flex flex-wrap gap-6 text-sm text-muted-foreground"
+            <div
+              className="flex flex-wrap gap-6 text-sm text-muted-foreground animate-in fade-in duration-700 delay-500"
             >
               <span className="flex items-center gap-2">
                 <MapPin size={16} className="text-primary" />
@@ -568,7 +552,7 @@ export function SearchClient(props: Props) {
                 <Shield size={16} className="text-primary" />
                 Pagamento seguro
               </span>
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>
@@ -576,14 +560,11 @@ export function SearchClient(props: Props) {
 
       <section id="busca" className="py-24 bg-card/30">
         <div className="container">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+          <div
             className="text-center mb-12"
           >
             <span className="text-primary text-sm font-semibold uppercase tracking-widest mb-3 block">
-              {isSearchPage ? "Resultados da busca" : "Buscar quadras"}
+              {isSearchPage ? "Resultados da busca" : "Quadras próximas"}
             </span>
             <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">
               {isSearchPage ? "Quadras encontradas para você" : "Encontre a quadra ideal"}
@@ -591,9 +572,9 @@ export function SearchClient(props: Props) {
             <p className="text-muted-foreground max-w-xl mx-auto">
               {isSearchPage
                 ? "Ajuste os filtros e veja os resultados atualizados com mapa e distância em tempo real."
-                : "Use os filtros para encontrar o horário perfeito e agendar em segundos."}
+                : "Veja as quadras disponíveis na sua região ou use os filtros para refinar a busca."}
             </p>
-          </motion.div>
+          </div>
 
           <div className="rounded-2xl bg-card border border-border p-6">
             <div className="grid gap-4 lg:grid-cols-12">
@@ -727,21 +708,18 @@ export function SearchClient(props: Props) {
                 type="button"
                 disabled={isPending}
                 onClick={() => {
+                  scrollOnNextUpdate.current = true;
                   setHasSearched(true);
                   try {
                     window.localStorage.setItem("ph:lastSearchHref", searchHref);
                   } catch {
                     // ignora
                   }
-                  if (!isSearchPage) {
-                    router.push(searchHref);
-                    return;
-                  }
                   fetchNearby({ userLat: lat, userLng: lng, radiusKm: effectiveRadiusKm });
                 }}
                 className="gradient-primary text-primary-foreground font-bold text-base px-8 py-4 rounded-xl inline-flex items-center justify-center gap-2 hover:opacity-90 transition-opacity glow-box disabled:opacity-60"
               >
-                {isPending ? "Buscando..." : isSearchPage ? "Atualizar busca" : "Ver quadras"}
+                {isPending ? "Buscando..." : isSearchPage ? "Atualizar busca" : "Filtrar quadras"}
               </button>
 
               {!props.viewer.isLoggedIn ? (
@@ -912,10 +890,7 @@ export function SearchClient(props: Props) {
       {!isSearchPage && (props.showMarketingCardsOnLoggedOut || props.viewer.isLoggedIn) ? (
         <section className="py-24 relative">
           <div className="container">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+            <div
               className="text-center mb-16"
             >
               <span className="text-primary text-sm font-semibold uppercase tracking-widest mb-3 block">
@@ -927,16 +902,12 @@ export function SearchClient(props: Props) {
               <p className="text-muted-foreground max-w-xl mx-auto">
                 Do agendamento ao pagamento, tudo integrado para uma experiência perfeita, seja jogador ou dono de quadra.
               </p>
-            </motion.div>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {landingFeatures.map((feature, i) => (
-                <motion.div
+                <div
                   key={feature.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
                   className="group p-6 rounded-2xl bg-card border border-border hover:glow-border transition-all duration-300"
                 >
                   <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -944,7 +915,7 @@ export function SearchClient(props: Props) {
                   </div>
                   <h3 className="font-display font-semibold text-lg mb-2">{feature.title}</h3>
                   <p className="text-muted-foreground text-sm leading-relaxed">{feature.description}</p>
-                </motion.div>
+                </div>
               ))}
             </div>
           </div>
@@ -954,10 +925,7 @@ export function SearchClient(props: Props) {
       {!isSearchPage ? (
       <section id="como-funciona" className="py-24 bg-card/30">
         <div className="container">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+          <div
             className="text-center mb-16"
           >
             <span className="text-primary text-sm font-semibold uppercase tracking-widest mb-3 block">
@@ -965,16 +933,12 @@ export function SearchClient(props: Props) {
             </span>
             <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">Simples como deve ser</h2>
             <p className="text-muted-foreground max-w-lg mx-auto">Em 4 passos rápidos, você sai do sofá para a quadra.</p>
-          </motion.div>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {landingSteps.map((step, i) => (
-              <motion.div
+              <div
                 key={step.step}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.15 }}
                 className="text-center relative"
               >
                 {i < landingSteps.length - 1 ? (
@@ -988,7 +952,7 @@ export function SearchClient(props: Props) {
                 </div>
                 <h3 className="font-display font-bold text-xl mb-2">{step.title}</h3>
                 <p className="text-muted-foreground text-sm leading-relaxed max-w-[220px] mx-auto">{step.description}</p>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
@@ -998,10 +962,7 @@ export function SearchClient(props: Props) {
       {!isSearchPage ? (
       <section id="contato" className="py-24">
         <div className="container">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
+          <div
             className="relative rounded-3xl overflow-hidden"
           >
             <div className="absolute inset-0 gradient-primary opacity-[0.08]" />
@@ -1016,7 +977,7 @@ export function SearchClient(props: Props) {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
-                  href="/search"
+                  href="/#busca"
                   className="gradient-primary text-primary-foreground font-bold text-base px-8 py-4 rounded-xl inline-flex items-center justify-center gap-2 hover:opacity-90 transition-opacity glow-box"
                 >
                   Agendar minha quadra
@@ -1024,7 +985,7 @@ export function SearchClient(props: Props) {
                 </Link>
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
       ) : null}
@@ -1050,7 +1011,7 @@ export function SearchClient(props: Props) {
               <div>
                 <h4 className="font-display font-semibold mb-4 text-sm uppercase tracking-wider">Plataforma</h4>
                 <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li><Link href="/search" className="hover:text-foreground transition-colors">Agendar quadra</Link></li>
+                  <li><Link href="/#busca" className="hover:text-foreground transition-colors">Agendar quadra</Link></li>
                   <li><Link href="/sorteio-times" className="hover:text-foreground transition-colors">Sorteio de times</Link></li>
                   <li><Link href="/torneios" className="hover:text-foreground transition-colors">Torneios</Link></li>
                   <li><Link href="/" className="hover:text-foreground transition-colors">Preços</Link></li>

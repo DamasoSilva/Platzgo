@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { getSession, signOut } from "next-auth/react";
 import type { Role } from "@/generated/prisma/enums";
 import { Menu, X } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+
 
 type Props = {
   variant?: "dark" | "light";
@@ -130,14 +130,14 @@ export function CustomerHeader(props: Props) {
           { label: "Sorteio de times", href: "/sorteio-times" },
           { label: "Torneios", href: "/torneios" },
           ...(isLoggedIn ? [{ label: "Meus Agendamentos", href: "/meus-agendamentos" }] : []),
-          { label: "Agendar agora", href: "/search" },
+          { label: "Agendar agora", href: "/#busca" },
         ]
       : [
           { label: "Início", href: "/" },
           { label: "Como funciona", href: "/#como-funciona" },
           { label: "Contato", href: "/#contato" },
         ];
-  const ctaHref = isOwner ? "/dashboard" : "/search";
+  const ctaHref = isOwner ? "/dashboard" : "/#busca";
   const ctaLabel = isOwner ? "Ir para dashboard" : "Agendar agora";
 
   const headerClass =
@@ -264,13 +264,9 @@ export function CustomerHeader(props: Props) {
         </div>
       </nav>
 
-      <AnimatePresence>
-        {menuOpen ? (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden glass border-t border-border/50 overflow-hidden"
+      {menuOpen ? (
+          <div
+            className="md:hidden glass border-t border-border/50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"
           >
             <div className="container py-4 flex flex-col gap-3">
               {links.map((link) => (
@@ -328,9 +324,8 @@ export function CustomerHeader(props: Props) {
                 </Link>
               )}
             </div>
-          </motion.div>
+          </div>
         ) : null}
-      </AnimatePresence>
     </header>
     {/* Spacer to prevent content from being hidden behind the fixed header */}
     <div className="h-16" />

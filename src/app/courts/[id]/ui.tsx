@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useMemo, useRef, useState, useTransition, useCallback, memo } from "react";
 import { Check, ChevronLeft, ChevronRight, Star } from "lucide-react";
 
 import { CustomerHeader } from "@/components/CustomerHeader";
@@ -162,6 +161,44 @@ function formatCountdown(ms: number): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
+const TimeSlotGrid = memo(function TimeSlotGrid({
+  slots,
+  selectedTime,
+  onSelect,
+}: {
+  slots: Array<{ start: Date; blocked: boolean }>;
+  selectedTime: number | null;
+  onSelect: (start: Date) => void;
+}) {
+  if (slots.length === 0) {
+    return <p className="col-span-full text-sm text-muted-foreground">Sem horários disponíveis para essa duração.</p>;
+  }
+  return (
+    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+      {slots.map(({ start, blocked }) => {
+        const active = selectedTime === start.getTime();
+        return (
+          <button
+            key={start.toISOString()}
+            onClick={() => onSelect(start)}
+            disabled={blocked}
+            type="button"
+            className={
+              blocked
+                ? "rounded-xl bg-secondary/30 py-2.5 text-sm text-muted-foreground/50 cursor-not-allowed line-through"
+                : active
+                  ? "rounded-xl gradient-primary py-2.5 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25 ring-2 ring-primary/30"
+                  : "rounded-xl border border-border bg-card py-2.5 text-sm font-medium text-foreground hover:border-primary/40 hover:bg-primary/5 transition-colors active:scale-95"
+            }
+          >
+            {formatHHMM(start)}
+          </button>
+        );
+      })}
+    </div>
+  );
+});
+
 export function CourtDetailsClient(props: {
   userId: string | null;
   customerCpfCnpj?: string | null;
@@ -206,6 +243,8 @@ export function CourtDetailsClient(props: {
   const repeatRef = useRef<HTMLDetailsElement | null>(null);
   const dayCacheRef = useRef<Map<string, DayData>>(new Map([[props.day, props.initial]]));
   const refreshSeqRef = useRef(0);
+
+  const handleSlotSelect = useCallback((start: Date) => setSelectedStart(start), []);
 
   const monthKey = useMemo(() => day.slice(0, 7), [day]);
   const initialTime = useMemo(() => {
@@ -1016,21 +1055,17 @@ export function CourtDetailsClient(props: {
         <div className="flex items-center justify-center gap-3 sm:gap-4 mb-10">
           {bookingSteps.map((s, i) => (
             <div key={s.n} className="flex items-center gap-2 sm:gap-3">
-              <motion.div
-                initial={false}
-                animate={{
-                  scale: bookingStep === s.n ? 1.1 : 1,
-                }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              <div
                 className={
-                  "w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-display font-bold text-sm transition-colors " +
+                  "w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-display font-bold text-sm transition-all duration-200 " +
+                  (bookingStep === s.n ? "scale-110 " : "") +
                   (bookingStep >= s.n
                     ? "gradient-primary text-primary-foreground shadow-md shadow-primary/20"
                     : "bg-secondary text-muted-foreground")
                 }
               >
                 {bookingStep > s.n ? <Check size={16} /> : s.n}
-              </motion.div>
+              </div>
               <span className="hidden sm:block text-sm font-medium">{s.label}</span>
               {i < bookingSteps.length - 1 ? (
                 <div className={"w-12 h-px " + (bookingStep > s.n ? "bg-primary" : "bg-border")} />
@@ -1041,11 +1076,8 @@ export function CourtDetailsClient(props: {
 
         <div className="grid gap-6 lg:grid-cols-12 lg:items-start">
           {/* ── Quadra info (sempre primeiro) ── */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="order-1 lg:col-span-4 lg:row-span-2"
+          <div
+            className="order-1 lg:col-span-4 lg:row-span-2 animate-in fade-in slide-in-from-bottom-2 duration-500"
           >
             <div className="rounded-2xl border border-border bg-card p-5">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -1191,7 +1223,7 @@ export function CourtDetailsClient(props: {
                   </div>
                 </div>
             </details>
-          </motion.div>
+          </div>
 
           {/* ── Agendamento (segundo no mobile, ao lado no desktop) ── */}
           <div className="order-2 lg:col-span-8">
@@ -1526,39 +1558,13 @@ export function CourtDetailsClient(props: {
                           {data.dayInfo.notice}
                         </div>
                       ) : null}
-                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                        {slotOptions.map(({ start, blocked }) => {
-                          const active = selectedStart?.getTime() === start.getTime();
-                          const disabled = blocked;
-                          return (
-                            <motion.button
-                              key={start.toISOString()}
-                              onClick={() => setSelectedStart(start)}
-                              disabled={disabled}
-                              type="button"
-                              whileTap={disabled ? undefined : { scale: 0.95 }}
-                              className={
-                                disabled
-                                  ? "rounded-xl bg-secondary/30 py-2.5 text-sm text-muted-foreground/50 cursor-not-allowed line-through"
-                                  : active
-                                    ? "rounded-xl gradient-primary py-2.5 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25 ring-2 ring-primary/30"
-                                    : "rounded-xl border border-border bg-card py-2.5 text-sm font-medium text-foreground hover:border-primary/40 hover:bg-primary/5 transition-colors"
-                              }
-                            >
-                              {formatHHMM(start)}
-                            </motion.button>
-                          );
-                        })}
-                        {slotOptions.length === 0 ? (
-                          <p className="col-span-full text-sm text-muted-foreground">Sem horários disponíveis para essa duração.</p>
-                        ) : null}
+                      <div className={isPending ? "opacity-50 pointer-events-none transition-opacity duration-150" : "transition-opacity duration-150"}>
+                        <TimeSlotGrid slots={slotOptions} selectedTime={selectedStart?.getTime() ?? null} onSelect={handleSlotSelect} />
                       </div>
                     </div>
 
-                    <motion.div
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: selectedStart ? 1 : 0.7, y: 0 }}
-                      className="rounded-2xl border border-border bg-secondary/50 p-5 lg:sticky lg:top-20"
+                    <div
+                      className={"rounded-2xl border border-border bg-secondary/50 p-5 lg:sticky lg:top-20 transition-opacity duration-200 " + (selectedStart ? "opacity-100" : "opacity-70")}
                     >
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-semibold text-foreground">Resumo</p>
@@ -1604,7 +1610,7 @@ export function CourtDetailsClient(props: {
                           </span>
                         </div>
                       </div>
-                    </motion.div>
+                    </div>
 
                     {!data.paymentsEnabled && data.paymentsEnabledReason ? (
                       <div className="rounded-2xl border border-primary/30 bg-primary/10 p-3 text-xs text-foreground">

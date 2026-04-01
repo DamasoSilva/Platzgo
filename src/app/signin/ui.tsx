@@ -110,7 +110,7 @@ export function SignInForm(props: {
 
       {/* Right form panel */}
       <div className="flex-1 flex items-center justify-center relative">
-        <div className="pointer-events-none absolute -top-48 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl lg:hidden" />
+        <div className="pointer-events-none absolute -top-48 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,hsl(var(--primary)/0.08)_0%,transparent_70%)] lg:hidden" />
         <div className="relative w-full max-w-md px-6 py-16">
           <div className="lg:hidden mb-8">
             <div className="flex items-center gap-2">
