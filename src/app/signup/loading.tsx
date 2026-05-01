@@ -1,6 +1,6 @@
 export default function SignUpLoading() {
   return (
-    <div className="ph-page min-h-screen flex">
+    <div className="ph-page ph-page-ambient flex">
       <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-emerald-600 to-emerald-800" />
       </div>

@@ -17,6 +17,7 @@ import { logAudit } from "@/lib/audit";
 import { extractAsaasErrorMessage, getPaymentConfig } from "@/lib/payments";
 import { releaseAsaasPayoutForPayment, startPaymentForBooking } from "@/lib/actions/payments";
 import { buildBlockingBookingWhere } from "@/lib/utils/bookingAvailability";
+import { normalizeCpfCnpj } from "@/lib/utils/cpfCnpj";
 import {
   bookingCancelledEmailToCustomer,
   bookingCancelledEmailToOwner,
@@ -279,6 +280,11 @@ export async function createBooking(input: CreateBookingInput): Promise<CreateBo
     if (durationMinutes <= 0) throw new Error("Duração inválida");
 
     const notificationSettings = await getNotificationSettings();
+    const customer = await prisma.user.findUnique({
+      where: { id: input.userId },
+      select: { cpf_cnpj: true },
+    });
+    const customerCpfCnpj = normalizeCpfCnpj(customer?.cpf_cnpj ?? "");
 
     // Importante: check + create no mesmo transaction para evitar race.
     const result = await prisma.$transaction(async (tx) => {
@@ -326,6 +332,21 @@ export async function createBooking(input: CreateBookingInput): Promise<CreateBo
 
     if (!court) throw new Error("Quadra não encontrada");
     if (!court.is_active) throw new Error("Quadra inativa");
+
+    const blockedCustomer = await tx.establishmentCustomerBlock.findFirst({
+      where: {
+        establishmentId: court.establishment.id,
+        OR: [
+          { userId: input.userId },
+          ...(customerCpfCnpj ? [{ cpf_cnpj: customerCpfCnpj }] : []),
+        ],
+      },
+      select: { id: true },
+    });
+
+    if (blockedCustomer) {
+      throw new Error("Seu acesso a agendamentos neste estabelecimento está bloqueado.");
+    }
 
     await lockCourtRow(tx, court.id);
 

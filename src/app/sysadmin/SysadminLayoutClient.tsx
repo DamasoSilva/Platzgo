@@ -108,7 +108,7 @@ function SysadminLayoutShell(props: {
   );
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="ph-page-ambient flex">
       <aside
         className={cn(
           "bg-card border-r border-border transition-all duration-300 flex flex-col fixed h-full z-40",

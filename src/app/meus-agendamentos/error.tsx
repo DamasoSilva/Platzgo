@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect } from "react";
 
 export default function BookingsError({
@@ -26,12 +27,12 @@ export default function BookingsError({
         >
           Tentar novamente
         </button>
-        <a
-          href="/"
+          <Link
+            href="/"
           className="rounded-full border border-border bg-card px-6 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
         >
           Página inicial
-        </a>
+          </Link>
       </div>
     </div>
   );

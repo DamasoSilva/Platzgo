@@ -856,7 +856,7 @@ export function CourtDetailsClient(props: {
   ];
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="ph-page-ambient">
       <CustomerHeader
         variant="dark"
         viewer={{

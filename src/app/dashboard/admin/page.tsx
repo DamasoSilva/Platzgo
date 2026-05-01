@@ -23,6 +23,16 @@ export default async function AdminDashboardPage() {
       contact_number: true,
       instagram_url: true,
       photo_urls: true,
+      customerBlocks: {
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          cpf_cnpj: true,
+          note: true,
+          createdAt: true,
+          user: { select: { id: true, name: true, email: true } },
+        },
+      },
       requires_booking_confirmation: true,
       address_text: true,
       latitude: true,

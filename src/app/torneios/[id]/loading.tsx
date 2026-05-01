@@ -1,6 +1,6 @@
 export default function TournamentLoading() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="ph-page-ambient">
       <div className="h-16 border-b bg-card" />
 
       <div className="mx-auto max-w-5xl px-6 py-8">

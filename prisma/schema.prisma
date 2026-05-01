@@ -65,6 +65,10 @@ enum NotificationType {
   TOURNAMENT_REGISTRATION_REJECTED
   TOURNAMENT_CANCELLED
   TOURNAMENT_INVITATION
+  TOURNAMENT_CONNECTION_APPLICATION
+  TOURNAMENT_CONNECTION_INVITATION
+  TOURNAMENT_CONNECTION_ACCEPTED
+  TOURNAMENT_CONNECTION_REJECTED
 }
 
 enum PaymentProvider {
@@ -128,6 +132,18 @@ enum TournamentInvitationStatus {
   PENDING
   ACCEPTED
   EXPIRED
+  CANCELLED
+}
+
+enum TournamentConnectionKind {
+  APPLICATION
+  INVITATION
+}
+
+enum TournamentConnectionStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
   CANCELLED
 }
 
@@ -197,6 +213,13 @@ model User {
   tournamentRegistrationsCreated TournamentRegistration[] @relation("TournamentRegistrationCreator")
   tournamentRegistrationsApproved TournamentRegistration[] @relation("TournamentRegistrationApprover")
   tournamentInvitationsSent TournamentInvitation[] @relation("TournamentInvitationSender")
+  tournamentPlayerProfile TournamentPlayerProfile?
+  tournamentPlayerAvailabilities TournamentPlayerAvailability[]
+  tournamentTeamRecruitmentPosts TournamentTeamRecruitmentPosting[] @relation("TournamentTeamRecruitmentCreator")
+  tournamentConnectionRequestsCreated TournamentConnectionRequest[] @relation("TournamentConnectionRequestCreator")
+  tournamentConnectionRequestsAsPlayer TournamentConnectionRequest[] @relation("TournamentConnectionRequestPlayer")
+  establishmentBlocksCreated EstablishmentCustomerBlock[] @relation("EstablishmentCustomerBlockCreator")
+  establishmentBlocksReceived EstablishmentCustomerBlock[] @relation("EstablishmentCustomerBlockUser")
   inactivatedBy User? @relation("UserInactivatedBy", fields: [inactivatedById], references: [id])
   inactivatedUsers User[] @relation("UserInactivatedBy")
 
@@ -296,6 +319,7 @@ model Establishment {
   owner  User    @relation(fields: [ownerId], references: [id])
   courts Court[]
   tournaments Tournament[]
+  customerBlocks EstablishmentCustomerBlock[]
   holidays EstablishmentHoliday[]
   reviews EstablishmentReview[]
   favorites EstablishmentFavorite[]
@@ -304,6 +328,26 @@ model Establishment {
 
   @@index([ownerId])
   @@index([latitude, longitude])
+}
+
+model EstablishmentCustomerBlock {
+  id              String   @id @default(cuid())
+  establishmentId String
+  userId          String?
+  cpf_cnpj        String?
+  note            String?
+  createdById     String
+  createdAt       DateTime @default(now())
+
+  establishment Establishment @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
+  user          User?         @relation("EstablishmentCustomerBlockUser", fields: [userId], references: [id], onDelete: SetNull)
+  createdBy     User          @relation("EstablishmentCustomerBlockCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@unique([establishmentId, userId])
+  @@unique([establishmentId, cpf_cnpj])
+  @@index([establishmentId, createdAt])
+  @@index([userId])
+  @@index([cpf_cnpj])
 }
 
 model Court {
@@ -533,6 +577,7 @@ model Tournament {
   status          TournamentStatus       @default(DRAFT)
   name            String
   description     String?
+  cover_image_url String?
   sport_type      SportType
   start_date      DateTime
   end_date        DateTime
@@ -556,6 +601,9 @@ model Tournament {
   matches    TournamentMatch[]
   standings  TournamentStanding[]
   invitations TournamentInvitation[]
+  playerAvailabilities TournamentPlayerAvailability[]
+  teamRecruitmentPosts TournamentTeamRecruitmentPosting[]
+  connectionRequests TournamentConnectionRequest[]
 
   @@index([organizer_user_id])
   @@index([establishmentId])
@@ -604,10 +652,95 @@ model Team {
   matchesAsTeamA TournamentMatch[] @relation("TournamentMatchTeamA")
   matchesAsTeamB TournamentMatch[] @relation("TournamentMatchTeamB")
   standings TournamentStanding[]
+  recruitmentPost TournamentTeamRecruitmentPosting?
+  connectionRequests TournamentConnectionRequest[]
 
   @@unique([tournamentId, name])
   @@index([tournamentId])
   @@index([created_by_id])
+}
+
+model TournamentPlayerProfile {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  photo_url          String
+  whatsapp_number    String
+  age                Int
+  birth_year         Int
+  preferred_position String
+  height_cm          Int
+  weight_kg          Int
+  description        String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user          User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  availabilities TournamentPlayerAvailability[]
+
+  @@index([preferred_position])
+}
+
+model TournamentPlayerAvailability {
+  id         String   @id @default(cuid())
+  tournamentId String
+  userId     String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  tournament Tournament              @relation(fields: [tournamentId], references: [id], onDelete: Cascade, map: "TournamentPlayerAvailability_tournamentId_fkey")
+  user       User                    @relation(fields: [userId], references: [id], onDelete: Cascade, map: "TournamentPlayerAvailability_user_fkey")
+  profile    TournamentPlayerProfile @relation(fields: [userId], references: [userId], onDelete: Cascade, map: "TournamentPlayerAvailability_profile_fkey")
+
+  @@unique([tournamentId, userId])
+  @@index([tournamentId, createdAt])
+  @@index([userId])
+}
+
+model TournamentTeamRecruitmentPosting {
+  id               String   @id @default(cuid())
+  tournamentId     String
+  teamId           String   @unique
+  createdById      String
+  photo_url        String
+  whatsapp_number  String
+  desired_position String
+  average_age      Int
+  notes            String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  team       Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  createdBy  User       @relation("TournamentTeamRecruitmentCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([tournamentId, createdAt])
+  @@index([createdById])
+  @@index([desired_position])
+}
+
+model TournamentConnectionRequest {
+  id            String                     @id @default(cuid())
+  tournamentId  String
+  teamId        String
+  playerUserId  String
+  createdById   String
+  kind          TournamentConnectionKind
+  status        TournamentConnectionStatus @default(PENDING)
+  note          String?
+  response_note String?
+  createdAt     DateTime                   @default(now())
+  updatedAt     DateTime                   @updatedAt
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  team       Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  player     User       @relation("TournamentConnectionRequestPlayer", fields: [playerUserId], references: [id], onDelete: Cascade)
+  createdBy  User       @relation("TournamentConnectionRequestCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, teamId, playerUserId, kind])
+  @@index([tournamentId, status, kind])
+  @@index([teamId, status])
+  @@index([playerUserId, status])
+  @@index([createdById])
 }
 
 model TeamMember {

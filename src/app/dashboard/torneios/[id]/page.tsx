@@ -110,7 +110,7 @@ export default async function DashboardTournamentDetailPage({ params }: { params
 
   if (!tournamentRow) notFound();
 
-  const [payments, standings] = await Promise.all([
+  const [payments, standings, playerAvailabilities, teamRecruitments, connectionRequests] = await Promise.all([
     prisma.payment.findMany({
       where: { tournamentRegistration: { tournamentId: tournamentRow.id } },
       select: { amount_cents: true, status: true, payout_amount_cents: true, metadata: true },
@@ -126,6 +126,78 @@ export default async function DashboardTournamentDetailPage({ params }: { params
         goals: true,
       },
       orderBy: [{ points: "desc" }, { wins: "desc" }, { goals: "desc" }],
+    }),
+    prisma.tournamentPlayerAvailability.findMany({
+      where: { tournamentId: tournamentRow.id },
+      orderBy: { createdAt: "desc" },
+      select: {
+        userId: true,
+        profile: {
+          select: {
+            photo_url: true,
+            whatsapp_number: true,
+            age: true,
+            birth_year: true,
+            preferred_position: true,
+            height_cm: true,
+            weight_kg: true,
+            description: true,
+          },
+        },
+        user: {
+          select: {
+            name: true,
+            address_text: true,
+          },
+        },
+      },
+    }),
+    prisma.tournamentTeamRecruitmentPosting.findMany({
+      where: { tournamentId: tournamentRow.id },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        photo_url: true,
+        whatsapp_number: true,
+        desired_position: true,
+        average_age: true,
+        notes: true,
+        team: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        createdBy: {
+          select: {
+            address_text: true,
+          },
+        },
+      },
+    }),
+    prisma.tournamentConnectionRequest.findMany({
+      where: { tournamentId: tournamentRow.id },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        kind: true,
+        status: true,
+        note: true,
+        response_note: true,
+        createdAt: true,
+        team: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        player: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     }),
   ]);
 
@@ -188,6 +260,42 @@ export default async function DashboardTournamentDetailPage({ params }: { params
       pending_cents: pendingNetCents,
       pending_gross_cents: pendingGrossCents,
     },
+    player_marketplace: playerAvailabilities.map((item) => ({
+      userId: item.userId,
+      name: item.user.name ?? "Jogador",
+      city: item.user.address_text ?? null,
+      photo_url: item.profile.photo_url,
+      whatsapp_number: item.profile.whatsapp_number,
+      age: item.profile.age,
+      birth_year: item.profile.birth_year,
+      preferred_position: item.profile.preferred_position,
+      height_cm: item.profile.height_cm,
+      weight_kg: item.profile.weight_kg,
+      description: item.profile.description,
+    })),
+    team_recruitments: teamRecruitments.map((item) => ({
+      id: item.id,
+      teamId: item.team.id,
+      teamName: item.team.name,
+      city: item.createdBy.address_text ?? tournamentRow.city ?? null,
+      photo_url: item.photo_url,
+      whatsapp_number: item.whatsapp_number,
+      desired_position: item.desired_position,
+      average_age: item.average_age,
+      notes: item.notes,
+    })),
+    connection_requests: connectionRequests.map((item) => ({
+      id: item.id,
+      kind: item.kind,
+      status: item.status,
+      note: item.note,
+      response_note: item.response_note,
+      createdAt: item.createdAt.toISOString(),
+      teamId: item.team.id,
+      teamName: item.team.name,
+      playerUserId: item.player.id,
+      playerName: item.player.name ?? "Jogador",
+    })),
   };
 
   return <DashboardTournamentDetailClient tournament={tournament} />;

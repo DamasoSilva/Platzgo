@@ -147,13 +147,13 @@ src/app/
   - Arquivos: [src/app/meus-agendamentos/[id]/page.tsx](src/app/meus-agendamentos/[id]/page.tsx), [src/app/meus-agendamentos/[id]/BookingDetailClient.tsx](src/app/meus-agendamentos/[id]/BookingDetailClient.tsx)
 
 - Rota: /meus-agendamentos/notificacoes
-  - Funcionalidades: historico de notificacoes com filtros, exclusao/restauracao.
+  - Funcionalidades: historico de notificacoes com filtros, exclusao/restauracao e rótulos amigáveis por tipo.
   - Arquivo: [src/app/meus-agendamentos/notificacoes/page.tsx](src/app/meus-agendamentos/notificacoes/page.tsx)
 
 ### Torneios (cliente)
 
 - Rota: /torneios
-  - Funcionalidades: listar torneios publicos e privados, filtros e detalhes basicos.
+  - Funcionalidades: listar torneios publicos e privados, filtros e detalhes basicos; cards com capa do torneio.
   - Arquivos: [src/app/torneios/page.tsx](src/app/torneios/page.tsx), [src/app/torneios/ui.tsx](src/app/torneios/ui.tsx)
 
 - Rota: /torneios/novo
@@ -161,7 +161,7 @@ src/app/
   - Arquivos: [src/app/torneios/novo/page.tsx](src/app/torneios/novo/page.tsx), [src/app/torneios/novo/ui.tsx](src/app/torneios/novo/ui.tsx)
 
 - Rota: /torneios/[id]
-  - Funcionalidades: detalhe do torneio, times inscritos, partidas e regras.
+  - Funcionalidades: detalhe do torneio, capa, times inscritos, partidas, regras e aba Conexões com marketplace de jogadores/times, filtros por posição/idade/cidade, candidatura interna, convocação interna e contato por WhatsApp.
   - Arquivos: [src/app/torneios/[id]/page.tsx](src/app/torneios/[id]/page.tsx), [src/app/torneios/[id]/ui.tsx](src/app/torneios/[id]/ui.tsx)
 
 - Rota: /torneios/[id]/inscricao
@@ -179,7 +179,7 @@ src/app/
   - Arquivo: [src/app/dashboard/page.tsx](src/app/dashboard/page.tsx)
 
 - Rota: /dashboard/admin
-  - Funcionalidades: dados do estabelecimento, configuracoes gerais, horarios e dados basicos.
+  - Funcionalidades: dados do estabelecimento, configuracoes gerais, horarios, dados basicos e aba de clientes com bloqueio de usuários por autocomplete + CPF/CNPJ.
   - Arquivos: [src/app/dashboard/admin/page.tsx](src/app/dashboard/admin/page.tsx), [src/app/dashboard/admin/ui.tsx](src/app/dashboard/admin/ui.tsx)
 
 - Rota: /dashboard/agenda
@@ -203,7 +203,7 @@ src/app/
   - Arquivo: [src/app/dashboard/aprovacoes/page.tsx](src/app/dashboard/aprovacoes/page.tsx)
 
 - Rota: /dashboard/notificacoes
-  - Funcionalidades: historico de notificacoes do dono, filtros e acoes.
+  - Funcionalidades: historico de notificacoes do dono, filtros, rótulos amigáveis por tipo e ações.
   - Arquivo: [src/app/dashboard/notificacoes/page.tsx](src/app/dashboard/notificacoes/page.tsx)
 
 - Rota: /dashboard/config
@@ -219,11 +219,11 @@ src/app/
   - Arquivos: [src/app/dashboard/torneios/page.tsx](src/app/dashboard/torneios/page.tsx), [src/app/dashboard/torneios/ui.tsx](src/app/dashboard/torneios/ui.tsx)
 
 - Rota: /dashboard/torneios/novo
-  - Funcionalidades: criar torneio do estabelecimento.
+  - Funcionalidades: criar torneio do estabelecimento com upload de capa.
   - Arquivos: [src/app/dashboard/torneios/novo/page.tsx](src/app/dashboard/torneios/novo/page.tsx), [src/app/dashboard/torneios/novo/ui.tsx](src/app/dashboard/torneios/novo/ui.tsx)
 
 - Rota: /dashboard/torneios/[id]
-  - Funcionalidades: detalhe do torneio, inscricoes, partidas e financeiro.
+  - Funcionalidades: detalhe do torneio, inscricoes, partidas, financeiro e aba Marketplace para moderar jogadores publicados, anúncios de times e solicitações internas.
   - Arquivos: [src/app/dashboard/torneios/[id]/page.tsx](src/app/dashboard/torneios/[id]/page.tsx), [src/app/dashboard/torneios/[id]/ui.tsx](src/app/dashboard/torneios/[id]/ui.tsx)
 
 ### Sysadmin

@@ -9,7 +9,7 @@ Definir como criar e operar torneios dentro do sistema, cobrindo dono do estabel
 
 ## Funcionalidades para o dono do estabelecimento
 - Criar torneio com:
-  - Nome, descricao, data inicio/fim, modalidade, local, limite de times, taxa de inscricao (valor definido pelo dono/admin).
+  - Nome, descricao, capa visual, data inicio/fim, modalidade, local, limite de times, taxa de inscricao (valor definido pelo dono/admin).
   - Quantidade de jogadores por time (min/max).
   - Formato: grupos + mata-mata, pontos corridos, eliminatoria simples/dupla.
   - Regras: duracao por jogo, desempate, tolerancia, wo, substituicoes.
@@ -34,6 +34,7 @@ Definir como criar e operar torneios dentro do sistema, cobrindo dono do estabel
 - Comunicacao:
   - Notificacoes para times (confirmacao de jogo, mudanca de horario, resultado).
   - Mensagens pre-definidas e avisos gerais.
+  - Moderacao do marketplace de conexoes do torneio (jogadores publicados, anuncios de times e solicitações internas).
 - Financeiro:
   - Acompanhar taxas pagas/pendentes.
   - Payload de pagamento vinculado a inscricao (valor, pix_payload, qr, expira).
@@ -42,6 +43,7 @@ Definir como criar e operar torneios dentro do sistema, cobrindo dono do estabel
 ## Funcionalidades para o cliente
 - Descobrir torneios:
   - Filtros por cidade, modalidade, data, nivel, taxa.
+  - Visualizacao de capa do torneio na lista e no detalhe.
 - Inscrever time:
   - Criar time e adicionar participantes.
   - Informar quantidade de jogadores conforme minimo/maximo do torneio.
@@ -57,6 +59,12 @@ Definir como criar e operar torneios dentro do sistema, cobrindo dono do estabel
   - Tabela de classificacao.
   - Bracket atualizado.
   - Estatisticas do time/jogadores.
+  - Marketplace de conexoes com:
+    - perfil único de jogador com foto, WhatsApp, cidade, posição, idade, altura, peso e descrição;
+    - anúncio de time buscando jogador com foto, WhatsApp, posição desejada, média de idade e observações;
+    - filtros por posição, idade e cidade;
+    - candidatura interna a um time e convocação interna de um jogador;
+    - notificações quando chegar e quando for decidida uma candidatura/convocação.
 - Torneio interno (cliente):
   - Criar torneio privado com regras basicas e quantidade de jogadores por time.
   - Enviar convite por link/whatsapp/email.
@@ -89,10 +97,20 @@ Definir como criar e operar torneios dentro do sistema, cobrindo dono do estabel
 - Envia convites ou inclui jogadores manualmente.
 - Sistema gera agenda e publica resultados internos.
 
+7) Marketplace de conexoes
+- Jogador salva seu perfil uma vez e publica disponibilidade no torneio.
+- Time inscrito publica anúncio buscando reforço.
+- Jogador pode se candidatar internamente; time pode convocar internamente.
+- Destinatário recebe notificação e aceita/recusa dentro do sistema.
+
 ## Dados e modelos (sugestao)
 - Tournament: id, name, sport_type, start_date, end_date, status, format, rules, organizer_id, organizer_type, visibility, team_size_min, team_size_max, entry_fee.
 - Category: id, tournament_id, label, level.
 - Team: id, name, logo_url.
+- TournamentPlayerProfile: user_id, photo_url, whatsapp_number, age, birth_year, preferred_position, height_cm, weight_kg, description.
+- TournamentPlayerAvailability: tournament_id, user_id.
+- TournamentTeamRecruitmentPosting: tournament_id, team_id, photo_url, whatsapp_number, desired_position, average_age, notes.
+- TournamentConnectionRequest: tournament_id, team_id, player_user_id, kind, status, note, response_note.
 - TeamMember: id, team_id, user_id, full_name, document_id, role.
 - Registration: id, team_id, tournament_id, status, paid, payment_id.
 - Match: id, tournament_id, round, group, court_id, start_time, end_time, status.
@@ -106,6 +124,7 @@ Definir como criar e operar torneios dentro do sistema, cobrindo dono do estabel
 - Agenda/Quadras: reservar horarios automaticamente para jogos.
 - Pagamentos: taxa de inscricao com PIX/cartao, payload e comprovante.
 - Notificacoes: email/push/whatsapp para jogos e resultados.
+- Notificacoes internas: chegada e decisão de candidatura/convocação no marketplace do torneio.
 
 ## MVP sugerido
 - Torneio unico por estabelecimento.

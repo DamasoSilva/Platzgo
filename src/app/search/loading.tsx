@@ -1,6 +1,6 @@
 export default function SearchLoading() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="ph-page-ambient">
       {/* Header placeholder */}
       <div className="h-16 border-b bg-card" />
 

@@ -44,6 +44,8 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
   const [maxTeams, setMaxTeams] = useState(16);
   const [entryFeeCents, setEntryFeeCents] = useState(0);
   const [description, setDescription] = useState("");
+  const [coverImageUrl, setCoverImageUrl] = useState("");
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [format, setFormat] = useState("GROUPS_KO");
   const [teamSizeMin, setTeamSizeMin] = useState(5);
   const [teamSizeMax, setTeamSizeMax] = useState(8);
@@ -67,6 +69,38 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
     setLevel(value);
   }
 
+  async function uploadCover(file: File): Promise<string> {
+    if (!file.type.startsWith("image/")) {
+      throw new Error("Envie uma imagem para a capa do torneio.");
+    }
+
+    const res = await fetch("/api/uploads", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prefix: "establishments",
+        files: [{ name: file.name, type: file.type, size: file.size }],
+      }),
+    });
+
+    const data = (await res.json().catch(() => null)) as
+      | null
+      | { error?: string; items?: Array<{ uploadUrl: string; publicUrl: string; contentType: string }> };
+
+    if (!res.ok) throw new Error(data?.error || "Erro ao preparar upload da capa");
+    const item = data?.items?.[0];
+    if (!item?.uploadUrl || !item.publicUrl) throw new Error("Resposta de upload inválida");
+
+    const put = await fetch(item.uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": item.contentType || file.type || "application/octet-stream" },
+      body: file,
+    });
+
+    if (!put.ok) throw new Error("Falha ao enviar a capa do torneio");
+    return item.publicUrl;
+  }
+
   function submitTournament(status: "DRAFT" | "OPEN") {
     setError(null);
     startTransition(async () => {
@@ -74,6 +108,7 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
         const result = await createTournamentAsAdmin({
           name,
           description,
+          cover_image_url: coverImageUrl,
           sport_type: sport,
           start_date: startDate,
           end_date: endDate,
@@ -257,6 +292,54 @@ export function DashboardTournamentCreateClient({ sportOptions }: Props) {
                 disabled={isPending}
               />
             </label>
+
+            <div className="mt-4 rounded-2xl border border-border bg-card p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground">Capa do torneio</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Essa imagem aparece para os usuários na lista de torneios e na página de detalhes.
+                  </p>
+                </div>
+                <label className={"ph-button-secondary-sm cursor-pointer" + (isPending || isUploadingCover ? " pointer-events-none opacity-60" : "")}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={isPending || isUploadingCover}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = "";
+                      if (!file) return;
+                      setError(null);
+                      void (async () => {
+                        try {
+                          setIsUploadingCover(true);
+                          const url = await uploadCover(file);
+                          setCoverImageUrl(url);
+                        } catch (err) {
+                          setError(err instanceof Error ? err.message : "Erro ao enviar capa");
+                        } finally {
+                          setIsUploadingCover(false);
+                        }
+                      })();
+                    }}
+                  />
+                  {isUploadingCover ? "Enviando..." : coverImageUrl ? "Trocar imagem" : "Enviar imagem"}
+                </label>
+              </div>
+
+              {coverImageUrl ? (
+                <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-muted/40">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={coverImageUrl} alt="Capa do torneio" className="h-48 w-full object-cover" />
+                </div>
+              ) : (
+                <div className="mt-4 rounded-2xl border border-dashed border-border bg-muted/40 px-4 py-8 text-center text-xs text-muted-foreground">
+                  Nenhuma capa enviada ainda.
+                </div>
+              )}
+            </div>
           </section>
 
           <section className="ph-card p-6">

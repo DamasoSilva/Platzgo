@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition, useCallback } from "react";
 
 import {
@@ -11,8 +12,14 @@ import {
   generateTournamentMatches,
   recordMatchScore,
 } from "@/lib/actions/tournaments";
+import {
+  deleteTeamRecruitmentPostingAsAdmin,
+  removeTournamentPlayerAvailabilityAsAdmin,
+  updateTournamentConnectionRequestStatusAsAdmin,
+} from "@/lib/actions/tournamentConnections";
 import { formatBRLFromCents } from "@/lib/utils/currency";
 import { formatSportLabel } from "@/lib/utils/sport";
+import { toWaMeLink } from "@/lib/utils/whatsapp";
 
 export type DashboardTournamentDetailView = {
   id: string;
@@ -53,13 +60,49 @@ export type DashboardTournamentDetailView = {
     pending_cents: number;
     pending_gross_cents: number;
   };
+  player_marketplace: Array<{
+    userId: string;
+    name: string;
+    city: string | null;
+    photo_url: string;
+    whatsapp_number: string;
+    age: number;
+    birth_year: number;
+    preferred_position: string;
+    height_cm: number;
+    weight_kg: number;
+    description: string;
+  }>;
+  team_recruitments: Array<{
+    id: string;
+    teamId: string;
+    teamName: string;
+    city: string | null;
+    photo_url: string;
+    whatsapp_number: string;
+    desired_position: string;
+    average_age: number;
+    notes: string;
+  }>;
+  connection_requests: Array<{
+    id: string;
+    kind: string;
+    status: string;
+    note: string | null;
+    response_note: string | null;
+    createdAt: string;
+    teamId: string;
+    teamName: string;
+    playerUserId: string;
+    playerName: string;
+  }>;
 };
 
 type Props = {
   tournament: DashboardTournamentDetailView;
 };
 
-type TabKey = "overview" | "registrations" | "schedule" | "results" | "finance";
+type TabKey = "overview" | "registrations" | "schedule" | "results" | "finance" | "marketplace";
 
 function statusLabel(status: string) {
   if (status === "OPEN") return "Inscricoes abertas";
@@ -77,7 +120,22 @@ function formatFormatLabel(value: string) {
   return "Formato customizado";
 }
 
+function connectionRequestStatusLabel(status: string) {
+  if (status === "ACCEPTED") return "Aceita";
+  if (status === "REJECTED") return "Recusada";
+  if (status === "CANCELLED") return "Cancelada";
+  return "Pendente";
+}
+
+function connectionRequestStatusClass(status: string) {
+  if (status === "ACCEPTED") return "bg-emerald-500/15 text-emerald-700";
+  if (status === "REJECTED") return "bg-rose-500/15 text-rose-700";
+  if (status === "CANCELLED") return "bg-secondary/60 text-muted-foreground";
+  return "bg-amber-500/15 text-amber-700";
+}
+
 export function DashboardTournamentDetailClient(props: Props) {
+  const router = useRouter();
   const { tournament } = props;
   const [tab, setTab] = useState<TabKey>("overview");
   const [isPending, startTransition] = useTransition();
@@ -179,6 +237,42 @@ export function DashboardTournamentDetailClient(props: Props) {
         window.location.reload();
       } catch (e: unknown) {
         setError(e instanceof Error ? e.message : "Erro ao salvar placar");
+      }
+    });
+  }
+
+  function handleRemoveMarketplacePlayer(userId: string) {
+    setError(null);
+    startTransition(async () => {
+      try {
+        await removeTournamentPlayerAvailabilityAsAdmin({ tournamentId: tournament.id, userId });
+        router.refresh();
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : "Erro ao remover jogador da vitrine");
+      }
+    });
+  }
+
+  function handleRemoveRecruitmentPosting(postingId: string) {
+    setError(null);
+    startTransition(async () => {
+      try {
+        await deleteTeamRecruitmentPostingAsAdmin({ postingId });
+        router.refresh();
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : "Erro ao remover anuncio do time");
+      }
+    });
+  }
+
+  function handleModerateConnectionRequest(requestId: string, status: "ACCEPTED" | "REJECTED" | "CANCELLED") {
+    setError(null);
+    startTransition(async () => {
+      try {
+        await updateTournamentConnectionRequestStatusAsAdmin({ requestId, status });
+        router.refresh();
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : "Erro ao atualizar solicitacao interna");
       }
     });
   }
@@ -289,6 +383,7 @@ export function DashboardTournamentDetailClient(props: Props) {
             { key: "schedule", label: "Agenda" },
             { key: "results", label: "Resultados" },
             { key: "finance", label: "Financeiro" },
+            { key: "marketplace", label: "Marketplace" },
           ] as const
         ).map((item) => (
           <button
@@ -425,6 +520,126 @@ export function DashboardTournamentDetailClient(props: Props) {
               </div>
             ))}
             {!schedule.length ? <p className="text-xs text-muted-foreground">Agenda ainda nao publicada. Gere o chaveamento primeiro.</p> : null}
+          </div>
+        </div>
+      ) : null}
+
+      {tab === "marketplace" ? (
+        <div className="mt-6 space-y-6">
+          <div className="rounded-3xl ph-surface p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">Jogadores publicados</h2>
+                <p className="mt-1 text-xs text-muted-foreground">Moderacao da vitrine de jogadores que abriram perfil para o torneio.</p>
+              </div>
+              <span className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">{tournament.player_marketplace.length} jogador(es)</span>
+            </div>
+
+            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {tournament.player_marketplace.map((player) => (
+                <article key={player.userId} className="overflow-hidden rounded-3xl border border-border bg-card/80 shadow-sm">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={player.photo_url} alt={player.name} className="h-40 w-full object-cover" />
+                  <div className="p-5">
+                    <h3 className="text-base font-semibold text-foreground">{player.name}</h3>
+                    <p className="mt-1 text-xs text-muted-foreground">{player.preferred_position}</p>
+                    {player.city ? <p className="mt-1 text-xs text-muted-foreground">{player.city}</p> : null}
+                    <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                      <div className="rounded-2xl border border-border bg-background/70 px-3 py-2">Idade: {player.age}</div>
+                      <div className="rounded-2xl border border-border bg-background/70 px-3 py-2">Nascimento: {player.birth_year}</div>
+                    </div>
+                    <p className="mt-4 text-sm text-muted-foreground">{player.description}</p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <a href={toWaMeLink(player.whatsapp_number)} target="_blank" rel="noreferrer" className="ph-button-secondary-xs">
+                        WhatsApp
+                      </a>
+                      <button type="button" className="ph-button-secondary-xs" onClick={() => handleRemoveMarketplacePlayer(player.userId)} disabled={isPending}>
+                        Remover da vitrine
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              ))}
+              {!tournament.player_marketplace.length ? <p className="text-xs text-muted-foreground">Nenhum jogador publicado.</p> : null}
+            </div>
+          </div>
+
+          <div className="rounded-3xl ph-surface p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">Times buscando reforcos</h2>
+                <p className="mt-1 text-xs text-muted-foreground">Anuncios publicados pelos times inscritos no torneio.</p>
+              </div>
+              <span className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">{tournament.team_recruitments.length} anuncio(s)</span>
+            </div>
+
+            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {tournament.team_recruitments.map((item) => (
+                <article key={item.id} className="overflow-hidden rounded-3xl border border-border bg-card/80 shadow-sm">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={item.photo_url} alt={item.teamName} className="h-40 w-full object-cover" />
+                  <div className="p-5">
+                    <h3 className="text-base font-semibold text-foreground">{item.teamName}</h3>
+                    {item.city ? <p className="mt-1 text-xs text-muted-foreground">{item.city}</p> : null}
+                    <p className="mt-4 text-sm text-muted-foreground">Posicao: <span className="font-semibold text-foreground">{item.desired_position}</span></p>
+                    <p className="mt-2 text-sm text-muted-foreground">Media de idade: <span className="font-semibold text-foreground">{item.average_age}</span></p>
+                    <p className="mt-4 text-sm text-muted-foreground">{item.notes}</p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <a href={toWaMeLink(item.whatsapp_number)} target="_blank" rel="noreferrer" className="ph-button-secondary-xs">
+                        WhatsApp
+                      </a>
+                      <button type="button" className="ph-button-secondary-xs" onClick={() => handleRemoveRecruitmentPosting(item.id)} disabled={isPending}>
+                        Remover anuncio
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              ))}
+              {!tournament.team_recruitments.length ? <p className="text-xs text-muted-foreground">Nenhum anuncio publicado.</p> : null}
+            </div>
+          </div>
+
+          <div className="rounded-3xl ph-surface p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">Solicitacoes internas</h2>
+                <p className="mt-1 text-xs text-muted-foreground">Candidaturas e convocacoes registradas internamente no torneio.</p>
+              </div>
+              <span className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">{tournament.connection_requests.length} solicitacao(oes)</span>
+            </div>
+
+            <div className="mt-5 space-y-3">
+              {tournament.connection_requests.map((request) => (
+                <div key={request.id} className="rounded-2xl border border-border bg-card/70 px-4 py-4 text-sm text-muted-foreground">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-foreground">{request.kind === "APPLICATION" ? "Candidatura" : "Convocacao"}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">Time: {request.teamName} · Jogador: {request.playerName}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{new Date(request.createdAt).toLocaleString("pt-BR")}</p>
+                    </div>
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${connectionRequestStatusClass(request.status)}`}>
+                      {connectionRequestStatusLabel(request.status)}
+                    </span>
+                  </div>
+                  {request.note ? <p className="mt-3 text-xs text-muted-foreground">Observacao: {request.note}</p> : null}
+                  {request.response_note ? <p className="mt-2 text-xs text-muted-foreground">Resposta: {request.response_note}</p> : null}
+                  {request.status === "PENDING" ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button type="button" className="ph-button-secondary-xs" onClick={() => handleModerateConnectionRequest(request.id, "ACCEPTED")} disabled={isPending}>
+                        Marcar aceita
+                      </button>
+                      <button type="button" className="ph-button-secondary-xs" onClick={() => handleModerateConnectionRequest(request.id, "REJECTED")} disabled={isPending}>
+                        Marcar recusada
+                      </button>
+                      <button type="button" className="ph-button-secondary-xs" onClick={() => handleModerateConnectionRequest(request.id, "CANCELLED")} disabled={isPending}>
+                        Cancelar
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+              {!tournament.connection_requests.length ? <p className="text-xs text-muted-foreground">Nenhuma solicitacao interna registrada.</p> : null}
+            </div>
           </div>
         </div>
       ) : null}

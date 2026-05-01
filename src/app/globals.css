@@ -106,6 +106,18 @@
     @apply min-h-screen bg-background text-foreground;
   }
 
+  .ph-page-ambient {
+    @apply relative isolate min-h-screen bg-background text-foreground;
+    background-image:
+      radial-gradient(820px 440px at 14% 8%, hsl(72 100% 50% / 0.10), transparent 62%),
+      radial-gradient(700px 420px at 86% 18%, hsl(160 84% 39% / 0.10), transparent 60%),
+      radial-gradient(980px 520px at 50% 100%, hsl(199 89% 48% / 0.08), transparent 64%),
+      linear-gradient(180deg, rgba(10, 14, 24, 0.98) 0%, rgba(9, 15, 26, 0.99) 40%, rgba(7, 12, 20, 1) 100%),
+      repeating-linear-gradient(90deg, rgba(148, 163, 184, 0.05) 0 1px, transparent 1px 84px),
+      repeating-linear-gradient(0deg, rgba(148, 163, 184, 0.04) 0 1px, transparent 1px 84px);
+    background-attachment: fixed;
+  }
+
   .ph-container {
     @apply container;
   }

@@ -9,6 +9,7 @@ import { deleteMyNotification, restoreMyNotification } from "@/lib/actions/notif
 import { NotificationType } from "@/generated/prisma/enums";
 import type { Prisma } from "@/generated/prisma/client";
 import { ThemedBackground } from "@/components/ThemedBackground";
+import { getNotificationTypeAppearance, getNotificationTypeLabel } from "@/lib/utils/notificationLabels";
 
 function formatDateTimeBR(d: Date): string {
   return new Intl.DateTimeFormat("pt-BR", {
@@ -51,7 +52,7 @@ function buildFilterSummary(args: {
   const parts: string[] = [];
   if (args.status !== "all") parts.push(`status: ${args.status === "active" ? "ativas" : "excluídas"}`);
   if (args.read !== "all") parts.push(`leitura: ${args.read === "unread" ? "não lidas" : "lidas"}`);
-  if (args.typeParam !== "all") parts.push(`tipo: ${args.typeParam}`);
+  if (args.typeParam !== "all") parts.push(`tipo: ${getNotificationTypeLabel(args.typeParam)}`);
   if (args.from || args.to) parts.push(`período: ${args.from || "…"} → ${args.to || "…"}`);
   if (args.q) parts.push(`busca: “${args.q}”`);
   if (args.bookingId) parts.push(`bookingId: ${args.bookingId}`);
@@ -205,7 +206,7 @@ export default async function MyNotificationsHistoryPage({
                 <option value="all">Todos</option>
                 {Object.values(NotificationType).map((t) => (
                   <option key={t} value={t}>
-                    {t}
+                    {getNotificationTypeLabel(t)}
                   </option>
                 ))}
               </select>
@@ -292,10 +293,15 @@ export default async function MyNotificationsHistoryPage({
           </div>
 
           {notifications.map((n) => (
+            (() => {
+              const appearance = getNotificationTypeAppearance(n.type);
+              return (
             <details
               key={n.id}
               className={
-                "rounded-2xl border p-4 " +
+                "rounded-2xl border border-l-4 p-4 " +
+                appearance.cardAccentClassName +
+                " " +
                 (n.deletedAt
                   ? "border-border bg-card opacity-80 dark:border-border dark:bg-card"
                   : n.readAt
@@ -309,6 +315,12 @@ export default async function MyNotificationsHistoryPage({
                     {n.title}
                     {n.deletedAt ? " (excluída)" : ""}
                   </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className={`inline-flex h-2.5 w-2.5 rounded-full ${appearance.dotClassName}`} aria-hidden="true" />
+                    <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${appearance.badgeClassName}`}>
+                      {appearance.label}
+                    </span>
+                  </div>
                   <p className="mt-1 text-[11px] text-muted-foreground/80 dark:text-muted-foreground/80">{formatDateTimeBR(n.createdAt)}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
@@ -353,6 +365,8 @@ export default async function MyNotificationsHistoryPage({
                 </div>
               </div>
             </details>
+              );
+            })()
           ))}
 
           {notifications.length === 0 ? (

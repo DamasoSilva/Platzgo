@@ -458,7 +458,7 @@ export function SearchClient(props: Props) {
   );
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="ph-page-ambient">
       <CustomerHeader
         subtitle="Agende quadras com poucos cliques"
         viewer={{

@@ -117,7 +117,7 @@ export function ProfileClient(props: Props) {
   }
 
   return (
-    <div className="ph-page">
+    <div className="ph-page ph-page-ambient">
       <CustomerHeader variant="light" viewer={props.viewer} rightSlot={null} />
 
       <div className="mx-auto max-w-4xl px-6 pb-12">

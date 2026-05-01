@@ -106,7 +106,7 @@ export function ResetPasswordClient(props: { initialEmail?: string | null; sent?
   }
 
   return (
-    <div className="ph-page">
+    <div className="ph-page ph-page-ambient">
       <div className="pointer-events-none absolute -top-48 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-primary/15 blur-3xl" />
       <div className="relative mx-auto max-w-md px-6 py-16">
         <h1 className="text-3xl font-semibold tracking-tight text-foreground dark:text-foreground">Redefinir senha</h1>

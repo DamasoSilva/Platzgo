@@ -278,7 +278,7 @@ function DashboardLayoutShell(props: {
   );
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="ph-page-ambient flex">
       {isMobile && mobileOpen ? (
         <button
           type="button"

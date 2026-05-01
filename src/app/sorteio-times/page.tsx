@@ -11,7 +11,7 @@ export default async function TeamDrawPage() {
   const isLoggedIn = Boolean(user?.id);
 
   return (
-    <div className="ph-page">
+    <div className="ph-page ph-page-ambient">
       <CustomerHeader
         variant="light"
         viewer={{

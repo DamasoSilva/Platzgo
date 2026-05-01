@@ -1,6 +1,6 @@
 export default function CourtLoading() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="ph-page-ambient">
       <div className="h-16 border-b bg-card" />
 
       <div className="mx-auto max-w-6xl px-4 py-6">

@@ -2,6 +2,17 @@
 
 Sistema web para gestão de quadras e agendamentos (portal do cliente + painel do dono), com notificações e envio de e-mails transacionais de forma assíncrona.
 
+## Funcionalidades recentes
+
+- Bloqueio de clientes por estabelecimento, com validação por usuário autenticado e/ou CPF/CNPJ no momento do agendamento.
+- Torneios do estabelecimento com capa visual na listagem pública e no detalhe.
+- Marketplace de conexões em torneios:
+	- perfil único de jogador com foto, WhatsApp, posição, idade, altura, peso, cidade e descrição;
+	- anúncio de time buscando reforços com foto, WhatsApp, posição desejada, média de idade e observações;
+	- filtros por posição, idade e cidade;
+	- candidaturas e convocações internas, além do contato direto por WhatsApp.
+- Notificações internas para chegada e decisão de candidatura/convocação.
+
 ## Stack
 
 - Next.js (App Router) + React + TypeScript
@@ -129,6 +140,8 @@ Painel do dono:
 - `/dashboard/config` (configurações)
 - `/dashboard/quadras` (CRUD quadras)
 - `/dashboard/sistema` (saúde e indicadores do sistema)
+- `/dashboard/admin` também concentra bloqueio de clientes com autocomplete por nome/e-mail/CPF/CNPJ
+- `/dashboard/torneios/[id]` também concentra moderação do marketplace do torneio (jogadores, anúncios e solicitações internas)
 
 Sysadmin:
 

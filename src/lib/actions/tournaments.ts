@@ -268,6 +268,7 @@ async function createAsaasPixCharge(params: {
 export type CreateTournamentInput = {
   name: string;
   description?: string;
+  cover_image_url?: string;
   sport_type: SportType;
   start_date: string;
   end_date: string;
@@ -337,6 +338,7 @@ export async function createTournamentAsAdmin(input: CreateTournamentInput) {
       status: input.status ?? TournamentStatus.DRAFT,
       name,
       description: input.description?.trim() || null,
+      cover_image_url: input.cover_image_url?.trim() || null,
       sport_type: input.sport_type,
       start_date: start,
       end_date: end,
@@ -902,6 +904,7 @@ export type UpdateTournamentInput = {
   tournamentId: string;
   name?: string;
   description?: string;
+  cover_image_url?: string | null;
   end_date?: string;
   max_teams?: number;
   rules?: string[] | string;
@@ -930,6 +933,7 @@ export async function updateTournament(input: UpdateTournamentInput) {
   const data: Record<string, unknown> = {};
   if (input.name?.trim()) data.name = input.name.trim();
   if (input.description !== undefined) data.description = input.description?.trim() || null;
+  if (input.cover_image_url !== undefined) data.cover_image_url = input.cover_image_url?.trim() || null;
   if (input.end_date) {
     const end = toDate(input.end_date, "Data fim");
     data.end_date = end;

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
@@ -191,9 +192,9 @@ export function SignInForm(props: {
               />
 
               <div className="mt-2 text-right text-sm">
-                <a className="font-semibold text-foreground underline dark:text-foreground" href="/forgot-password">
+                <Link className="font-semibold text-foreground underline dark:text-foreground" href="/forgot-password">
                   Esqueci minha senha
-                </a>
+                </Link>
               </div>
             </div>
 

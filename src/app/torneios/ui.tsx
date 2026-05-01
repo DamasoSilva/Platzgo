@@ -11,6 +11,7 @@ export type TournamentListItem = {
   id: string;
   name: string;
   description: string | null;
+  cover_image_url: string | null;
   sport_type: string;
   start_date: string;
   end_date: string;
@@ -80,11 +81,18 @@ export function TournamentsListClient(props: Props) {
   const publicTournaments = props.publicTournaments;
   const internalTournaments = props.internalTournaments;
   const isLoggedIn = props.isLoggedIn;
-  const canCreateInternal = props.role === "CUSTOMER";
-  const showInternalCreate = canCreateInternal || !isLoggedIn;
-  const internalCreateHref = canCreateInternal
+  const isCustomer = props.role === "CUSTOMER";
+  const isAdmin = props.role === "ADMIN" || props.role === "SYSADMIN";
+  const createHref = isCustomer
     ? "/torneios/novo"
-    : `/signin?callbackUrl=${encodeURIComponent("/torneios/novo")}`;
+    : isAdmin
+      ? "/dashboard/torneios/novo"
+      : `/signin?callbackUrl=${encodeURIComponent("/torneios")}`;
+  const createLabel = isCustomer
+    ? "Criar torneio interno"
+    : isAdmin
+      ? "Criar torneio do estabelecimento"
+      : "Entrar para criar";
 
   const [query, setQuery] = useState("");
   const [sport, setSport] = useState("ALL");
@@ -126,9 +134,6 @@ export function TournamentsListClient(props: Props) {
     });
   }, [publicTournaments, query, sport, status, category, fee]);
 
-  const showInternalCta = props.role === "CUSTOMER";
-  const showInternalLoginCta = !props.isLoggedIn;
-
   return (
     <div className="mx-auto max-w-6xl">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -138,9 +143,9 @@ export function TournamentsListClient(props: Props) {
             Encontre campeonatos abertos e organize seus torneios internos com convites.
           </p>
         </div>
-        {showInternalCreate ? (
-          <Link href={internalCreateHref} className="ph-button-secondary">
-            {canCreateInternal ? "Criar torneio interno" : "Entrar para criar"}
+        {!isLoggedIn || isCustomer || isAdmin ? (
+          <Link href={createHref} className="ph-button-secondary">
+            {createLabel}
           </Link>
         ) : null}
       </div>
@@ -237,6 +242,12 @@ export function TournamentsListClient(props: Props) {
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           {filteredPublic.map((tournament) => (
             <div key={tournament.id} className="ph-card p-5">
+              {tournament.cover_image_url ? (
+                <div className="mb-4 overflow-hidden rounded-2xl border border-border bg-muted/40">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={tournament.cover_image_url} alt={tournament.name} className="h-44 w-full object-cover" />
+                </div>
+              ) : null}
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2">
@@ -322,12 +333,16 @@ export function TournamentsListClient(props: Props) {
       <div className="mt-10">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-foreground">Torneios internos</h2>
-          {showInternalCta ? (
+          {isCustomer ? (
             <Link href="/torneios/novo" className="ph-button-secondary-sm">
               Criar interno
             </Link>
-          ) : showInternalLoginCta ? (
-            <Link href="/signin?callbackUrl=%2Ftorneios%2Fnovo" className="ph-button-secondary-sm">
+          ) : isAdmin ? (
+            <Link href="/dashboard/torneios/novo" className="ph-button-secondary-sm">
+              Criar torneio do estabelecimento
+            </Link>
+          ) : !isLoggedIn ? (
+            <Link href="/signin?callbackUrl=%2Ftorneios" className="ph-button-secondary-sm">
               Entrar para criar
             </Link>
           ) : null}
@@ -340,6 +355,12 @@ export function TournamentsListClient(props: Props) {
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           {internalTournaments.map((tournament) => (
             <div key={tournament.id} className="rounded-3xl border border-border bg-card/80 p-5 shadow-sm">
+              {tournament.cover_image_url ? (
+                <div className="mb-4 overflow-hidden rounded-2xl border border-border bg-muted/40">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={tournament.cover_image_url} alt={tournament.name} className="h-44 w-full object-cover" />
+                </div>
+              ) : null}
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <span className="rounded-full bg-sky-500/15 px-3 py-1 text-xs font-semibold text-sky-700 dark:text-sky-300">

@@ -19,6 +19,7 @@ export default async function TournamentDetailPage({ params }: { params: { id: s
       id: true,
       name: true,
       description: true,
+      cover_image_url: true,
       sport_type: true,
       start_date: true,
       end_date: true,
@@ -84,10 +85,132 @@ export default async function TournamentDetailPage({ params }: { params: { id: s
     orderBy: [{ points: "desc" }, { wins: "desc" }, { goals: "desc" }],
   });
 
+  const [playerAvailabilities, teamRecruitments, currentPlayerProfile, myTeams, connectionRequests] = await Promise.all([
+    prisma.tournamentPlayerAvailability.findMany({
+      where: { tournamentId: tournamentRow.id },
+      orderBy: { createdAt: "desc" },
+      select: {
+        userId: true,
+        profile: {
+          select: {
+            photo_url: true,
+            whatsapp_number: true,
+            age: true,
+            birth_year: true,
+            preferred_position: true,
+            height_cm: true,
+            weight_kg: true,
+            description: true,
+          },
+        },
+        user: {
+          select: {
+            name: true,
+            address_text: true,
+          },
+        },
+      },
+    }),
+    prisma.tournamentTeamRecruitmentPosting.findMany({
+      where: { tournamentId: tournamentRow.id },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        photo_url: true,
+        whatsapp_number: true,
+        desired_position: true,
+        average_age: true,
+        notes: true,
+        team: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        createdBy: {
+          select: {
+            address_text: true,
+          },
+        },
+      },
+    }),
+    user?.id
+      ? prisma.tournamentPlayerProfile.findUnique({
+          where: { userId: user.id },
+          select: {
+            photo_url: true,
+            whatsapp_number: true,
+            age: true,
+            birth_year: true,
+            preferred_position: true,
+            height_cm: true,
+            weight_kg: true,
+            description: true,
+            availabilities: {
+              where: { tournamentId: tournamentRow.id },
+              select: { id: true },
+            },
+          },
+        })
+      : Promise.resolve(null),
+    user?.id
+      ? prisma.team.findMany({
+          where: {
+            tournamentId: tournamentRow.id,
+            created_by_id: user.id,
+          },
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true,
+            name: true,
+            recruitmentPost: {
+              select: {
+                id: true,
+                photo_url: true,
+                whatsapp_number: true,
+                desired_position: true,
+                average_age: true,
+                notes: true,
+              },
+            },
+          },
+        })
+      : Promise.resolve([]),
+    prisma.tournamentConnectionRequest.findMany({
+      where: { tournamentId: tournamentRow.id },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        kind: true,
+        status: true,
+        note: true,
+        response_note: true,
+        createdAt: true,
+        createdById: true,
+        playerUserId: true,
+        team: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        player: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    }),
+  ]);
+
+  const myTeamIds = new Set(myTeams.map((team) => team.id));
+
   const tournament: TournamentDetailView = {
     id: tournamentRow.id,
     name: tournamentRow.name,
     description: tournamentRow.description,
+    cover_image_url: tournamentRow.cover_image_url,
     sport_type: tournamentRow.sport_type,
     start_date: tournamentRow.start_date.toISOString(),
     end_date: tournamentRow.end_date.toISOString(),
@@ -132,6 +255,76 @@ export default async function TournamentDetailPage({ params }: { params: { id: s
       losses: s.losses,
       goals: s.goals,
     })),
+    player_marketplace: playerAvailabilities.map((item) => ({
+      userId: item.userId,
+      name: item.user.name ?? "Jogador",
+      city: item.user.address_text ?? null,
+      photo_url: item.profile.photo_url,
+      whatsapp_number: item.profile.whatsapp_number,
+      age: item.profile.age,
+      birth_year: item.profile.birth_year,
+      preferred_position: item.profile.preferred_position,
+      height_cm: item.profile.height_cm,
+      weight_kg: item.profile.weight_kg,
+      description: item.profile.description,
+      isCurrentUser: item.userId === user?.id,
+    })),
+    team_recruitments: teamRecruitments.map((item) => ({
+      id: item.id,
+      teamId: item.team.id,
+      teamName: item.team.name,
+      city: item.createdBy.address_text ?? tournamentRow.city ?? null,
+      photo_url: item.photo_url,
+      whatsapp_number: item.whatsapp_number,
+      desired_position: item.desired_position,
+      average_age: item.average_age,
+      notes: item.notes,
+      isOwnedByCurrentUser: myTeamIds.has(item.team.id),
+    })),
+    current_player_profile: currentPlayerProfile
+      ? {
+          photo_url: currentPlayerProfile.photo_url,
+          whatsapp_number: currentPlayerProfile.whatsapp_number,
+          age: currentPlayerProfile.age,
+          birth_year: currentPlayerProfile.birth_year,
+          preferred_position: currentPlayerProfile.preferred_position,
+          height_cm: currentPlayerProfile.height_cm,
+          weight_kg: currentPlayerProfile.weight_kg,
+          description: currentPlayerProfile.description,
+          isPublishedForTournament: currentPlayerProfile.availabilities.length > 0,
+        }
+      : null,
+    my_teams: myTeams.map((team) => ({
+      id: team.id,
+      name: team.name,
+      recruitment_post: team.recruitmentPost
+        ? {
+            id: team.recruitmentPost.id,
+            photo_url: team.recruitmentPost.photo_url,
+            whatsapp_number: team.recruitmentPost.whatsapp_number,
+            desired_position: team.recruitmentPost.desired_position,
+            average_age: team.recruitmentPost.average_age,
+            notes: team.recruitmentPost.notes,
+          }
+        : null,
+    })),
+    connection_requests: connectionRequests.map((item) => ({
+      id: item.id,
+      kind: item.kind,
+      status: item.status,
+      note: item.note,
+      response_note: item.response_note,
+      createdAt: item.createdAt.toISOString(),
+      teamId: item.team.id,
+      teamName: item.team.name,
+      playerUserId: item.player.id,
+      playerName: item.player.name ?? "Jogador",
+      isMineAsPlayer: item.playerUserId === user?.id,
+      isMineAsTeamOwner: myTeamIds.has(item.team.id),
+      isCreatedByCurrentUser: item.createdById === user?.id,
+    })),
+    currentUserId: user?.id ?? null,
+    currentUserRole: user?.role ?? null,
   };
 
   return (

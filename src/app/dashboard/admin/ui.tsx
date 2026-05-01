@@ -17,6 +17,11 @@ import {
   updateMyEstablishmentPayments,
   upsertMyEstablishment,
 } from "@/lib/actions/admin";
+import {
+  deleteMyEstablishmentCustomerBlock,
+  searchUsersForMyEstablishmentBlock,
+  upsertMyEstablishmentCustomerBlock,
+} from "../../../lib/actions/establishmentCustomerBlocks";
 import { deleteMyEstablishmentHoliday, upsertMyEstablishmentHoliday } from "@/lib/actions/holidays";
 import { formatBRLFromCents } from "@/lib/utils/currency";
 import { formatSportLabel } from "@/lib/utils/sport";
@@ -210,6 +215,17 @@ type EstablishmentWithCourts = {
   contact_number: string | null;
   instagram_url: string | null;
   photo_urls: string[];
+  customerBlocks: Array<{
+    id: string;
+    cpf_cnpj: string | null;
+    note: string | null;
+    createdAt: Date;
+    user: {
+      id: string;
+      name: string | null;
+      email: string;
+    } | null;
+  }>;
   requires_booking_confirmation: boolean;
   address_text: string;
   latitude: number;
@@ -298,7 +314,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
   const [isUploading, setIsUploading] = useState(false);
   const [walletTestStatus, setWalletTestStatus] = useState<"idle" | "ok" | "error">("idle");
   const [walletTestMessage, setWalletTestMessage] = useState<string | null>(null);
-  const [tab, setTab] = useState<"general" | "hours" | "payments" | "courts">("general");
+  const [tab, setTab] = useState<"general" | "hours" | "payments" | "courts" | "customers">("general");
 
   const viewerNav =
     props.viewerRole === "SYSADMIN" ? (
@@ -335,6 +351,32 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
 
   const courts = useMemo(() => props.establishment?.courts ?? [], [props.establishment]);
   const holidays = useMemo(() => props.establishment?.holidays ?? [], [props.establishment]);
+  const customerBlocks = useMemo(() => props.establishment?.customerBlocks ?? [], [props.establishment]);
+  const [customerBlockSearchQuery, setCustomerBlockSearchQuery] = useState("");
+  const [customerBlockSearchResults, setCustomerBlockSearchResults] = useState<
+    Array<{ id: string; name: string | null; email: string; cpf_cnpj: string | null }>
+  >([]);
+  const [isSearchingCustomerBlockUser, setIsSearchingCustomerBlockUser] = useState(false);
+  const customerBlockSearchDigits = customerBlockSearchQuery.replace(/\D/g, "");
+  const shouldContinueTypingCustomerBlockSearch =
+    customerBlockSearchQuery.trim().length > 0 && customerBlockSearchQuery.trim().length < 2 && customerBlockSearchDigits.length < 3;
+  const [blockedCustomerListQuery, setBlockedCustomerListQuery] = useState("");
+  const filteredCustomerBlocks = useMemo(() => {
+    const query = blockedCustomerListQuery.trim().toLowerCase();
+    if (!query) return customerBlocks;
+
+    return customerBlocks.filter((block) => {
+      const haystack = [block.user?.name, block.user?.email, block.user?.id, block.cpf_cnpj, block.note]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [blockedCustomerListQuery, customerBlocks]);
+
+  const [blockUserId, setBlockUserId] = useState("");
+  const [blockCpfCnpj, setBlockCpfCnpj] = useState("");
+  const [blockNote, setBlockNote] = useState("");
 
   const [holidayForm, setHolidayForm] = useState(() => ({
     date: "",
@@ -568,6 +610,77 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
     });
   }
 
+  async function onSaveCustomerBlock() {
+    setMessage(null);
+    startTransition(async () => {
+      try {
+        await upsertMyEstablishmentCustomerBlock({
+          userId: blockUserId,
+          cpf_cnpj: blockCpfCnpj,
+          note: blockNote,
+        });
+        setBlockUserId("");
+        setBlockCpfCnpj("");
+        setBlockNote("");
+        setCustomerBlockSearchQuery("");
+        setCustomerBlockSearchResults([]);
+        setMessage("Cliente bloqueado com sucesso.");
+        router.refresh();
+      } catch (e) {
+        setMessage(e instanceof Error ? e.message : "Erro ao bloquear cliente");
+      }
+    });
+  }
+
+  useEffect(() => {
+    const query = customerBlockSearchQuery.trim();
+    const digits = query.replace(/\D/g, "");
+
+    if (query.length < 2 && digits.length < 3) {
+      setCustomerBlockSearchResults([]);
+      setIsSearchingCustomerBlockUser(false);
+      return;
+    }
+
+    let cancelled = false;
+    setIsSearchingCustomerBlockUser(true);
+
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        const results = await searchUsersForMyEstablishmentBlock({ query });
+        if (!cancelled) {
+          setCustomerBlockSearchResults(results);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setMessage(e instanceof Error ? e.message : "Erro ao buscar usuários");
+        }
+      } finally {
+        if (!cancelled) {
+          setIsSearchingCustomerBlockUser(false);
+        }
+      }
+    }, 350);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [customerBlockSearchQuery]);
+
+  async function onDeleteCustomerBlock(blockId: string) {
+    setMessage(null);
+    startTransition(async () => {
+      try {
+        await deleteMyEstablishmentCustomerBlock({ blockId });
+        setMessage("Bloqueio removido.");
+        router.refresh();
+      } catch (e) {
+        setMessage(e instanceof Error ? e.message : "Erro ao remover bloqueio");
+      }
+    });
+  }
+
   return (
     <div className="space-y-6">
       <header>
@@ -582,7 +695,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
         </div>
       </header>
 
-      {message ? (
+                  {shouldContinueTypingCustomerBlockSearch ? (
         <div className="rounded-2xl border border-border bg-card p-4 text-sm text-foreground">
           {message}
         </div>
@@ -624,6 +737,7 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
           { key: "general", label: "Dados gerais" },
           { key: "hours", label: "Horários" },
           { key: "payments", label: "Pagamentos" },
+          { key: "customers", label: "Clientes" },
           { key: "courts", label: "Quadras" },
         ] as const).map((item) => (
           <button
@@ -1292,6 +1406,144 @@ export function AdminDashboard(props: { establishment: EstablishmentWithCourts; 
                   </Link>
                   <p className="ph-help mt-2">Editar, inativar e adicionar quadras agora fica nessa tela.</p>
                 </div>
+              </div>
+            </section>
+          </div>
+        ) : null}
+
+        {tab === "customers" ? (
+          <div className="grid gap-6 lg:grid-cols-12">
+            <section className="lg:col-span-5 ph-card p-6">
+              <h2 className="text-lg font-semibold text-foreground">Bloquear cliente</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Impede novos agendamentos neste estabelecimento por ID do usuário e/ou CPF/CNPJ.
+              </p>
+
+              <div className="mt-5 space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground">Buscar usuário</label>
+                  <input
+                    value={customerBlockSearchQuery}
+                    onChange={(e) => setCustomerBlockSearchQuery(e.target.value)}
+                    className="ph-input mt-2"
+                    placeholder="Nome, email ou CPF/CNPJ"
+                  />
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {isSearchingCustomerBlockUser ? "Buscando usuários..." : "A busca acontece automaticamente enquanto você digita."}
+                  </p>
+                  {customerBlockSearchResults.length ? (
+                    <div className="mt-3 space-y-2 rounded-2xl border border-border bg-card/60 p-3">
+                      {customerBlockSearchResults.map((user) => (
+                        <button
+                          key={user.id}
+                          type="button"
+                          onClick={() => {
+                            setBlockUserId(user.id);
+                            setBlockCpfCnpj((user.cpf_cnpj ?? "").replace(/\D/g, "").slice(0, 14));
+                          }}
+                          className="flex w-full items-start justify-between gap-3 rounded-2xl border border-border px-3 py-3 text-left hover:bg-secondary/60"
+                        >
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-foreground">{user.name ?? user.email}</p>
+                            <p className="text-xs text-muted-foreground">{user.email}</p>
+                            <p className="text-xs text-muted-foreground">ID: {user.id}</p>
+                          </div>
+                          {user.cpf_cnpj ? <span className="text-xs text-muted-foreground">{user.cpf_cnpj}</span> : null}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                  {!isSearchingCustomerBlockUser && !shouldContinueTypingCustomerBlockSearch && customerBlockSearchQuery.trim().length >= 2 && !customerBlockSearchResults.length ? (
+                    <div className="mt-3 rounded-2xl border border-dashed border-border bg-card/40 p-3 text-xs text-muted-foreground">
+                      Nenhum usuário encontrado para esse termo.
+                    </div>
+                  ) : null}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground">ID do usuário</label>
+                  <input
+                    value={blockUserId}
+                    onChange={(e) => setBlockUserId(e.target.value)}
+                    className="ph-input mt-2"
+                    placeholder="cuid do usuário"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground">CPF/CNPJ</label>
+                  <input
+                    value={blockCpfCnpj}
+                    onChange={(e) => setBlockCpfCnpj(e.target.value.replace(/\D/g, "").slice(0, 14))}
+                    className="ph-input mt-2"
+                    inputMode="numeric"
+                    maxLength={14}
+                    placeholder="Somente números"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground">Observação</label>
+                  <textarea
+                    value={blockNote}
+                    onChange={(e) => setBlockNote(e.target.value)}
+                    className="ph-textarea mt-2"
+                    rows={3}
+                    placeholder="Motivo do bloqueio"
+                  />
+                </div>
+
+                <button type="button" onClick={onSaveCustomerBlock} className="ph-button w-full" disabled={isPending}>
+                  Salvar bloqueio
+                </button>
+              </div>
+            </section>
+
+            <section className="lg:col-span-7 ph-card p-6">
+              <h2 className="text-lg font-semibold text-foreground">Clientes bloqueados</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                A validação acontece no momento do agendamento por usuário autenticado e CPF/CNPJ cadastrado.
+              </p>
+
+              <div className="mt-5 space-y-3">
+                <input
+                  value={blockedCustomerListQuery}
+                  onChange={(e) => setBlockedCustomerListQuery(e.target.value)}
+                  className="ph-input"
+                  placeholder="Filtrar bloqueados por nome, email, CPF/CNPJ ou observação"
+                />
+
+                {filteredCustomerBlocks.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhum cliente bloqueado.</p>
+                ) : (
+                  filteredCustomerBlocks.map((block) => (
+                    <div key={block.id} className="rounded-2xl border border-border p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0 space-y-1">
+                          <p className="text-sm font-semibold text-foreground">
+                            {block.user?.name ?? block.user?.email ?? "Cliente sem conta vinculada"}
+                          </p>
+                          {block.user?.id ? (
+                            <p className="text-xs text-muted-foreground">ID: {block.user.id}</p>
+                          ) : null}
+                          {block.cpf_cnpj ? (
+                            <p className="text-xs text-muted-foreground">CPF/CNPJ: {block.cpf_cnpj}</p>
+                          ) : null}
+                          {block.note ? (
+                            <p className="text-xs text-muted-foreground">Motivo: {block.note}</p>
+                          ) : null}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => onDeleteCustomerBlock(block.id)}
+                          className="text-xs font-semibold text-destructive hover:text-destructive"
+                        >
+                          Remover
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </section>
           </div>
