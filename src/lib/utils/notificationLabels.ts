@@ -26,8 +26,7 @@ type NotificationAppearance = {
   cardAccentClassName: string;
 };
 
-const DEFAULT_NOTIFICATION_APPEARANCE: NotificationAppearance = {
-  label: "Notificação",
+const DEFAULT_NOTIFICATION_APPEARANCE: Omit<NotificationAppearance, "label"> = {
   badgeClassName: "border-border bg-secondary text-foreground",
   dotClassName: "bg-muted-foreground/60",
   cardAccentClassName: "border-l-border",
