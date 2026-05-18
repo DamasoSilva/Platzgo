@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { acceptTournamentInvitation } from "@/lib/actions/tournaments";
+import { buildSignInHref } from "@/lib/client/auth";
 
 export default function TournamentInvitePage({ params }: { params: { token: string } }) {
   const router = useRouter();
@@ -20,6 +21,10 @@ export default function TournamentInvitePage({ params }: { params: { token: stri
           setSuccess({ tournamentId: result.tournamentId!, tournamentName: result.tournamentName! });
         }
       } catch (e: unknown) {
+        if (e instanceof Error && /nao autenticado|não autenticado/i.test(e.message)) {
+          router.push(buildSignInHref(`/torneios/convite/${params.token}`));
+          return;
+        }
         setError(e instanceof Error ? e.message : "Erro ao aceitar convite");
       }
     });

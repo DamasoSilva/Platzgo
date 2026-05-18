@@ -9,6 +9,7 @@ import { CustomerHeader } from "@/components/CustomerHeader";
 import { createBooking, getMyBookingStatus } from "@/lib/actions/bookings";
 import { getCourtBookingsForDay } from "@/lib/actions/courts";
 import { createAvailabilityAlert } from "@/lib/actions/availabilityAlerts";
+import { buildSignInHref } from "@/lib/client/auth";
 import { requestMonthlyPass } from "@/lib/actions/monthlyPasses";
 import { updateMyProfile } from "@/lib/actions/profile";
 import { computeTotalPriceCents } from "@/lib/utils/pricing";
@@ -259,6 +260,12 @@ export function CourtDetailsClient(props: {
     if (selectedStart) return formatHHMM(selectedStart);
     return prefillTime;
   }, [prefillTime, selectedStart]);
+  const signInCallbackUrl = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set("day", day);
+    if (loginTime) params.set("time", loginTime);
+    return `/courts/${props.courtId}?${params.toString()}`;
+  }, [day, loginTime, props.courtId]);
   const todayYmd = useMemo(() => {
     const d = new Date();
     const yyyy = d.getFullYear();
@@ -617,7 +624,7 @@ export function CourtDetailsClient(props: {
       return;
     }
     if (!props.userId) {
-      setMessage({ type: "info", text: "Faça login para agendar." });
+      router.push(buildSignInHref(signInCallbackUrl));
       return;
     }
     if (requiresCpfCnpj && !cpfValid) {
@@ -732,7 +739,7 @@ export function CourtDetailsClient(props: {
       return;
     }
     if (!props.userId) {
-      setAlertMessage({ type: "info", text: "Faça login para criar um alerta." });
+      router.push(buildSignInHref(signInCallbackUrl));
       return;
     }
     if (!alertTime) {
@@ -759,7 +766,7 @@ export function CourtDetailsClient(props: {
   async function onRequestMonthlyPass() {
     if (isOwnerPreview) return;
     if (!props.userId) {
-      setMessage({ type: "info", text: "Faça login para solicitar mensalidade." });
+      router.push(buildSignInHref(signInCallbackUrl));
       return;
     }
     if (!selectedStart || !selectedEnd) {

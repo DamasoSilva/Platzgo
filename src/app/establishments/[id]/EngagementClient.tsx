@@ -1,8 +1,10 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 
 import { toggleFavoriteEstablishment } from "@/lib/actions/favorites";
+import { buildSignInHref } from "@/lib/client/auth";
 
 type ReviewItem = {
   id: string;
@@ -19,7 +21,10 @@ export function EngagementClient(props: {
   avgRating: number;
   reviewsCount: number;
   reviews: ReviewItem[];
+  isLoggedIn: boolean;
+  signInCallbackUrl: string;
 }) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isFavorite, setIsFavorite] = useState(props.initialIsFavorite);
   const [message, setMessage] = useState<string | null>(null);
@@ -30,6 +35,11 @@ export function EngagementClient(props: {
   }, [props.avgRating, props.reviewsCount]);
 
   function onToggleFavorite() {
+    if (!props.isLoggedIn) {
+      router.push(buildSignInHref(props.signInCallbackUrl));
+      return;
+    }
+
     setMessage(null);
     startTransition(async () => {
       try {

@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { getSession, signOut } from "next-auth/react";
 import type { Role } from "@/generated/prisma/enums";
 import { Menu, X } from "lucide-react";
+import { buildSignInHref } from "@/lib/client/auth";
 
 
 type Props = {
@@ -43,6 +44,8 @@ export function CustomerHeader(props: Props) {
   const isOwner = role === "ADMIN";
   const isCustomerFacing = !isOwner && role !== "SYSADMIN";
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   // Protecao contra BFCache (voltar do navegador apos logout).
   // Se a rota for protegida e nao houver mais sessao, força login.
@@ -108,7 +111,12 @@ export function CustomerHeader(props: Props) {
     router.push(last);
   }
 
-  const signInCallbackUrl = props.signInCallbackUrl ?? "/";
+  const currentSearch = searchParams?.toString() ?? "";
+  const signInCallbackUrl = useMemo(() => {
+    if (props.signInCallbackUrl) return props.signInCallbackUrl;
+    const current = `${pathname ?? ""}${currentSearch ? `?${currentSearch}` : ""}`;
+    return current || "/";
+  }, [currentSearch, pathname, props.signInCallbackUrl]);
   const signOutCallbackUrl = role === "ADMIN" ? "/signin?logout=1&callbackUrl=%2Fdashboard" : "/signin?logout=1&callbackUrl=%2F";
 
   const [open, setOpen] = useState(false);
@@ -188,7 +196,7 @@ export function CustomerHeader(props: Props) {
 
           {!isLoggedIn ? (
             <Link
-              href={`/signin?callbackUrl=${encodeURIComponent(signInCallbackUrl)}`}
+              href={buildSignInHref(signInCallbackUrl)}
               className="hidden sm:inline-flex border border-border bg-card/50 text-foreground font-medium text-sm px-5 py-2.5 rounded-lg hover:bg-card transition-colors"
             >
               Entrar
@@ -316,7 +324,7 @@ export function CustomerHeader(props: Props) {
                 </>
               ) : (
                 <Link
-                  href={`/signin?callbackUrl=${encodeURIComponent(signInCallbackUrl)}`}
+                  href={buildSignInHref(signInCallbackUrl)}
                   onClick={() => setMenuOpen(false)}
                   className="gradient-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-lg text-center"
                 >

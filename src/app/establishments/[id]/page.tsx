@@ -66,10 +66,6 @@ export default async function EstablishmentPage(props: {
   const callbackUrl = `/establishments/${params.id}?day=${encodeURIComponent(day)}${
     time ? `&time=${encodeURIComponent(time)}` : ""
   }`;
-  if (!userId) {
-    redirect(`/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`);
-  }
-
   const est = await prisma.establishment.findUnique({
     where: { id: params.id },
     select: {
@@ -121,10 +117,12 @@ export default async function EstablishmentPage(props: {
       _avg: { rating: true },
       _count: { rating: true },
     }),
-    prisma.establishmentFavorite.findUnique({
-      where: { establishmentId_userId: { establishmentId: est.id, userId } },
-      select: { id: true },
-    }),
+    userId
+      ? prisma.establishmentFavorite.findUnique({
+          where: { establishmentId_userId: { establishmentId: est.id, userId } },
+          select: { id: true },
+        })
+      : Promise.resolve(null),
   ]);
 
   const coverUrl = (est.photo_urls ?? []).find((u) => (u ?? "").trim()) ?? null;
@@ -140,7 +138,7 @@ export default async function EstablishmentPage(props: {
           variant="light"
           subtitle="Agende quadras com poucos cliques"
           viewer={{
-            isLoggedIn: true,
+            isLoggedIn: Boolean(userId),
             name: session?.user?.name ?? null,
             image: session?.user?.image ?? null,
             role: session?.user?.role ?? null,
@@ -249,6 +247,8 @@ export default async function EstablishmentPage(props: {
             initialIsFavorite={Boolean(favorite)}
             avgRating={stats._avg.rating ?? 0}
             reviewsCount={stats._count.rating}
+            isLoggedIn={Boolean(userId)}
+            signInCallbackUrl={callbackUrl}
             reviews={reviews.map((r) => ({
               id: r.id,
               rating: r.rating,

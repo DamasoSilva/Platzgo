@@ -24,6 +24,7 @@ import { PlacesLocationPicker } from "@/components/PlacesLocationPicker";
 import { getNearbyEstablishments } from "@/lib/actions/establishments";
 import { listSearchSportOptionsForPublic } from "@/lib/actions/sysadmin";
 import { toggleFavoriteEstablishment } from "@/lib/actions/favorites";
+import { buildSignInHref, getCurrentCallbackUrl } from "@/lib/client/auth";
 import { loadGoogleMaps } from "@/lib/client/googleMaps";
 import { formatBRLFromCents } from "@/lib/utils/currency";
 import { formatSportLabel } from "@/lib/utils/sport";
@@ -438,7 +439,10 @@ export function SearchClient(props: Props) {
 
   const handleToggleFavorite = useCallback(
     (establishmentId: string) => {
-      if (!props.viewer.isLoggedIn) return;
+      if (!props.viewer.isLoggedIn) {
+        router.push(buildSignInHref(getCurrentCallbackUrl("/")));
+        return;
+      }
       startFavTransition(async () => {
         try {
           const res = await toggleFavoriteEstablishment({ establishmentId });
@@ -723,9 +727,13 @@ export function SearchClient(props: Props) {
               </button>
 
               {!props.viewer.isLoggedIn ? (
-                <span className="text-xs text-muted-foreground">
-                  Faça login para ver preços, contatos e mapa.
-                </span>
+                <button
+                  type="button"
+                  onClick={() => router.push(buildSignInHref(getCurrentCallbackUrl("/")))}
+                  className="text-xs font-medium text-primary underline underline-offset-4"
+                >
+                  Entrar para ver preços, contatos e mapa.
+                </button>
               ) : null}
             </div>
           </div>

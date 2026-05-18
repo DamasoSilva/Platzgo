@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { buildSignInHref } from "@/lib/client/auth";
+
 const LEVELS = [
   { key: "level1", label: "Nível 1 - Alto rendimento" },
   { key: "level2", label: "Nível 2 - Médio rendimento" },
@@ -496,9 +498,13 @@ export function TeamDrawClient(props: { isLoggedIn: boolean }) {
             </button>
           </div>
           {!isLoggedIn ? (
-            <p className="mt-2 text-[11px] text-muted-foreground/80 dark:text-muted-foreground">
-              Para gerar o sorteio, faça login.
-            </p>
+            <button
+              type="button"
+              onClick={() => router.push(buildSignInHref("/sorteio-times"))}
+              className="mt-2 text-[11px] font-medium text-primary underline underline-offset-4"
+            >
+              Entrar para gerar o sorteio.
+            </button>
           ) : null}
         </div>
       </div>
