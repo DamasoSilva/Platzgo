@@ -1,28 +1,35 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { acceptTournamentInvitation } from "@/lib/actions/tournaments";
 import { buildSignInHref } from "@/lib/client/auth";
 
-export default function TournamentInvitePage({ params }: { params: { token: string } }) {
+export default function TournamentInvitePage() {
   const router = useRouter();
+  const params = useParams<{ token: string }>();
+  const token = typeof params?.token === "string" ? params.token : "";
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<{ tournamentId: string; tournamentName: string } | null>(null);
 
   function handleAccept() {
+    if (!token) {
+      setError("Convite invalido");
+      return;
+    }
+
     setError(null);
     startTransition(async () => {
       try {
-        const result = await acceptTournamentInvitation({ token: params.token });
+        const result = await acceptTournamentInvitation({ token });
         if (result.ok) {
           setSuccess({ tournamentId: result.tournamentId!, tournamentName: result.tournamentName! });
         }
       } catch (e: unknown) {
         if (e instanceof Error && /nao autenticado|não autenticado/i.test(e.message)) {
-          router.push(buildSignInHref(`/torneios/convite/${params.token}`));
+          router.push(buildSignInHref(`/torneios/convite/${token}`));
           return;
         }
         setError(e instanceof Error ? e.message : "Erro ao aceitar convite");

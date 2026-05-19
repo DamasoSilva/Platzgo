@@ -60,7 +60,10 @@ function getOwnerNetCents(payment: { amount_cents: number; payout_amount_cents?:
   return null;
 }
 
-export default async function DashboardTournamentDetailPage({ params }: { params: { id: string } }) {
+export default async function DashboardTournamentDetailPage(props: {
+  params: { id: string } | Promise<{ id: string }>;
+}) {
+  const params = await Promise.resolve(props.params);
   const { establishmentId } = await requireAdminWithSetupOrRedirect(`/dashboard/torneios/${params.id}`);
 
   const tournamentRow = await prisma.tournament.findFirst({

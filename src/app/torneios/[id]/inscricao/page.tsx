@@ -8,7 +8,10 @@ import { ThemedBackground } from "@/components/ThemedBackground";
 
 import { TournamentRegistrationClient, type TournamentRegistrationView } from "@/app/torneios/[id]/inscricao/ui";
 
-export default async function TournamentRegistrationPage({ params }: { params: { id: string } }) {
+export default async function TournamentRegistrationPage(props: {
+  params: { id: string } | Promise<{ id: string }>;
+}) {
+  const params = await Promise.resolve(props.params);
   const session = await getServerSession(authOptions);
   const user = session?.user;
 

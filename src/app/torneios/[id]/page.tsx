@@ -8,7 +8,10 @@ import { ThemedBackground } from "@/components/ThemedBackground";
 
 import { TournamentDetailClient, type TournamentDetailView } from "./ui";
 
-export default async function TournamentDetailPage({ params }: { params: { id: string } }) {
+export default async function TournamentDetailPage(props: {
+  params: { id: string } | Promise<{ id: string }>;
+}) {
+  const params = await Promise.resolve(props.params);
   const session = await getServerSession(authOptions);
   const user = session?.user;
   const isLoggedIn = Boolean(user?.id);
