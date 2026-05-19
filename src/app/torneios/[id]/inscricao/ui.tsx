@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 
 import { registerTeamForTournament } from "@/lib/actions/tournaments";
@@ -37,6 +38,7 @@ function createPlayer(): PlayerForm {
 
 export function TournamentRegistrationClient(props: Props) {
   const { tournament } = props;
+  const router = useRouter();
 
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -57,9 +59,14 @@ export function TournamentRegistrationClient(props: Props) {
   const [pixExpiresAt, setPixExpiresAt] = useState<string | null>(null);
   const [pixCheckoutUrl, setPixCheckoutUrl] = useState<string | null>(null);
   const [pixCopied, setPixCopied] = useState<string | null>(null);
-  const [isConfirmed, setIsConfirmed] = useState(false);
   const [pixCountdown, setPixCountdown] = useState<string | null>(null);
   const [pixExpired, setPixExpired] = useState(false);
+
+  function buildTrackingHref(currentRegistrationId: string, hasPendingPayment: boolean) {
+    const params = new URLSearchParams({ confirmed: "1", registrationId: currentRegistrationId });
+    if (hasPendingPayment) params.set("payment", "1");
+    return `/torneios/meus?${params.toString()}`;
+  }
 
   useEffect(() => {
     if (!pixExpiresAt) return;
@@ -150,7 +157,7 @@ export function TournamentRegistrationClient(props: Props) {
           setPixExpiresAt(result.payment.expiresAt);
           setPixCheckoutUrl(result.payment.checkoutUrl);
         } else {
-          setIsConfirmed(true);
+          router.push(buildTrackingHref(result.registrationId, false));
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : "Não foi possível gerar o pagamento";
@@ -387,17 +394,14 @@ export function TournamentRegistrationClient(props: Props) {
               <button
                 type="button"
                 className="ph-button mt-6 w-full"
-                disabled={isFree ? !registrationId : !pixPayload}
-                onClick={() => setIsConfirmed(true)}
+                disabled={isFree ? !registrationId : !(pixPayload || pixCheckoutUrl || pixQrBase64)}
+                onClick={() => {
+                  if (!registrationId) return;
+                  router.push(buildTrackingHref(registrationId, !isFree));
+                }}
               >
-                Confirmar inscrição
+                Acompanhar meus torneios
               </button>
-
-              {isConfirmed ? (
-                <div className="mt-4 rounded-2xl border border-emerald-500/30 bg-primary/100/10 p-3 text-xs text-primary">
-                  Inscrição confirmada. O time será liberado após validação do pagamento.
-                </div>
-              ) : null}
             </div>
           </div>
         ) : null}

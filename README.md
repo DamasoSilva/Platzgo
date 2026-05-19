@@ -102,12 +102,30 @@ Abra `http://localhost:3000`.
 - `npm run start`: servidor de produção
 - `npm run lint`: lint
 - `npm run seed`: cria usuários (e opcionalmente dados de exemplo com `SEED_DEMO_DATA=1`)
+- `npm run seed:test-scenarios`: cria torneios, times, inscrições e usuários de mensalidade para testes manuais
 - `npm run backup:db`: gera backup do Postgres
 - `npm run restore:db`: restaura backup do Postgres
 - `npm run email:worker`: processa a fila de e-mails em loop
 - `npm run availability:worker`: processa alertas de disponibilidade
 - `npm run reminder:worker`: envia lembretes de agendamentos
 - `npm run maintenance:cleanup`: limpeza de tokens/logs antigos
+
+## Cenários automáticos de teste
+
+Se você quiser evitar gerar times e usuários manualmente para validar torneios e mensalidades, rode:
+
+```bash
+npm run seed:test-scenarios
+```
+
+Esse comando cria cenários idempotentes com:
+
+- torneio público com PIX pendente para o cliente padrão
+- torneio gratuito com inscrição pendente
+- torneio em andamento com tabela e partidas
+- usuários de teste com mensalidade ativa e renovação pendente
+
+Após rodar, use a tela `/torneios/meus` para acompanhar as inscrições do cliente padrão.
 
 ## Papéis (Roles)
 

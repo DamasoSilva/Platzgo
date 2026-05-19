@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { buildActivePaymentWhere } from "@/lib/utils/bookingAvailability";
 import { CustomerHeader } from "@/components/CustomerHeader";
 import { ThemedBackground } from "@/components/ThemedBackground";
 
@@ -11,8 +12,10 @@ export default async function TournamentsPage() {
   const session = await getServerSession(authOptions);
   const user = session?.user;
   const isLoggedIn = Boolean(user?.id);
+  const now = new Date();
+  const activePaymentWhere = buildActivePaymentWhere(now);
 
-  const [publicRows, internalRows] = await Promise.all([
+  const [publicRows, internalRows, mySummary] = await Promise.all([
     prisma.tournament.findMany({
       where: { visibility: "PUBLIC", status: { not: "DRAFT" } },
       orderBy: { start_date: "asc" },
@@ -70,6 +73,31 @@ export default async function TournamentsPage() {
           },
         })
       : Promise.resolve([]),
+    isLoggedIn && user?.role === "CUSTOMER"
+      ? Promise.all([
+          prisma.tournamentRegistration.count({
+            where: { createdById: user.id },
+          }),
+          prisma.tournamentRegistration.count({
+            where: { createdById: user.id, status: "PENDING" },
+          }),
+          prisma.tournamentRegistration.count({
+            where: { createdById: user.id, status: "APPROVED" },
+          }),
+          prisma.tournamentRegistration.count({
+            where: {
+              createdById: user.id,
+              paid: false,
+              payments: { some: activePaymentWhere },
+            },
+          }),
+        ]).then(([total, pendingApproval, approved, pendingPayment]) => ({
+          total,
+          pendingApproval,
+          approved,
+          pendingPayment,
+        }))
+      : Promise.resolve(null),
   ]);
 
   const publicTournaments: TournamentListItem[] = publicRows.map((row) => ({
@@ -139,6 +167,7 @@ export default async function TournamentsPage() {
             role={user?.role ?? null}
             publicTournaments={publicTournaments}
             internalTournaments={internalTournaments}
+            mySummary={mySummary}
           />
         </div>
       </div>

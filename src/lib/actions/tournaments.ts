@@ -648,6 +648,7 @@ export async function registerTeamForTournament(input: RegisterTeamInput) {
 
   revalidatePath(`/torneios/${tournament.id}`);
   revalidatePath(`/torneios/${tournament.id}/inscricao`);
+  revalidatePath("/torneios/meus");
 
   // Notificar dono do estabelecimento sobre nova inscrição
   const owner = tournament.establishment?.owner;
@@ -893,6 +894,7 @@ export async function setTournamentRegistrationStatus(input: {
   }
 
   revalidatePath(`/dashboard/torneios/${registration.tournament.id}`);
+  revalidatePath("/torneios/meus");
   return { ok: true };
 }
 
@@ -1050,6 +1052,7 @@ export async function cancelTournament(input: { tournamentId: string }) {
 
   revalidatePath("/dashboard/torneios");
   revalidatePath("/torneios");
+  revalidatePath("/torneios/meus");
   return { ok: true };
 }
 

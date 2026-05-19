@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "tsx prisma/seed.ts",
+    "seed:test-scenarios": "tsx scripts/seed-test-scenarios.ts",
     "backup:db": "tsx scripts/backup-db.ts",
     "restore:db": "tsx scripts/restore-db.ts",
     "email:worker": "tsx scripts/email-worker.ts",

@@ -35,6 +35,12 @@ type Props = {
   role: Role | null;
   publicTournaments: TournamentListItem[];
   internalTournaments: TournamentListItem[];
+  mySummary: {
+    total: number;
+    pendingApproval: number;
+    approved: number;
+    pendingPayment: number;
+  } | null;
 };
 
 type FeeFilter = "ANY" | "FREE" | "UP_TO_50" | "UP_TO_100";
@@ -83,6 +89,7 @@ export function TournamentsListClient(props: Props) {
   const isLoggedIn = props.isLoggedIn;
   const isCustomer = props.role === "CUSTOMER";
   const isAdmin = props.role === "ADMIN" || props.role === "SYSADMIN";
+  const mySummary = props.mySummary;
   const createHref = isCustomer
     ? "/torneios/novo"
     : isAdmin
@@ -143,11 +150,18 @@ export function TournamentsListClient(props: Props) {
             Encontre campeonatos abertos e organize seus torneios internos com convites.
           </p>
         </div>
-        {!isLoggedIn || isCustomer || isAdmin ? (
-          <Link href={createHref} className="ph-button-secondary">
-            {createLabel}
-          </Link>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-2">
+          {isCustomer ? (
+            <Link href="/torneios/meus" className="ph-button">
+              Acompanhar meus torneios
+            </Link>
+          ) : null}
+          {!isLoggedIn || isCustomer || isAdmin ? (
+            <Link href={createHref} className="ph-button-secondary">
+              {createLabel}
+            </Link>
+          ) : null}
+        </div>
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
@@ -230,6 +244,38 @@ export function TournamentsListClient(props: Props) {
           <p className="mt-4 text-xs text-muted-foreground">
             Torneios internos são privados e usam convites para liberar os times.
           </p>
+
+          {isCustomer && mySummary ? (
+            <>
+              <div className="mt-5 h-px bg-border" />
+              <div className="mt-5">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Meus torneios</p>
+                  <Link href="/torneios/meus" className="text-xs font-semibold text-primary">
+                    Ver tela completa
+                  </Link>
+                </div>
+                <div className="mt-4 space-y-3 text-sm text-muted-foreground">
+                  <div className="flex items-center justify-between">
+                    <span>Total inscritos</span>
+                    <span className="font-semibold">{mySummary.total}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Aguardando aprovação</span>
+                    <span className="font-semibold">{mySummary.pendingApproval}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Aprovados</span>
+                    <span className="font-semibold">{mySummary.approved}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Pagamento pendente</span>
+                    <span className="font-semibold">{mySummary.pendingPayment}</span>
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : null}
         </div>
       </div>
 
