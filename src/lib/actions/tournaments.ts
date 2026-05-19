@@ -520,7 +520,7 @@ export async function registerTeamForTournament(input: RegisterTeamInput) {
       where: {
         tournamentId: tournament.id,
         contact: session.user.email ?? "",
-        status: TournamentInvitationStatus.PENDING,
+        status: { in: [TournamentInvitationStatus.PENDING, TournamentInvitationStatus.ACCEPTED] },
       },
       select: { id: true },
     });
