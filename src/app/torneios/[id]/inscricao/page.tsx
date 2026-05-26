@@ -9,11 +9,11 @@ import { ThemedBackground } from "@/components/ThemedBackground";
 
 import { TournamentRegistrationClient, type TournamentRegistrationView } from "@/app/torneios/[id]/inscricao/ui";
 
+export const dynamic = "force-dynamic";
+
 export default async function TournamentRegistrationPage(props: {
   params: { id: string } | Promise<{ id: string }>;
 }) {
-  await redirectIfModuleDisabled("tournaments", "/");
-
   const params = await Promise.resolve(props.params);
   const session = await getServerSession(authOptions);
   const user = session?.user;
@@ -25,6 +25,8 @@ export default async function TournamentRegistrationPage(props: {
   if (user.role !== "CUSTOMER") {
     redirect("/");
   }
+
+  await redirectIfModuleDisabled("tournaments", "/");
 
   const tournamentRow = await prisma.tournament.findUnique({
     where: { id: params.id },

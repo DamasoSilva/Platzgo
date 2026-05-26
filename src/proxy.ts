@@ -59,7 +59,7 @@ function isOwnerArea(pathname: string) {
   return pathname.startsWith("/dashboard") || pathname.startsWith("/sysadmin");
 }
 
-export async function middleware(req: NextRequest, event: NextFetchEvent) {
+export async function proxy(req: NextRequest, event: NextFetchEvent) {
   const { pathname } = req.nextUrl;
   if (shouldSkip(pathname)) {
     return NextResponse.next();

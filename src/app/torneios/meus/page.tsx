@@ -12,6 +12,8 @@ import { formatSportLabel } from "@/lib/utils/sport";
 import { buildActivePaymentWhere } from "@/lib/utils/bookingAvailability";
 import { PaymentStatus, TournamentRegistrationStatus, TournamentStatus } from "@/generated/prisma/enums";
 
+export const dynamic = "force-dynamic";
+
 type SearchParams = {
   registrationId?: string;
   confirmed?: string;
@@ -68,8 +70,6 @@ function isPendingPaymentStatus(status: PaymentStatus) {
 }
 
 export default async function MyTournamentsPage(props: { searchParams?: SearchParams | Promise<SearchParams> }) {
-  await redirectIfModuleDisabled("tournaments", "/");
-
   const session = await getServerSession(authOptions);
   const user = session?.user;
   const userId = user?.id;
@@ -81,6 +81,8 @@ export default async function MyTournamentsPage(props: { searchParams?: SearchPa
   if (user?.role !== "CUSTOMER") {
     redirect("/");
   }
+
+  await redirectIfModuleDisabled("tournaments", "/");
 
   const searchParams = props.searchParams ? await Promise.resolve(props.searchParams) : undefined;
   const highlightedRegistrationId = typeof searchParams?.registrationId === "string" ? searchParams.registrationId : null;

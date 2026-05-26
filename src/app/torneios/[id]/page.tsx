@@ -9,6 +9,8 @@ import { ThemedBackground } from "@/components/ThemedBackground";
 
 import { TournamentDetailClient, type TournamentDetailView } from "./ui";
 
+export const dynamic = "force-dynamic";
+
 export default async function TournamentDetailPage(props: {
   params: { id: string } | Promise<{ id: string }>;
 }) {

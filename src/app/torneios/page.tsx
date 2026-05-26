@@ -9,6 +9,8 @@ import { ThemedBackground } from "@/components/ThemedBackground";
 
 import { TournamentsListClient, type TournamentListItem } from "./ui";
 
+export const dynamic = "force-dynamic";
+
 export default async function TournamentsPage() {
   await redirectIfModuleDisabled("tournaments", "/");
 

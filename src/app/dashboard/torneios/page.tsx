@@ -4,10 +4,12 @@ import { prisma } from "@/lib/prisma";
 
 import { DashboardTournamentsClient, type DashboardTournamentListItem } from "./ui";
 
-export default async function DashboardTournamentsPage() {
-  await redirectIfModuleDisabled("tournaments", "/dashboard");
+export const dynamic = "force-dynamic";
 
+export default async function DashboardTournamentsPage() {
   const { establishmentId } = await requireAdminWithSetupOrRedirect("/dashboard/torneios");
+
+  await redirectIfModuleDisabled("tournaments", "/dashboard");
 
   const rows = await prisma.tournament.findMany({
     where: { establishmentId },

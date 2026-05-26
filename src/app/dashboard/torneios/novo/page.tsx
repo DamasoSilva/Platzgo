@@ -6,10 +6,12 @@ import { SportType } from "@/generated/prisma/enums";
 
 import { DashboardTournamentCreateClient } from "./ui";
 
-export default async function DashboardTournamentCreatePage() {
-  await redirectIfModuleDisabled("tournaments", "/dashboard");
+export const dynamic = "force-dynamic";
 
+export default async function DashboardTournamentCreatePage() {
   const { establishmentId } = await requireAdminWithSetupOrRedirect("/dashboard/torneios/novo");
+
+  await redirectIfModuleDisabled("tournaments", "/dashboard");
 
   const [courts, sportOptionRows] = await Promise.all([
     prisma.court.findMany({

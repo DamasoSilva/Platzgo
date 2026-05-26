@@ -8,9 +8,9 @@ import { ThemedBackground } from "@/components/ThemedBackground";
 
 import { InternalTournamentCreateClient } from "@/app/torneios/novo/ui";
 
-export default async function InternalTournamentCreatePage() {
-  await redirectIfModuleDisabled("tournaments", "/");
+export const dynamic = "force-dynamic";
 
+export default async function InternalTournamentCreatePage() {
   const session = await getServerSession(authOptions);
   const user = session?.user;
 
@@ -21,6 +21,8 @@ export default async function InternalTournamentCreatePage() {
   if (user.role !== "CUSTOMER") {
     redirect("/torneios");
   }
+
+  await redirectIfModuleDisabled("tournaments", "/");
 
   return (
     <div className="ph-page">
