@@ -2,6 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
+import { redirectIfModuleDisabled } from "@/lib/moduleGates";
 import { prisma } from "@/lib/prisma";
 import { CustomerHeader } from "@/components/CustomerHeader";
 import { ThemedBackground } from "@/components/ThemedBackground";
@@ -11,6 +12,8 @@ import { TournamentRegistrationClient, type TournamentRegistrationView } from "@
 export default async function TournamentRegistrationPage(props: {
   params: { id: string } | Promise<{ id: string }>;
 }) {
+  await redirectIfModuleDisabled("tournaments", "/");
+
   const params = await Promise.resolve(props.params);
   const session = await getServerSession(authOptions);
   const user = session?.user;

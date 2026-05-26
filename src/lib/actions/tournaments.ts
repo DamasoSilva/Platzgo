@@ -7,6 +7,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/authz";
+import { ensureModuleEnabled } from "@/lib/moduleGates";
 import { extractAsaasErrorMessage, getPaymentConfig } from "@/lib/payments";
 import { enqueueEmail } from "@/lib/emailQueue";
 import {
@@ -284,6 +285,7 @@ export type CreateTournamentInput = {
 };
 
 export async function createTournamentAsAdmin(input: CreateTournamentInput) {
+  await ensureModuleEnabled("tournaments");
   const session = await requireRole("ADMIN");
 
   const name = input.name?.trim();
@@ -390,6 +392,7 @@ export type CreateInternalTournamentInput = {
 };
 
 export async function createInternalTournament(input: CreateInternalTournamentInput) {
+  await ensureModuleEnabled("tournaments");
   const session = await requireRole("CUSTOMER");
 
   const name = input.name?.trim();
@@ -483,6 +486,7 @@ export type RegisterTeamInput = {
 };
 
 export async function registerTeamForTournament(input: RegisterTeamInput) {
+  await ensureModuleEnabled("tournaments");
   const session = await requireRole("CUSTOMER");
 
   const tournament = await prisma.tournament.findUnique({
@@ -683,6 +687,7 @@ export async function registerTeamForTournament(input: RegisterTeamInput) {
 }
 
 export async function createTournamentInvitations(input: { tournamentId: string; contacts: string[] }) {
+  await ensureModuleEnabled("tournaments");
   const session = await requireRole("CUSTOMER");
 
   const tournament = await prisma.tournament.findUnique({
@@ -731,6 +736,7 @@ export async function createTournamentInvitations(input: { tournamentId: string;
 }
 
 export async function setTournamentStatus(input: { tournamentId: string; status: TournamentStatus }) {
+  await ensureModuleEnabled("tournaments");
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) throw new Error("Nao autenticado");
 
@@ -825,6 +831,7 @@ export async function setTournamentRegistrationStatus(input: {
   registrationId: string;
   status: TournamentRegistrationStatus;
 }) {
+  await ensureModuleEnabled("tournaments");
   const session = await requireRole("ADMIN");
 
   const registration = await prisma.tournamentRegistration.findUnique({
@@ -913,6 +920,7 @@ export type UpdateTournamentInput = {
 };
 
 export async function updateTournament(input: UpdateTournamentInput) {
+  await ensureModuleEnabled("tournaments");
   const session = await requireRole("ADMIN");
 
   const tournament = await prisma.tournament.findUnique({
@@ -961,6 +969,7 @@ export async function updateTournament(input: UpdateTournamentInput) {
 // ──────────────────────────────────────────────
 
 export async function cancelTournament(input: { tournamentId: string }) {
+  await ensureModuleEnabled("tournaments");
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) throw new Error("Nao autenticado");
 
@@ -1061,6 +1070,7 @@ export async function cancelTournament(input: { tournamentId: string }) {
 // ──────────────────────────────────────────────
 
 export async function acceptTournamentInvitation(input: { token: string }) {
+  await ensureModuleEnabled("tournaments");
   const session = await requireRole("CUSTOMER");
 
   const invitation = await prisma.tournamentInvitation.findUnique({
@@ -1110,6 +1120,7 @@ export async function replaceTeamMember(input: {
   newFullName: string;
   newDocumentId: string;
 }) {
+  await ensureModuleEnabled("tournaments");
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) throw new Error("Nao autenticado");
 
@@ -1175,6 +1186,7 @@ export async function createTournamentMatch(input: {
   teamAId?: string;
   teamBId?: string;
 }) {
+  await ensureModuleEnabled("tournaments");
   const session = await requireRole("ADMIN");
 
   const tournament = await prisma.tournament.findUnique({
@@ -1222,6 +1234,7 @@ export async function createTournamentMatch(input: {
 }
 
 export async function generateTournamentMatches(input: { tournamentId: string }) {
+  await ensureModuleEnabled("tournaments");
   const session = await requireRole("ADMIN");
 
   const tournament = await prisma.tournament.findUnique({
@@ -1363,6 +1376,7 @@ export async function recordMatchScore(input: {
   teamAScore: number;
   teamBScore: number;
 }) {
+  await ensureModuleEnabled("tournaments");
   const session = await requireRole("ADMIN");
 
   const match = await prisma.tournamentMatch.findUnique({
@@ -1474,6 +1488,7 @@ async function recalculateStandings(tournamentId: string) {
 // ──────────────────────────────────────────────
 
 export async function getTournamentStandings(tournamentId: string) {
+  await ensureModuleEnabled("tournaments");
   const standings = await prisma.tournamentStanding.findMany({
     where: { tournamentId },
     select: {

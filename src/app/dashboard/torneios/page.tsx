@@ -1,9 +1,12 @@
 import { requireAdminWithSetupOrRedirect } from "@/lib/authz";
+import { redirectIfModuleDisabled } from "@/lib/moduleGates";
 import { prisma } from "@/lib/prisma";
 
 import { DashboardTournamentsClient, type DashboardTournamentListItem } from "./ui";
 
 export default async function DashboardTournamentsPage() {
+  await redirectIfModuleDisabled("tournaments", "/dashboard");
+
   const { establishmentId } = await requireAdminWithSetupOrRedirect("/dashboard/torneios");
 
   const rows = await prisma.tournament.findMany({

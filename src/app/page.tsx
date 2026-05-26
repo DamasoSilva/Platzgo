@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getPublicSiteSettings } from "@/lib/systemSettings";
+import { getPublicModuleSettings, getPublicSiteSettings } from "@/lib/systemSettings";
 import { SearchClient } from "@/components/SearchClient";
 import { SportType } from "@/generated/prisma/enums";
 
@@ -69,10 +69,11 @@ export default async function Home(props: {
 }) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
 
-  const [session, searchParams, footer] = await Promise.all([
+  const [session, searchParams, footer, modules] = await Promise.all([
     getServerSession(authOptions),
     props.searchParams ? Promise.resolve(props.searchParams) : Promise.resolve(undefined),
     getPublicSiteSettings(),
+    getPublicModuleSettings(),
   ]);
 
   const viewerUserId = session?.user?.id ?? null;
@@ -119,6 +120,7 @@ export default async function Home(props: {
       showMarketingCardsOnLoggedOut={!isLoggedIn}
       showFooter
       footer={footer}
+      tournamentsEnabled={modules.tournamentsEnabled}
       viewer={{
         userId: viewerUserId,
         isLoggedIn,

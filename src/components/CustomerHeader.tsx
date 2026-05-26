@@ -21,6 +21,7 @@ type Props = {
   rightSlot?: React.ReactNode;
   homeHref?: string;
   signInCallbackUrl?: string;
+  tournamentsEnabled?: boolean;
 };
 
 function firstTwoNames(name?: string | null): string {
@@ -43,9 +44,31 @@ export function CustomerHeader(props: Props) {
   const role = props.viewer?.role ?? null;
   const isOwner = role === "ADMIN";
   const isCustomerFacing = !isOwner && role !== "SYSADMIN";
+  const [tournamentsEnabled, setTournamentsEnabled] = useState(props.tournamentsEnabled ?? true);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (typeof props.tournamentsEnabled === "boolean") {
+      setTournamentsEnabled(props.tournamentsEnabled);
+      return;
+    }
+
+    let cancelled = false;
+
+    fetch("/api/public/modules", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (cancelled || !data || typeof data.tournamentsEnabled !== "boolean") return;
+        setTournamentsEnabled(data.tournamentsEnabled);
+      })
+      .catch(() => null);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [props.tournamentsEnabled]);
 
   // Protecao contra BFCache (voltar do navegador apos logout).
   // Se a rota for protegida e nao houver mais sessao, força login.
@@ -136,7 +159,7 @@ export function CustomerHeader(props: Props) {
           { label: "Como funciona", href: "/#como-funciona" },
           { label: "Contato", href: "/#contato" },
           { label: "Sorteio de times", href: "/sorteio-times" },
-          { label: "Torneios", href: "/torneios" },
+          ...(tournamentsEnabled ? [{ label: "Torneios", href: "/torneios" }] : []),
           ...(isLoggedIn ? [{ label: "Meus Agendamentos", href: "/meus-agendamentos" }] : []),
           { label: "Agendar agora", href: "/#busca" },
         ]

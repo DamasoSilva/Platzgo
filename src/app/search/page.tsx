@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getPublicSiteSettings } from "@/lib/systemSettings";
+import { getPublicModuleSettings, getPublicSiteSettings } from "@/lib/systemSettings";
 import { SearchClient } from "@/components/SearchClient";
 import { SportType } from "@/generated/prisma/enums";
 
@@ -106,7 +106,7 @@ export default async function SearchPage(props: {
   const time = parseTime(searchParams?.time);
   const maxPrice = parseNumber(searchParams?.maxPrice, 0);
   const onlyFavorites = searchParams?.onlyFavorites === "1";
-  const footer = await getPublicSiteSettings();
+  const [footer, modules] = await Promise.all([getPublicSiteSettings(), getPublicModuleSettings()]);
 
   return (
     <SearchClient
@@ -116,6 +116,7 @@ export default async function SearchPage(props: {
       showMarketingCardsOnLoggedOut={!isLoggedIn}
       showFooter={false}
       footer={footer}
+      tournamentsEnabled={modules.tournamentsEnabled}
       viewer={{
         userId: viewerUserId,
         isLoggedIn,

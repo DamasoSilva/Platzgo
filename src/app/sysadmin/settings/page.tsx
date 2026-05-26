@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { requireRoleOrRedirect } from "@/lib/authz";
 import { FormSubmitButton } from "@/components/FormSubmitButton";
 import {
+  getModuleSettingsForSysadmin,
+  saveModuleSettingsForSysadmin,
   getSmtpSettingsForSysadmin,
   saveSmtpSettings,
   clearSmtpPassword,
@@ -29,7 +31,7 @@ export default async function SysadminSettingsPage(props: {
 
   const searchParams = props.searchParams ? await Promise.resolve(props.searchParams) : undefined;
   const rawTab = (searchParams?.tab ?? "").toString();
-  const tab = rawTab === "payments" || rawTab === "notifications" || rawTab === "password" || rawTab === "site"
+  const tab = rawTab === "payments" || rawTab === "notifications" || rawTab === "password" || rawTab === "site" || rawTab === "modules"
     ? rawTab
     : "smtp";
   const tabParam = `tab=${tab}`;
@@ -39,11 +41,12 @@ export default async function SysadminSettingsPage(props: {
   const walletErr = (searchParams?.walletErr ?? "").trim();
   const walletList = (searchParams?.walletList ?? "").trim();
 
-  const [smtp, notifications, payments, site] = await Promise.all([
+  const [smtp, notifications, payments, site, modules] = await Promise.all([
     getSmtpSettingsForSysadmin(),
     getNotificationSettingsForSysadmin(),
     getPaymentSettingsForSysadmin(),
     getSiteSettingsForSysadmin(),
+    getModuleSettingsForSysadmin(),
   ]);
 
   return (
@@ -85,6 +88,7 @@ export default async function SysadminSettingsPage(props: {
       <div className="flex flex-wrap gap-2 border-b border-border pb-3">
         {([
           { key: "smtp", label: "SMTP" },
+          { key: "modules", label: "Módulos" },
           { key: "payments", label: "Pagamentos" },
           { key: "notifications", label: "Notificações" },
           { key: "site", label: "Site" },
@@ -196,6 +200,55 @@ export default async function SysadminSettingsPage(props: {
                 Enviar email de teste
               </button>
             </div>
+          </form>
+        </div>
+      ) : null}
+
+      {tab === "modules" ? (
+        <div className="ph-card p-6">
+          <h2 className="text-lg font-semibold text-foreground">Módulos do produto</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Ative ou desative módulos inteiros do sistema. Quando desligado, o módulo some da navegação e as rotas/actions passam a bloquear acesso.
+          </p>
+
+          <form
+            className="mt-4 space-y-4"
+            action={async (formData) => {
+              "use server";
+              try {
+                await saveModuleSettingsForSysadmin({
+                  tournamentsEnabled: String(formData.get("tournamentsEnabled") ?? "0"),
+                });
+                redirect(`/sysadmin/settings?${tabParam}&ok=1`);
+              } catch (e) {
+                if ((e as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) throw e;
+                const msg = e instanceof Error ? e.message : "Erro ao salvar";
+                redirect(`/sysadmin/settings?${tabParam}&err=${encodeURIComponent(msg)}`);
+              }
+            }}
+          >
+            <div className="rounded-2xl border border-border bg-card/70 p-4 text-sm text-muted-foreground">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-semibold text-foreground">Torneios</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Controla listagem pública, telas internas do cliente, painel do organizador e server actions do módulo.
+                  </p>
+                </div>
+
+                <label className="flex items-center gap-2 text-sm text-foreground">
+                  <input
+                    name="tournamentsEnabled"
+                    type="checkbox"
+                    value="1"
+                    defaultChecked={modules.tournamentsEnabled}
+                  />
+                  <span>Ativar módulo</span>
+                </label>
+              </div>
+            </div>
+
+            <FormSubmitButton label="Salvar módulos" pendingLabel="Salvando..." className="ph-button" />
           </form>
         </div>
       ) : null}

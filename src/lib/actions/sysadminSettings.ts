@@ -15,8 +15,31 @@ import {
   getSystemSecret,
   getEffectiveSmtpConfig,
   SITE_SETTING_KEYS,
+  MODULE_SETTING_KEYS,
+  parseBooleanSystemSetting,
 } from "@/lib/systemSettings";
 import { PAYMENT_SETTING_KEYS } from "@/lib/payments";
+
+export async function getModuleSettingsForSysadmin() {
+  await requireRole("SYSADMIN");
+
+  const tournamentsEnabled = await getSystemSetting(MODULE_SETTING_KEYS.tournamentsEnabled);
+
+  return {
+    tournamentsEnabled: parseBooleanSystemSetting(tournamentsEnabled, true),
+  };
+}
+
+export async function saveModuleSettingsForSysadmin(input: { tournamentsEnabled: string }) {
+  await requireRole("SYSADMIN");
+
+  await setSystemSetting(
+    MODULE_SETTING_KEYS.tournamentsEnabled,
+    parseBooleanSystemSetting(input.tournamentsEnabled, false) ? "1" : "0"
+  );
+
+  return { ok: true };
+}
 
 export async function saveSmtpSettings(input: {
   host: string;

@@ -2,10 +2,11 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getPublicModuleSettings } from "@/lib/systemSettings";
 import { DashboardLayoutClient } from "./DashboardLayoutClient";
 
 export default async function DashboardLayout(props: { children: React.ReactNode }) {
-  const session = await getServerSession(authOptions);
+  const [session, modules] = await Promise.all([getServerSession(authOptions), getPublicModuleSettings()]);
 
   let hasEstablishment = false;
   let hasAtLeastOneCourt = false;
@@ -41,6 +42,7 @@ export default async function DashboardLayout(props: { children: React.ReactNode
       establishmentProfile={establishmentProfile}
       approvalStatus={approvalStatus}
       approvalNote={approvalNote}
+      tournamentsEnabled={modules.tournamentsEnabled}
     >
       {props.children}
     </DashboardLayoutClient>

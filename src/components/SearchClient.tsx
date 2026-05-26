@@ -51,6 +51,7 @@ type Props = {
     termsUrl?: string | null;
     privacyUrl?: string | null;
   };
+  tournamentsEnabled?: boolean;
   initial: {
     lat: number;
     lng: number;
@@ -465,6 +466,7 @@ export function SearchClient(props: Props) {
     <div className="ph-page-ambient">
       <CustomerHeader
         subtitle="Agende quadras com poucos cliques"
+        tournamentsEnabled={props.tournamentsEnabled}
         viewer={{
           isLoggedIn: props.viewer.isLoggedIn,
           name: props.viewer.name,
@@ -1021,7 +1023,7 @@ export function SearchClient(props: Props) {
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li><Link href="/#busca" className="hover:text-foreground transition-colors">Agendar quadra</Link></li>
                   <li><Link href="/sorteio-times" className="hover:text-foreground transition-colors">Sorteio de times</Link></li>
-                  <li><Link href="/torneios" className="hover:text-foreground transition-colors">Torneios</Link></li>
+                  {props.tournamentsEnabled ? <li><Link href="/torneios" className="hover:text-foreground transition-colors">Torneios</Link></li> : null}
                   <li><Link href="/" className="hover:text-foreground transition-colors">Preços</Link></li>
                 </ul>
               </div>

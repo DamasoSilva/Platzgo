@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
+import { redirectIfModuleDisabled } from "@/lib/moduleGates";
 import { prisma } from "@/lib/prisma";
 import { buildActivePaymentWhere } from "@/lib/utils/bookingAvailability";
 import { CustomerHeader } from "@/components/CustomerHeader";
@@ -9,6 +10,8 @@ import { ThemedBackground } from "@/components/ThemedBackground";
 import { TournamentsListClient, type TournamentListItem } from "./ui";
 
 export default async function TournamentsPage() {
+  await redirectIfModuleDisabled("tournaments", "/");
+
   const session = await getServerSession(authOptions);
   const user = session?.user;
   const isLoggedIn = Boolean(user?.id);

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { requireAdminWithSetupOrRedirect } from "@/lib/authz";
+import { redirectIfModuleDisabled } from "@/lib/moduleGates";
 import { prisma } from "@/lib/prisma";
 
 import { DashboardTournamentDetailClient, type DashboardTournamentDetailView } from "./ui";
@@ -63,6 +64,8 @@ function getOwnerNetCents(payment: { amount_cents: number; payout_amount_cents?:
 export default async function DashboardTournamentDetailPage(props: {
   params: { id: string } | Promise<{ id: string }>;
 }) {
+  await redirectIfModuleDisabled("tournaments", "/dashboard");
+
   const params = await Promise.resolve(props.params);
   const { establishmentId } = await requireAdminWithSetupOrRedirect(`/dashboard/torneios/${params.id}`);
 

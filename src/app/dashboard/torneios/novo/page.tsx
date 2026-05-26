@@ -1,4 +1,5 @@
 import { requireAdminWithSetupOrRedirect } from "@/lib/authz";
+import { redirectIfModuleDisabled } from "@/lib/moduleGates";
 import { prisma } from "@/lib/prisma";
 import { formatSportLabel } from "@/lib/utils/sport";
 import { SportType } from "@/generated/prisma/enums";
@@ -6,6 +7,8 @@ import { SportType } from "@/generated/prisma/enums";
 import { DashboardTournamentCreateClient } from "./ui";
 
 export default async function DashboardTournamentCreatePage() {
+  await redirectIfModuleDisabled("tournaments", "/dashboard");
+
   const { establishmentId } = await requireAdminWithSetupOrRedirect("/dashboard/torneios/novo");
 
   const [courts, sportOptionRows] = await Promise.all([

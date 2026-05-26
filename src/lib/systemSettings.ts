@@ -4,8 +4,16 @@ import { prisma } from "@/lib/prisma";
 
 export type SystemSettingKey = string;
 
+export type SystemModule = "tournaments";
+
 function normalizeKey(key: string): string {
   return (key ?? "").trim();
+}
+
+export function parseBooleanSystemSetting(value: string | null | undefined, fallback = false): boolean {
+  const normalized = (value ?? "").trim().toLowerCase();
+  if (!normalized) return fallback;
+  return normalized === "1" || normalized === "true" || normalized === "on" || normalized === "yes";
 }
 
 function getEncryptionKeyBytes(): Buffer | null {
@@ -147,6 +155,14 @@ export const SITE_SETTING_KEYS = {
   privacyUrl: "site.privacy.url",
 } as const;
 
+export const MODULE_SETTING_KEYS = {
+  tournamentsEnabled: "modules.tournaments.enabled",
+} as const;
+
+const MODULE_DEFAULTS: Record<SystemModule, boolean> = {
+  tournaments: true,
+};
+
 export type PublicSiteSettings = {
   contactEmail: string;
   contactInstagram: string;
@@ -154,6 +170,28 @@ export type PublicSiteSettings = {
   termsUrl: string;
   privacyUrl: string;
 };
+
+export type PublicModuleSettings = {
+  tournamentsEnabled: boolean;
+};
+
+export async function getPublicModuleSettings(): Promise<PublicModuleSettings> {
+  const tournamentsEnabledRaw = await getSystemSetting(MODULE_SETTING_KEYS.tournamentsEnabled);
+
+  return {
+    tournamentsEnabled: parseBooleanSystemSetting(tournamentsEnabledRaw, MODULE_DEFAULTS.tournaments),
+  };
+}
+
+export async function isSystemModuleEnabled(moduleName: SystemModule): Promise<boolean> {
+  const settings = await getPublicModuleSettings();
+
+  if (moduleName === "tournaments") {
+    return settings.tournamentsEnabled;
+  }
+
+  return MODULE_DEFAULTS[moduleName];
+}
 
 export async function getPublicSiteSettings(): Promise<PublicSiteSettings> {
   const [contactEmailRaw, contactInstagramRaw, contactWhatsappRaw, termsUrlRaw, privacyUrlRaw] = await Promise.all([

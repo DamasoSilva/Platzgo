@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
+import { redirectIfModuleDisabled } from "@/lib/moduleGates";
 import { prisma } from "@/lib/prisma";
 import { CustomerHeader } from "@/components/CustomerHeader";
 import { ThemedBackground } from "@/components/ThemedBackground";
@@ -67,6 +68,8 @@ function isPendingPaymentStatus(status: PaymentStatus) {
 }
 
 export default async function MyTournamentsPage(props: { searchParams?: SearchParams | Promise<SearchParams> }) {
+  await redirectIfModuleDisabled("tournaments", "/");
+
   const session = await getServerSession(authOptions);
   const user = session?.user;
   const userId = user?.id;

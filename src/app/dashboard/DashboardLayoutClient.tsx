@@ -69,6 +69,7 @@ export function DashboardLayoutClient(props: {
   establishmentProfile?: EstablishmentProfile | null;
   approvalStatus?: import("@/generated/prisma/enums").EstablishmentApprovalStatus | null;
   approvalNote?: string | null;
+  tournamentsEnabled?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -83,6 +84,7 @@ export function DashboardLayoutClient(props: {
       establishmentProfile={props.establishmentProfile}
       approvalStatus={props.approvalStatus}
       approvalNote={props.approvalNote}
+      tournamentsEnabled={props.tournamentsEnabled}
     >
       {props.children}
     </DashboardLayoutShell>
@@ -98,6 +100,7 @@ function DashboardLayoutShell(props: {
   establishmentProfile?: EstablishmentProfile | null;
   approvalStatus?: import("@/generated/prisma/enums").EstablishmentApprovalStatus | null;
   approvalNote?: string | null;
+  tournamentsEnabled?: boolean;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -160,10 +163,10 @@ function DashboardLayoutShell(props: {
       { href: "/dashboard/pagamentos", label: "Pagamentos", icon: CreditCard },
       { href: "/dashboard/aprovacoes", label: "Aprovacoes", icon: CheckSquare },
       { href: "/dashboard/notificacoes", label: "Notificacoes", icon: Bell },
-      { href: "/dashboard/torneios", label: "Torneios", icon: Trophy },
+      ...(props.tournamentsEnabled ? [{ href: "/dashboard/torneios", label: "Torneios", icon: Trophy }] : []),
       ...base,
     ];
-  }, [props.hasEstablishment, props.hasAtLeastOneCourt]);
+  }, [props.hasEstablishment, props.hasAtLeastOneCourt, props.tournamentsEnabled]);
 
   const isActive = (href: string) => {
     if (href === "/dashboard") return props.pathname === "/dashboard";

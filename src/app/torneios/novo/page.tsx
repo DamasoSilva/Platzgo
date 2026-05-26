@@ -2,12 +2,15 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
+import { redirectIfModuleDisabled } from "@/lib/moduleGates";
 import { CustomerHeader } from "@/components/CustomerHeader";
 import { ThemedBackground } from "@/components/ThemedBackground";
 
 import { InternalTournamentCreateClient } from "@/app/torneios/novo/ui";
 
 export default async function InternalTournamentCreatePage() {
+  await redirectIfModuleDisabled("tournaments", "/");
+
   const session = await getServerSession(authOptions);
   const user = session?.user;
 

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/authz";
+import { ensureModuleEnabled } from "@/lib/moduleGates";
 import { prisma } from "@/lib/prisma";
 import { NotificationType } from "@/generated/prisma/enums";
 
@@ -213,6 +214,7 @@ async function notifyTournamentConnectionDecision(params: {
 }
 
 export async function upsertTournamentPlayerProfile(input: UpsertTournamentPlayerProfileInput) {
+  await ensureModuleEnabled("tournaments");
   const session = await requireRole("CUSTOMER");
   const currentYear = new Date().getFullYear();
 
@@ -242,6 +244,7 @@ export async function upsertTournamentPlayerProfile(input: UpsertTournamentPlaye
 }
 
 export async function publishMyTournamentAvailability(input: SetTournamentAvailabilityInput) {
+  await ensureModuleEnabled("tournaments");
   const session = await requireRole("CUSTOMER");
   const tournamentId = requiredText(input.tournamentId, "O torneio");
 
@@ -276,6 +279,7 @@ export async function publishMyTournamentAvailability(input: SetTournamentAvaila
 }
 
 export async function removeMyTournamentAvailability(input: SetTournamentAvailabilityInput) {
+  await ensureModuleEnabled("tournaments");
   const session = await requireRole("CUSTOMER");
   const tournamentId = requiredText(input.tournamentId, "O torneio");
 
@@ -291,6 +295,7 @@ export async function removeMyTournamentAvailability(input: SetTournamentAvailab
 }
 
 export async function upsertTeamRecruitmentPosting(input: UpsertTeamRecruitmentPostingInput) {
+  await ensureModuleEnabled("tournaments");
   const session = await requireRole("CUSTOMER");
   const tournamentId = requiredText(input.tournamentId, "O torneio");
   const teamId = requiredText(input.teamId, "O time");
@@ -335,6 +340,7 @@ export async function upsertTeamRecruitmentPosting(input: UpsertTeamRecruitmentP
 }
 
 export async function deleteTeamRecruitmentPosting(input: DeleteTeamRecruitmentPostingInput) {
+  await ensureModuleEnabled("tournaments");
   const session = await requireRole("CUSTOMER");
   const postingId = requiredText(input.postingId, "O anuncio");
 
@@ -363,6 +369,7 @@ export async function deleteTeamRecruitmentPosting(input: DeleteTeamRecruitmentP
 }
 
 export async function createTournamentConnectionRequest(input: CreateTournamentConnectionRequestInput) {
+  await ensureModuleEnabled("tournaments");
   const session = await requireRole("CUSTOMER");
   const tournamentId = requiredText(input.tournamentId, "O torneio");
   const teamId = requiredText(input.teamId, "O time");
@@ -485,6 +492,7 @@ export async function createTournamentConnectionRequest(input: CreateTournamentC
 }
 
 export async function updateTournamentConnectionRequestStatus(input: UpdateTournamentConnectionRequestStatusInput) {
+  await ensureModuleEnabled("tournaments");
   const session = await requireRole("CUSTOMER");
   const requestId = requiredText(input.requestId, "A solicitacao");
   const response_note = (input.response_note ?? "").trim() || null;
@@ -544,6 +552,7 @@ export async function updateTournamentConnectionRequestStatus(input: UpdateTourn
 }
 
 export async function removeTournamentPlayerAvailabilityAsAdmin(input: SetTournamentAvailabilityInput & { userId: string }) {
+  await ensureModuleEnabled("tournaments");
   const session = await requireRole("ADMIN");
   const tournamentId = requiredText(input.tournamentId, "O torneio");
   const userId = requiredText(input.userId, "O jogador");
@@ -560,6 +569,7 @@ export async function removeTournamentPlayerAvailabilityAsAdmin(input: SetTourna
 }
 
 export async function deleteTeamRecruitmentPostingAsAdmin(input: DeleteTeamRecruitmentPostingInput) {
+  await ensureModuleEnabled("tournaments");
   const session = await requireRole("ADMIN");
   const postingId = requiredText(input.postingId, "O anuncio");
 
@@ -593,6 +603,7 @@ export async function deleteTeamRecruitmentPostingAsAdmin(input: DeleteTeamRecru
 }
 
 export async function updateTournamentConnectionRequestStatusAsAdmin(input: UpdateTournamentConnectionRequestStatusInput) {
+  await ensureModuleEnabled("tournaments");
   const session = await requireRole("ADMIN");
   const requestId = requiredText(input.requestId, "A solicitacao");
   const response_note = (input.response_note ?? "").trim() || null;
