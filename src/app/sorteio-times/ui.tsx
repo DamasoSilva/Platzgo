@@ -75,6 +75,23 @@ function createTeams(teamCount: number): string[][] {
   return Array.from({ length: teamCount }, () => []);
 }
 
+function resolveEffectiveTeamCount(totalPlayers: number, requestedTeamCount: number, playersPerTeam: number): number {
+  if (requestedTeamCount <= 0 || playersPerTeam <= 0) return requestedTeamCount;
+  return Math.max(requestedTeamCount, Math.ceil(totalPlayers / playersPerTeam));
+}
+
+function describeOverflow(totalPlayers: number, requestedTeamCount: number, playersPerTeam: number) {
+  const effectiveTeamCount = resolveEffectiveTeamCount(totalPlayers, requestedTeamCount, playersPerTeam);
+  const extraTeams = Math.max(0, effectiveTeamCount - requestedTeamCount);
+  const overflowPlayers = Math.max(0, totalPlayers - requestedTeamCount * playersPerTeam);
+
+  return {
+    effectiveTeamCount,
+    extraTeams,
+    overflowPlayers,
+  };
+}
+
 function computeTargetSizes(totalPlayers: number, teamCount: number, playersPerTeam: number): number[] {
   if (teamCount <= 0) return [];
 
@@ -142,9 +159,10 @@ function assignBalancedLevel(players: string[], teams: string[][], targetSizes: 
 }
 
 function randomDraw(players: string[], teamCount: number, playersPerTeam: number): TeamResult {
-  const teams = createTeams(teamCount);
+  const effectiveTeamCount = resolveEffectiveTeamCount(players.length, teamCount, playersPerTeam);
+  const teams = createTeams(effectiveTeamCount);
   const bench: string[] = [];
-  const targetSizes = computeTargetSizes(players.length, teamCount, playersPerTeam);
+  const targetSizes = computeTargetSizes(players.length, effectiveTeamCount, playersPerTeam);
 
   assignRoundRobin(shuffle(players), teams, targetSizes);
 
@@ -156,13 +174,11 @@ function balancedDraw(
   teamCount: number,
   playersPerTeam: number
 ): TeamResult {
-  const teams = createTeams(teamCount);
+  const totalPlayers = levelPlayers.level1.length + levelPlayers.level2.length + levelPlayers.level3.length;
+  const effectiveTeamCount = resolveEffectiveTeamCount(totalPlayers, teamCount, playersPerTeam);
+  const teams = createTeams(effectiveTeamCount);
   const bench: string[] = [];
-  const targetSizes = computeTargetSizes(
-    levelPlayers.level1.length + levelPlayers.level2.length + levelPlayers.level3.length,
-    teamCount,
-    playersPerTeam
-  );
+  const targetSizes = computeTargetSizes(totalPlayers, effectiveTeamCount, playersPerTeam);
 
   const distribute = (players: string[]) => {
     assignBalancedLevel(players, teams, targetSizes);
@@ -253,16 +269,16 @@ export function TeamDrawClient(props: { isLoggedIn: boolean }) {
         setError("Jogadores insuficientes para a quantidade de times.");
         return;
       }
-      const remainder = players.length - teamCount * playersPerTeam;
-      if (remainder > 0) {
-        setWarning((prev) =>
-          prev
-            ? `${prev} ${remainder} jogador(es) extra entraram no último time.`
-            : `${remainder} jogador(es) extra entraram no último time.`
-        );
+      const overflow = describeOverflow(players.length, teamCount, playersPerTeam);
+      if (overflow.extraTeams > 0) {
+        setWarning((prev) => {
+          const teamLabel = overflow.extraTeams === 1 ? "1 novo time" : `${overflow.extraTeams} novos times`;
+          const message = `${overflow.overflowPlayers} jogador(es) excedentes foram distribuídos em ${teamLabel}.`;
+          return prev ? `${prev} ${message}` : message;
+        });
       }
-      if (remainder < 0) {
-        const missing = Math.abs(remainder);
+      if (players.length < teamCount * playersPerTeam) {
+        const missing = teamCount * playersPerTeam - players.length;
         setWarning((prev) =>
           prev
             ? `${prev} Faltam ${missing} jogador(es) para completar todos os times.`
@@ -295,16 +311,16 @@ export function TeamDrawClient(props: { isLoggedIn: boolean }) {
       setError("Jogadores insuficientes para a quantidade de times.");
       return;
     }
-    const remainder = merged.length - teamCount * playersPerTeam;
-    if (remainder > 0) {
-      setWarning((prev) =>
-        prev
-          ? `${prev} ${remainder} jogador(es) extra entraram no último time.`
-          : `${remainder} jogador(es) extra entraram no último time.`
-      );
+    const overflow = describeOverflow(merged.length, teamCount, playersPerTeam);
+    if (overflow.extraTeams > 0) {
+      setWarning((prev) => {
+        const teamLabel = overflow.extraTeams === 1 ? "1 novo time" : `${overflow.extraTeams} novos times`;
+        const message = `${overflow.overflowPlayers} jogador(es) excedentes foram distribuídos em ${teamLabel}. O balanceamento por nível foi mantido.`;
+        return prev ? `${prev} ${message}` : message;
+      });
     }
-    if (remainder < 0) {
-      const missing = Math.abs(remainder);
+    if (merged.length < teamCount * playersPerTeam) {
+      const missing = teamCount * playersPerTeam - merged.length;
       setWarning((prev) =>
         prev
           ? `${prev} Faltam ${missing} jogador(es) para completar todos os times. O balanceamento por nível foi mantido.`
@@ -343,6 +359,7 @@ export function TeamDrawClient(props: { isLoggedIn: boolean }) {
   }
 
   const capacity = teamCount * playersPerTeam;
+  const overflowPreview = describeOverflow(totalPlayers, teamCount, playersPerTeam);
   const remainderPreview = totalPlayers - Math.max(0, Math.min(teamCount, fullTeamsPossible)) * playersPerTeam;
 
   return (
@@ -461,11 +478,16 @@ export function TeamDrawClient(props: { isLoggedIn: boolean }) {
             </div>
           ) : null}
           <p className="mt-2 text-[11px] text-muted-foreground/80 dark:text-muted-foreground">
-            Times completos possíveis: {fullTeamsPossible}. Se sobrarem jogadores, eles entram no último time.
+            Times completos possíveis: {fullTeamsPossible}. Se sobrarem jogadores, o sistema cria automaticamente novo(s) time(s).
           </p>
           {remainderPreview > 0 ? (
             <p className="mt-1 text-[11px] text-muted-foreground/80 dark:text-muted-foreground">
               Excedente estimado: {remainderPreview} jogador(es).
+            </p>
+          ) : null}
+          {overflowPreview.extraTeams > 0 ? (
+            <p className="mt-1 text-[11px] text-muted-foreground/80 dark:text-muted-foreground">
+              Com a lista atual, serão gerados {overflowPreview.effectiveTeamCount} times no total.
             </p>
           ) : null}
 
@@ -514,7 +536,7 @@ export function TeamDrawClient(props: { isLoggedIn: boolean }) {
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-lg font-semibold text-foreground dark:text-foreground">Resultado</h2>
             {mode === "skill" ? (
-              <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-primary dark:bg-emerald-950/40 dark:text-emerald-100">
+              <span className="inline-flex rounded-full border border-emerald-300 bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-950 shadow-sm dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100">
                 Balanceamento por nível aplicado
               </span>
             ) : null}
@@ -542,8 +564,8 @@ export function TeamDrawClient(props: { isLoggedIn: boolean }) {
                   const p2 = Math.round((l2 / total) * 100);
                   const p3 = Math.round((l3 / total) * 100);
                   return (
-                    <div className="mt-3 rounded-xl border border-border bg-card p-3 text-xs text-muted-foreground dark:border-border dark:bg-card/40 dark:text-muted-foreground">
-                      <p className="font-semibold">Resumo por nível</p>
+                    <div className="mt-3 rounded-xl border border-border bg-card/90 p-3 text-xs text-foreground/80 shadow-sm dark:border-border dark:bg-card/40 dark:text-muted-foreground">
+                      <p className="font-semibold text-foreground">Resumo por nível</p>
                       <p className="mt-1">
                         Nível 1: {l1} ({p1}%) • Nível 2: {l2} ({p2}%) • Nível 3: {l3} ({p3}%)
                       </p>
