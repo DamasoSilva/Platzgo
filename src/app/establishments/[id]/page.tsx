@@ -5,14 +5,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { CustomerHeader } from "@/components/CustomerHeader";
-import { formatBRLFromCents } from "@/lib/utils/currency";
 import { toWaMeLink } from "@/lib/utils/whatsapp";
 import { ThemedBackground } from "@/components/ThemedBackground";
-
+import { PhotoStrip } from "@/components/PhotoStrip";
+import { EstablishmentHeader, CourtCard } from "@/components/EstablishmentUI";
 import { EngagementClient } from "./EngagementClient";
-import { formatSportLabel } from "@/lib/utils/sport";
 import { SearchPrefillClient } from "@/components/SearchPrefillClient";
-import { PrefilledCourtLink } from "@/components/PrefilledCourtLink";
 
 export async function generateMetadata(props: {
   params: { id: string } | Promise<{ id: string }>;
@@ -20,7 +18,7 @@ export async function generateMetadata(props: {
   const params = await Promise.resolve(props.params);
   const est = await prisma.establishment.findUnique({
     where: { id: params.id },
-    select: { name: true, description: true },
+    select: { name: true, description: true, slug: true },
   });
 
   if (!est) {
@@ -30,6 +28,10 @@ export async function generateMetadata(props: {
   return {
     title: `${est.name} • PlatzGo!`,
     description: est.description ?? `Agende horários em ${est.name}.`,
+    robots: { index: false, follow: true },
+    alternates: {
+      canonical: est.slug ? `/${est.slug}` : undefined,
+    },
   };
 }
 
@@ -72,6 +74,7 @@ export default async function EstablishmentPage(props: {
       id: true,
       name: true,
       description: true,
+      slug: true,
       photo_urls: true,
       address_text: true,
       whatsapp_number: true,
@@ -96,6 +99,13 @@ export default async function EstablishmentPage(props: {
 
   if (!est) {
     redirect("/");
+  }
+
+  if (est.slug) {
+    const qs = hasDayParam
+      ? `day=${encodeURIComponent(day)}${time ? `&time=${encodeURIComponent(time)}` : ""}`
+      : "";
+    redirect(`/${est.slug}${qs ? `?${qs}` : ""}`);
   }
 
   const [reviews, stats, favorite] = await Promise.all([
@@ -125,10 +135,10 @@ export default async function EstablishmentPage(props: {
       : Promise.resolve(null),
   ]);
 
-  const coverUrl = (est.photo_urls ?? []).find((u) => (u ?? "").trim()) ?? null;
   const waLink = toWaMeLink(est.whatsapp_number);
   const instagramUrl = (est.instagram_url ?? "").trim() || null;
   const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(est.address_text)}`;
+  const photos = (est.photo_urls ?? []).filter((u) => (u ?? "").trim());
 
   return (
     <div className="ph-page">
@@ -146,34 +156,17 @@ export default async function EstablishmentPage(props: {
           rightSlot={null}
         />
 
-        <div className="mx-auto max-w-6xl px-6 pb-12 pt-4">
-          <div className="ph-card p-6 sm:p-8">
-            <p className="text-xs text-muted-foreground">Escolha sua quadra e horário em poucos cliques</p>
-            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-foreground">{est.name}</h1>
-            <p className="mt-2 text-sm text-muted-foreground">{est.address_text}</p>
-            {est.description ? (
-              <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">{est.description}</p>
-            ) : null}
-
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <a href={waLink} target="_blank" rel="noreferrer" className="ph-button-sm">WhatsApp</a>
-              <a href={mapsHref} target="_blank" rel="noreferrer" className="ph-button-secondary-sm">Ver no mapa</a>
-              {instagramUrl ? (
-                <a
-                  href={instagramUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="ph-button-secondary-sm"
-                >
-                  Instagram
-                </a>
-              ) : null}
-            </div>
-
-            <div className="mt-4 inline-flex items-center rounded-full border border-border bg-card/60 px-3 py-1 text-xs text-muted-foreground">
-              Funcionamento: {est.opening_time} às {est.closing_time}
-            </div>
-          </div>
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 pb-16 pt-4">
+          <EstablishmentHeader
+            name={est.name}
+            address={est.address_text}
+            description={est.description}
+            openingTime={est.opening_time}
+            closingTime={est.closing_time}
+            waLink={waLink}
+            mapsHref={mapsHref}
+            instagramUrl={instagramUrl}
+          />
 
           <SearchPrefillClient
             hasDayParam={hasDayParam}
@@ -181,83 +174,52 @@ export default async function EstablishmentPage(props: {
             basePath={`/establishments/${est.id}`}
           />
 
-          {coverUrl ? (
-            <div className="mt-6 overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={coverUrl} alt={`Foto de ${est.name}`} className="aspect-[16/6] h-full w-full object-cover" />
-            </div>
-          ) : null}
-
-          <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {est.courts.map((c) => {
-              const courtCover = (c.photo_urls ?? []).find((u) => (u ?? "").trim()) ?? coverUrl;
-              return (
-                <div
-                  key={c.id}
-                  className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm"
-                >
-                  {courtCover ? (
-                    <div className="w-full bg-secondary/30">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={courtCover} alt={`Foto da quadra ${c.name}`} className="aspect-[16/10] h-full w-full object-cover" />
-                    </div>
-                  ) : null}
-
-                  <div className="p-5">
-                    <p className="text-sm font-semibold text-foreground">{c.name}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {formatSportLabel(c.sport_type)} • {formatBRLFromCents(c.price_per_hour)}/h
-                    </p>
-
-                    <div className="mt-4 flex flex-wrap items-center gap-2">
-                      <PrefilledCourtLink
-                        courtId={c.id}
-                        day={day}
-                        time={time}
-                        hasDayParam={hasDayParam}
-                        hasTimeParam={hasTimeParam}
-                        className="ph-button-sm"
-                      >
-                        Ver horários
-                      </PrefilledCourtLink>
-
-                      <a
-                        href={waLink}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="ph-button-secondary-sm"
-                      >
-                        WhatsApp
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="mt-8">
+            <PhotoStrip photos={photos} altPrefix={`Foto de ${est.name}`} />
           </div>
 
-          {est.courts.length === 0 ? (
-            <div className="mt-6 rounded-3xl ph-surface p-6 text-sm text-muted-foreground">
-              Nenhuma quadra ativa encontrada neste estabelecimento.
+          <section className="mt-12">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground">Quadras disponíveis</h2>
+            <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {est.courts.map((c) => (
+                <CourtCard
+                  key={c.id}
+                  court={c}
+                  coverUrl={photos[0] ?? null}
+                  waLink={waLink}
+                  day={day}
+                  time={time}
+                  hasDayParam={hasDayParam}
+                  hasTimeParam={hasTimeParam}
+                />
+              ))}
             </div>
-          ) : null}
 
-          <EngagementClient
-            establishmentId={est.id}
-            initialIsFavorite={Boolean(favorite)}
-            avgRating={stats._avg.rating ?? 0}
-            reviewsCount={stats._count.rating}
-            isLoggedIn={Boolean(userId)}
-            signInCallbackUrl={callbackUrl}
-            reviews={reviews.map((r) => ({
-              id: r.id,
-              rating: r.rating,
-              comment: r.comment,
-              createdAt: r.createdAt.toISOString(),
-              userName: r.user?.name ?? "Cliente",
-              userId: r.userId,
-            }))}
-          />
+            {est.courts.length === 0 && (
+              <div className="mt-6 rounded-2xl ph-surface p-6 text-sm text-muted-foreground">
+                Nenhuma quadra ativa encontrada neste estabelecimento.
+              </div>
+            )}
+          </section>
+
+          <section className="mt-12">
+            <EngagementClient
+              establishmentId={est.id}
+              initialIsFavorite={Boolean(favorite)}
+              avgRating={stats._avg.rating ?? 0}
+              reviewsCount={stats._count.rating}
+              isLoggedIn={Boolean(userId)}
+              signInCallbackUrl={callbackUrl}
+              reviews={reviews.map((r) => ({
+                id: r.id,
+                rating: r.rating,
+                comment: r.comment,
+                createdAt: r.createdAt.toISOString(),
+                userName: r.user?.name ?? "Cliente",
+                userId: r.userId,
+              }))}
+            />
+          </section>
         </div>
       </div>
     </div>

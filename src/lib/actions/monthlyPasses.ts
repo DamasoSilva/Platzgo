@@ -10,7 +10,7 @@ import { enqueueEmail } from "@/lib/emailQueue";
 import { buildBlockingBookingWhere } from "@/lib/utils/bookingAvailability";
 import { fromTimeZoneDate } from "@/lib/utils/time";
 import { getPaymentConfig, extractAsaasErrorMessage } from "@/lib/payments";
-import { isValidCpfCnpj, normalizeCpfCnpj } from "@/lib/utils/cpfCnpj";
+import { ensureAsaasCustomer } from "@/lib/asaasCustomer";
 import {
   getAppUrl,
   monthlyPassCancelledEmailToCustomer,
@@ -55,7 +55,7 @@ function listWeekdayDates(month: string, weekday: number): Date[] {
   const start = parseMonthStart(month);
   const dates: Date[] = [];
   const monthIndex = start.getMonth();
-  let cursor = new Date(start);
+  const cursor = new Date(start);
   while (cursor.getMonth() === monthIndex) {
     if (cursor.getDay() === weekday) dates.push(new Date(cursor));
     cursor.setDate(cursor.getDate() + 1);
@@ -83,65 +83,6 @@ function parseAsaasExpiration(value: unknown): string | null {
   return parsed.toISOString();
 }
 
-async function ensureAsaasCustomerForMonthly(userId: string, apiKey: string, baseUrl: string) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { id: true, name: true, email: true, whatsapp_number: true, cpf_cnpj: true, asaas_customer_id: true },
-  });
-
-  if (!user) throw new Error("Usuário não encontrado");
-
-  const cpfCnpj = normalizeCpfCnpj(user.cpf_cnpj ?? "");
-  if (!cpfCnpj) throw new Error("CPF/CNPJ é obrigatório para pagamento de mensalidade.");
-  if (!isValidCpfCnpj(cpfCnpj)) throw new Error("CPF/CNPJ inválido para pagamento de mensalidade.");
-
-  if (user.asaas_customer_id) {
-    const checkRes = await fetch(`${baseUrl}/customers/${user.asaas_customer_id}`, {
-      headers: { access_token: apiKey },
-    }).catch(() => null);
-
-    if (checkRes?.ok) {
-      return user.asaas_customer_id;
-    }
-
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { asaas_customer_id: null },
-      select: { id: true },
-    });
-  }
-
-  const payload = {
-    name: user.name ?? user.email,
-    email: user.email,
-    phone: (user.whatsapp_number ?? "").replace(/\D/g, "") || undefined,
-    cpfCnpj,
-  };
-
-  const res = await fetch(`${baseUrl}/customers`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      access_token: apiKey,
-    },
-    body: JSON.stringify(payload),
-  });
-
-  const data = await res.json().catch(() => null);
-  const detail = extractAsaasErrorMessage(data);
-  if (!res.ok || !data?.id) {
-    throw new Error(detail ? `Falha ao criar cliente no Asaas: ${detail}` : "Falha ao criar cliente no Asaas");
-  }
-
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { asaas_customer_id: String(data.id) },
-    select: { id: true },
-  });
-
-  return String(data.id);
-}
-
 async function createMonthlyPassPix(params: {
   passId: string;
   customerId: string;
@@ -155,7 +96,7 @@ async function createMonthlyPassPix(params: {
   }
 
   const baseUrl = config.asaas.baseUrl ?? "https://sandbox.asaas.com/api/v3";
-  const customer = await ensureAsaasCustomerForMonthly(params.customerId, config.asaas.apiKey, baseUrl);
+  const customer = await ensureAsaasCustomer(params.customerId, { apiKey: config.asaas.apiKey, baseUrl });
 
   const dueDate = new Date().toISOString().slice(0, 10);
   const chargeRes = await fetch(`${baseUrl}/payments`, {

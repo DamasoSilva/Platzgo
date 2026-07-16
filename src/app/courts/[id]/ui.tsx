@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState, useTransition, useCallback, memo 
 import { Check, ChevronLeft, ChevronRight, Star } from "lucide-react";
 
 import { CustomerHeader } from "@/components/CustomerHeader";
+import { OptimizedImage } from "@/components/OptimizedImage";
 import { createBooking, getMyBookingStatus } from "@/lib/actions/bookings";
 import { getCourtBookingsForDay } from "@/lib/actions/courts";
 import { createAvailabilityAlert } from "@/lib/actions/availabilityAlerts";
@@ -981,13 +982,11 @@ export function CourtDetailsClient(props: {
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="h-9 w-20 overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/logo" alt="PlatzGo" className="h-full w-full object-contain" />
+                  <OptimizedImage src="/logo" alt="PlatzGo" width={80} height={36} className="h-full w-full object-contain" />
                 </div>
                 <div className="h-6 w-px bg-border" />
                 <div className="h-8 w-20 overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/asaas-logo.svg" alt="Asaas" className="h-full w-full object-contain" />
+                  <OptimizedImage src="/asaas-logo.svg" alt="Asaas" width={80} height={32} className="h-full w-full object-contain" />
                 </div>
               </div>
               <button
@@ -1118,13 +1117,17 @@ export function CourtDetailsClient(props: {
 
               <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-secondary/30">
                 {courtPhotos.length ? (
-                  <div className="relative h-48 w-full">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={courtPhotos[activePhotoIndex]!}
-                      alt={`Foto da quadra ${data.court.name}`}
-                      className="h-full w-full object-cover"
-                    />
+                  <div className="relative">
+                    <div className="relative aspect-[16/10] w-full">
+                      <OptimizedImage
+                        src={courtPhotos[activePhotoIndex]!}
+                        alt={`Foto da quadra ${data.court.name}`}
+                        fill
+                        className="object-cover transition-opacity duration-300"
+                        sizes="(max-width: 1024px) 100vw, 400px"
+                        priority
+                      />
+                    </div>
                     {courtPhotos.length > 1 ? (
                       <>
                         <button
@@ -1134,7 +1137,7 @@ export function CourtDetailsClient(props: {
                               prev === 0 ? courtPhotos.length - 1 : prev - 1
                             )
                           }
-                          className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full border border-border bg-card/80 p-2 text-foreground backdrop-blur"
+                          className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/60 p-2 text-white backdrop-blur-sm hover:bg-black/80 transition-all"
                           aria-label="Imagem anterior"
                         >
                           <ChevronLeft size={16} />
@@ -1146,23 +1149,23 @@ export function CourtDetailsClient(props: {
                               prev === courtPhotos.length - 1 ? 0 : prev + 1
                             )
                           }
-                          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full border border-border bg-card/80 p-2 text-foreground backdrop-blur"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/60 p-2 text-white backdrop-blur-sm hover:bg-black/80 transition-all"
                           aria-label="Próxima imagem"
                         >
                           <ChevronRight size={16} />
                         </button>
 
-                        <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-border bg-card/70 px-2 py-1 backdrop-blur">
+                        <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black/60 px-3 py-1.5 backdrop-blur-sm">
                           {courtPhotos.map((_, idx) => (
                             <button
                               key={`${idx}`}
                               type="button"
                               onClick={() => setActivePhotoIndex(idx)}
-                              className={
+                              className={`rounded-full transition-all duration-300 ${
                                 idx === activePhotoIndex
-                                  ? "h-1.5 w-5 rounded-full bg-primary"
-                                  : "h-1.5 w-1.5 rounded-full bg-muted-foreground/60"
-                              }
+                                  ? "h-2 w-6 bg-primary"
+                                  : "h-2 w-2 bg-white/50 hover:bg-white/80"
+                              }`}
                               aria-label={`Ver imagem ${idx + 1}`}
                             />
                           ))}
@@ -1171,7 +1174,7 @@ export function CourtDetailsClient(props: {
                     ) : null}
                   </div>
                 ) : (
-                  <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
+                  <div className="flex aspect-[16/10] items-center justify-center text-sm text-muted-foreground">
                     Sem imagens cadastradas para esta quadra.
                   </div>
                 )}
@@ -1322,7 +1325,7 @@ export function CourtDetailsClient(props: {
                       <span className="text-sm font-semibold text-foreground">Selecione a data</span>
                       <div className="h-px flex-1 bg-border" />
                     </div>
-                    <div className="flex gap-2.5 overflow-x-auto pb-2 snap-x" style={{ scrollbarWidth: "thin" }}>
+                    <div className="flex gap-2.5 overflow-x-auto pb-2 snap-x scroll-smooth scrollbar-none" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
                       {dateOptions.map((opt) => {
                         const active = day === opt.value;
                         return (
@@ -1331,16 +1334,16 @@ export function CourtDetailsClient(props: {
                             type="button"
                             onClick={() => refreshDay(opt.value)}
                             className={
-                              "flex-shrink-0 w-[76px] rounded-2xl border px-2 py-2.5 text-center transition-all snap-start " +
+                              "flex-shrink-0 min-w-[88px] rounded-2xl border px-3 py-3 text-center transition-all duration-200 snap-start " +
                               (active
-                                ? "border-primary bg-primary/15 shadow-lg shadow-primary/20 ring-2 ring-primary/40"
+                                ? "border-primary bg-primary/15 shadow-lg shadow-primary/20 ring-2 ring-primary/40 scale-105"
                                 : "border-border bg-card hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md")
                             }
                           >
                             <span className={"block text-[11px] font-semibold uppercase tracking-wide " + (active ? "text-primary" : "text-muted-foreground")}>
                               {opt.weekday}
                             </span>
-                            <span className={"mt-0.5 block text-lg font-black leading-none " + (active ? "text-foreground" : "text-foreground/80")}>
+                            <span className={"mt-0.5 block text-xl font-black leading-none " + (active ? "text-foreground" : "text-foreground/80")}>
                               {opt.ddmm}
                             </span>
                             {opt.isToday ? (

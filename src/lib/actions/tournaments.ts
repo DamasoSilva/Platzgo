@@ -32,7 +32,7 @@ import {
   TournamentStatus,
   TournamentVisibility,
 } from "@/generated/prisma/enums";
-import { isValidCpfCnpj, normalizeCpfCnpj } from "@/lib/utils/cpfCnpj";
+import { ensureAsaasCustomer } from "@/lib/asaasCustomer";
 
 function toDate(value: string, fieldLabel: string): Date {
   const date = new Date(value);
@@ -113,83 +113,6 @@ function parseLevels(input?: string[] | string): string[] {
     .filter(Boolean);
 }
 
-function onlyDigits(v: string | null | undefined): string {
-  return (v ?? "").replace(/\D/g, "");
-}
-
-async function ensureAsaasCustomer(userId: string, config: { apiKey?: string; baseUrl?: string }) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { id: true, name: true, email: true, whatsapp_number: true, cpf_cnpj: true, asaas_customer_id: true },
-  });
-
-  if (!user) throw new Error("Usuario nao encontrado");
-  if (!config.apiKey) throw new Error("Asaas nao configurado");
-  const baseUrl = config.baseUrl ?? "https://sandbox.asaas.com/api/v3";
-  const cpfCnpj = normalizeCpfCnpj(user.cpf_cnpj ?? "");
-
-  if (!cpfCnpj) {
-    throw new Error("CPF/CNPJ e obrigatorio para pagamentos online. Atualize seu perfil.");
-  }
-  if (!isValidCpfCnpj(cpfCnpj)) {
-    throw new Error("CPF/CNPJ invalido. Atualize seu perfil.");
-  }
-
-  if (user.asaas_customer_id) {
-    const checkRes = await fetch(`${baseUrl}/customers/${user.asaas_customer_id}`, {
-      headers: { access_token: config.apiKey },
-    }).catch(() => null);
-    if (checkRes?.ok) {
-      await fetch(`${baseUrl}/customers/${user.asaas_customer_id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          access_token: config.apiKey,
-        },
-        body: JSON.stringify({ cpfCnpj }),
-      }).catch(() => null);
-
-      return user.asaas_customer_id;
-    }
-
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { asaas_customer_id: null },
-      select: { id: true },
-    });
-  }
-
-  const payload = {
-    name: user.name ?? user.email,
-    email: user.email,
-    phone: onlyDigits(user.whatsapp_number) || undefined,
-    cpfCnpj,
-  };
-
-  const res = await fetch(`${baseUrl}/customers`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      access_token: config.apiKey,
-    },
-    body: JSON.stringify(payload),
-  });
-
-  const data = await res.json().catch(() => null);
-  const detail = extractAsaasErrorMessage(data);
-  if (!res.ok || !data?.id) {
-    throw new Error(detail ? `Falha ao criar cliente no Asaas: ${detail}` : "Falha ao criar cliente no Asaas");
-  }
-
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { asaas_customer_id: String(data.id) },
-    select: { id: true },
-  });
-
-  return String(data.id);
-}
-
 async function createAsaasPixCharge(params: {
   referenceId: string;
   amountCents: number;
@@ -238,7 +161,7 @@ async function createAsaasPixCharge(params: {
   const localExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
   try {
     const pixRes = await fetch(
-      `${config.asaas.baseUrl ?? "https:/api.asaas.com/api/v3"}/payments/${data.id}/pixQrCode`,
+      `${config.asaas.baseUrl ?? "https://sandbox.asaas.com/api/v3"}/payments/${data.id}/pixQrCode`,
       {
         method: "GET",
         headers: {
