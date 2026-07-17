@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Calendar, Clock, MapPin, CreditCard, CheckCircle2, XCircle, AlertCircle, RefreshCw, Trash2 } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, MapPin, CreditCard, CheckCircle2, XCircle, AlertCircle, RefreshCw, Trash2, Receipt } from "lucide-react";
 
 import { BookingStatus } from "@/generated/prisma/enums";
 import { cancelBookingAsCustomer, rescheduleBookingAsCustomer } from "@/lib/actions/bookings";
@@ -288,21 +288,21 @@ const canRefreshPix = Boolean(paymentExpiresAt && paymentExpiresAt.getTime() <= 
               </span>
             </div>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Calendar className="h-4 w-4 flex-shrink-0" />
-                <span>{dateLabel}</span>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <div className="inline-flex items-center gap-2.5 rounded-xl bg-secondary/50 px-4 py-3">
+                <Calendar className="h-5 w-5 text-primary flex-shrink-0" />
+                <span className="text-sm font-semibold text-foreground">{dateLabel}</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Clock className="h-4 w-4 flex-shrink-0" />
-                <span>{timeLabel}</span>
+              <div className="inline-flex items-center gap-2.5 rounded-xl bg-secondary/50 px-4 py-3">
+                <Clock className="h-5 w-5 text-primary flex-shrink-0" />
+                <span className="text-sm font-bold text-foreground tracking-tight">{timeLabel}</span>
               </div>
               {props.booking.court.establishment.address_text && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground sm:col-span-2">
-                  <MapPin className="h-4 w-4 flex-shrink-0" />
-                  <span className="truncate">{props.booking.court.establishment.address_text}</span>
-                </div>
-              )}
+              <div className="flex items-center gap-2.5 text-sm text-muted-foreground mt-2">
+                <MapPin className="h-4 w-4 flex-shrink-0" />
+                <span className="truncate">{props.booking.court.establishment.address_text}</span>
+              </div>
+            )}
             </div>
 
             <div className="mt-4 flex items-center justify-between pt-3 border-t border-border/50">
@@ -312,6 +312,7 @@ const canRefreshPix = Boolean(paymentExpiresAt && paymentExpiresAt.getTime() <= 
               </div>
               <div className="flex items-center gap-2">
                 <Link href={{ pathname: `/courts/${props.booking.court.id}`, query: { day: props.booking.start_time.slice(0, 10) } }} className="ph-button-secondary-sm">Ver quadra</Link>
+                <Link href={`/meus-agendamentos/${props.booking.id}/extrato`} target="_blank" className="ph-button-secondary-sm inline-flex items-center gap-1"><Receipt className="h-3.5 w-3.5" /> Extrato</Link>
               </div>
             </div>
           </div>
