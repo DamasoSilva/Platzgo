@@ -1,0 +1,10 @@
+.git
+.github
+.vscode
+.kilo
+node_modules
+.next
+*.md
+docs
+tests
+Logo
