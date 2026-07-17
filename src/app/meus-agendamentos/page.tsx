@@ -12,8 +12,9 @@ import { deleteAllMyReadNotifications, deleteMyNotification, markAllMyNotificati
 import { ThemedBackground } from "@/components/ThemedBackground";
 import { ReviewFormClient } from "@/app/meus-agendamentos/ReviewFormClient";
 import { formatSportLabel } from "@/lib/utils/sport";
-import { MyBookingsFiltersClient } from "@/app/meus-agendamentos/MyBookingsFiltersClient";
 import { buildActivePaymentWhere } from "@/lib/utils/bookingAvailability";
+import { formatHHMM } from "@/lib/utils/time";
+import { Calendar, Clock, CreditCard, AlertCircle, CheckCircle2, XCircle, ChevronRight, Bell } from "lucide-react";
 
 type SearchParams = {
   start?: string;
@@ -45,18 +46,22 @@ function formatDateTimeBR(d: Date): string {
   }).format(d);
 }
 
-function statusLabel(s: BookingStatus): string {
-  switch (s) {
-    case BookingStatus.PENDING:
-      return "Pendente";
-    case BookingStatus.CONFIRMED:
-      return "Confirmado";
-    case BookingStatus.CANCELLED:
-      return "Cancelado";
-    default:
-      return s;
-  }
+function formatDateBR(d: Date): string {
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    weekday: "long",
+  }).format(d);
 }
+
+const TABS = [
+  { key: "all", label: "Todos" },
+  { key: "confirmed", label: "Confirmados" },
+  { key: "awaiting_payment", label: "Aguardando pagamento" },
+  { key: "pending", label: "Pendentes" },
+  { key: "finished", label: "Finalizados" },
+  { key: "cancelled", label: "Cancelados" },
+] as const;
 
 export default async function MyBookingsPage(props: { searchParams?: SearchParams | Promise<SearchParams> }) {
   const session = await getServerSession(authOptions);
@@ -103,7 +108,7 @@ export default async function MyBookingsPage(props: { searchParams?: SearchParam
     ]);
   });
 
-  const where: any = { customerId: userId };
+  const where: Record<string, unknown> = { customerId: userId };
   if (startDate || endDate) {
     where.start_time = {
       ...(startDate ? { gte: startDate } : {}),
@@ -153,6 +158,7 @@ export default async function MyBookingsPage(props: { searchParams?: SearchParam
             id: true,
             name: true,
             sport_type: true,
+            photo_urls: true,
             establishment: {
               select: {
                 id: true,
@@ -186,242 +192,273 @@ export default async function MyBookingsPage(props: { searchParams?: SearchParam
     }),
   ]);
 
+  const groupedByMonth = bookings.reduce<Record<string, typeof bookings>>((acc, b) => {
+    const key = b.start_time.toISOString().slice(0, 7);
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(b);
+    return acc;
+  }, {});
+
   return (
     <div className="ph-page">
       <ThemedBackground />
       <div className="relative z-10">
-      <CustomerHeader
-        variant="light"
-        viewer={{
-          isLoggedIn: true,
-          name: session?.user?.name ?? null,
-          image: session?.user?.image ?? null,
-          role: session?.user?.role ?? null,
-        }}
-        rightSlot={null}
-      />
+        <CustomerHeader
+          variant="light"
+          viewer={{
+            isLoggedIn: true,
+            name: session?.user?.name ?? null,
+            image: session?.user?.image ?? null,
+            role: session?.user?.role ?? null,
+          }}
+          rightSlot={null}
+        />
 
-      <div className="mx-auto max-w-4xl px-6 pb-10">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground dark:text-foreground">Meus agendamentos</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Histórico dos seus agendamentos.</p>
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 pb-16 pt-4">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">Meus agendamentos</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Gerencie suas reservas e histórico de quadras.</p>
           </div>
-        </div>
 
-        <MyBookingsFiltersClient start={startParam} end={endParam} status={statusParam} />
-
-        {notifications.length ? (
-          <div className="mt-6 rounded-3xl ph-surface p-6">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-sm font-semibold text-foreground dark:text-foreground">Notificações</h2>
-                <p className="mt-1 text-xs text-muted-foreground">Confirmações e cancelamentos recentes.</p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
+          {/* Tabs */}
+          <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-none" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+            {TABS.map((tab) => {
+              const active = statusParam === tab.key;
+              return (
                 <Link
-                  href="/meus-agendamentos/notificacoes"
-                  className="ph-button-secondary-xs"
-                >
-                  Histórico
-                </Link>
-
-                {unreadCount ? (
-                  <form action={markAllMyNotificationsAsRead}>
-                    <button
-                      type="submit"
-                      className="ph-button-secondary-xs"
-                    >
-                      Marcar todas como lidas
-                    </button>
-                  </form>
-                ) : null}
-
-                <form action={deleteAllMyReadNotifications}>
-                  <button
-                    type="submit"
-                    className="ph-button-secondary-xs"
-                  >
-                    Excluir lidas
-                  </button>
-                </form>
-              </div>
-            </div>
-
-            <div className="mt-4 space-y-3">
-              {notifications.map((n) => (
-                <div
-                  key={n.id}
+                  key={tab.key}
+                  href={`/meus-agendamentos${tab.key !== "all" ? `?status=${tab.key}` : ""}`}
                   className={
-                    "rounded-2xl border p-4 " +
-                    (n.readAt
-                      ? "border-border bg-card dark:border-border dark:bg-card"
-                      : "border-primary/40 bg-primary/10 dark:border-primary/40 dark:bg-primary/10")
+                    "flex-shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors " +
+                    (active
+                      ? "bg-primary/20 text-primary ring-1 ring-primary/40"
+                      : "bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary/30")
                   }
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        {!n.readAt ? <span className="inline-flex h-2 w-2 rounded-full bg-primary" /> : null}
-                        <p className="truncate text-sm font-semibold text-foreground dark:text-foreground">{n.title}</p>
+                  {tab.label}
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Notifications */}
+          {notifications.length > 0 && (
+            <details className="mt-6 rounded-2xl border border-border bg-card">
+              <summary className="cursor-pointer p-5 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Bell className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold text-foreground">Notificações</span>
+                  {unreadCount > 0 && (
+                    <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
+                      {unreadCount}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2" onClick={(e) => e.preventDefault()}>
+                  {unreadCount > 0 && (
+                    <form action={markAllMyNotificationsAsRead}>
+                      <button type="submit" className="ph-button-secondary-xs">Marcar lidas</button>
+                    </form>
+                  )}
+                  <form action={deleteAllMyReadNotifications}>
+                    <button type="submit" className="ph-button-secondary-xs">Limpar lidas</button>
+                  </form>
+                </div>
+              </summary>
+              <div className="px-5 pb-5 space-y-2">
+                {notifications.map((n) => (
+                  <div
+                    key={n.id}
+                    className={
+                      "rounded-xl p-4 " +
+                      (n.readAt
+                        ? "bg-secondary/30"
+                        : "bg-primary/5 border border-primary/20")
+                    }
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          {!n.readAt && <span className="inline-flex h-2 w-2 rounded-full bg-primary flex-shrink-0" />}
+                          <p className="text-sm font-semibold text-foreground">{n.title}</p>
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground">{n.body}</p>
+                        <p className="mt-2 text-[11px] text-muted-foreground/70">{formatDateTimeBR(n.createdAt)}</p>
                       </div>
-                      <p className="mt-1 text-xs text-muted-foreground">{n.body}</p>
-                      <p className="mt-2 text-[11px] text-muted-foreground/80 dark:text-muted-foreground/80">{formatDateTimeBR(n.createdAt)}</p>
-                    </div>
-                    {n.bookingId ? (
-                      <div className="flex shrink-0 items-center gap-2">
-                        <Link
-                          href={`/meus-agendamentos/${n.bookingId}`}
-                          className="rounded-full border border-border bg-card px-3 py-2 text-xs font-bold text-foreground hover:bg-card dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-secondary"
-                        >
-                          Ver
-                        </Link>
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        {n.bookingId && (
+                          <Link href={`/meus-agendamentos/${n.bookingId}`} className="ph-button-secondary-xs">Ver</Link>
+                        )}
                         <form action={deleteMyNotification.bind(null, n.id)}>
-                          <button
-                            type="submit"
-                            className="rounded-full border border-border bg-card px-3 py-2 text-xs font-bold text-foreground hover:bg-card dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-secondary"
-                          >
-                            Excluir
-                          </button>
+                          <button type="submit" className="ph-button-secondary-xs">Excluir</button>
                         </form>
                       </div>
-                    ) : (
-                      <form action={deleteMyNotification.bind(null, n.id)} className="shrink-0">
-                        <button
-                          type="submit"
-                          className="rounded-full border border-border bg-card px-3 py-2 text-xs font-bold text-foreground hover:bg-card dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-secondary"
-                        >
-                          Excluir
-                        </button>
-                      </form>
-                    )}
+                    </div>
                   </div>
+                ))}
+              </div>
+            </details>
+          )}
+
+          {/* Bookings list */}
+          <div className="mt-6 space-y-10">
+            {Object.entries(groupedByMonth).map(([monthKey, monthBookings]) => {
+              const [year, month] = monthKey.split("-");
+              const monthLabel = new Date(Number(year), Number(month) - 1, 1)
+                .toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+
+              return (
+                <section key={monthKey}>
+                  <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                    {monthLabel}
+                  </h2>
+                  <div className="space-y-3">
+                    {monthBookings.map((b) => {
+                      const pendingPayment = b.payments[0] ?? null;
+                      const awaitingPayment = b.status === BookingStatus.PENDING && Boolean(pendingPayment);
+                      const isFinished = b.status === BookingStatus.CONFIRMED && b.end_time < now;
+
+                      const statusConfig = isFinished
+                        ? { label: "Finalizado", icon: CheckCircle2, className: "bg-secondary text-muted-foreground" }
+                        : awaitingPayment
+                          ? { label: "Aguardando pagamento", icon: CreditCard, className: "bg-amber-500/15 text-amber-500" }
+                          : b.status === BookingStatus.CONFIRMED
+                            ? { label: "Confirmado", icon: CheckCircle2, className: "bg-emerald-500/15 text-emerald-500" }
+                            : b.status === BookingStatus.CANCELLED
+                              ? { label: "Cancelado", icon: XCircle, className: "bg-secondary text-muted-foreground" }
+                              : { label: "Pendente", icon: AlertCircle, className: "bg-amber-500/15 text-amber-500" };
+
+                      const StatusIcon = statusConfig.icon;
+
+                      return (
+                        <div key={b.id} className="group rounded-2xl border border-border bg-card hover:border-primary/20 transition-all duration-200">
+                          <div className="p-5">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-secondary/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                    {formatSportLabel(b.court.sport_type)}
+                                  </span>
+                                  {b.total_price_cents === 0 && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                                      Mensalidade
+                                    </span>
+                                  )}
+                                  {b.rescheduledFromId && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-2 py-0.5 text-[10px] font-semibold text-sky-500">
+                                      Reagendado
+                                    </span>
+                                  )}
+                                  {b.rescheduledTo?.id && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/10 px-2 py-0.5 text-[10px] font-semibold text-violet-500">
+                                      Já reagendado
+                                    </span>
+                                  )}
+                                </div>
+
+                                <h3 className="font-semibold text-foreground truncate">
+                                  {b.court.establishment.name}
+                                </h3>
+                                <p className="text-sm text-muted-foreground truncate">{b.court.name}</p>
+
+                                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                                  <span className="inline-flex items-center gap-1">
+                                    <Calendar className="h-3.5 w-3.5" />
+                                    {formatDateBR(b.start_time)}
+                                  </span>
+                                  <span className="inline-flex items-center gap-1">
+                                    <Clock className="h-3.5 w-3.5" />
+                                    {formatHHMM(b.start_time)} – {formatHHMM(b.end_time)}
+                                  </span>
+                                </div>
+
+                                {b.status === BookingStatus.CANCELLED && (
+                                  <div className="mt-2 text-xs text-muted-foreground">
+                                    {b.cancel_reason && <span>Motivo: {b.cancel_reason}</span>}
+                                    {b.cancel_fee_cents > 0 && (
+                                      <span className="ml-2">Multa: {formatBRLFromCents(b.cancel_fee_cents)}</span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="text-right flex-shrink-0">
+                                <p className="text-lg font-bold text-foreground">
+                                  {b.total_price_cents === 0 ? "Mensal" : formatBRLFromCents(b.total_price_cents)}
+                                </p>
+                                <span className={`mt-1 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold ${statusConfig.className}`}>
+                                  <StatusIcon className="h-3 w-3" />
+                                  {statusConfig.label}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="mt-4 flex flex-wrap items-center gap-2 pt-3 border-t border-border/50">
+                              <Link
+                                href={`/meus-agendamentos/${b.id}`}
+                                className="ph-button-secondary-xs inline-flex items-center gap-1"
+                              >
+                                Detalhes
+                                <ChevronRight className="h-3 w-3" />
+                              </Link>
+
+                              <Link
+                                href={{ pathname: `/courts/${b.court.id}`, query: { day: b.start_time.toISOString().slice(0, 10) } }}
+                                className="ph-button-secondary-xs"
+                              >
+                                Ver quadra
+                              </Link>
+
+                              {pendingPayment && (
+                                <Link
+                                  href={`/meus-agendamentos/${b.id}?pay=1`}
+                                  className="ph-button-sm"
+                                >
+                                  Pagar agora
+                                </Link>
+                              )}
+                            </div>
+                          </div>
+
+                          {isFinished && (
+                            <div className="border-t border-border px-5 py-4 bg-secondary/20 rounded-b-2xl">
+                              <ReviewFormClient
+                                establishmentId={b.court.establishment.id}
+                                establishmentName={b.court.establishment.name}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              );
+            })}
+
+            {bookings.length === 0 && (
+              <div className="rounded-2xl border border-border bg-card p-10 text-center">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-secondary/50">
+                  <Calendar className="h-8 w-8 text-muted-foreground" />
                 </div>
-              ))}
-            </div>
+                <h3 className="mt-4 text-lg font-semibold text-foreground">
+                  {statusParam !== "all" ? "Nenhum agendamento neste status" : "Nenhum agendamento encontrado"}
+                </h3>
+                <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
+                  {statusParam !== "all"
+                    ? "Tente selecionar outro filtro para ver outros agendamentos."
+                    : "Você ainda não fez nenhum agendamento. Encontre a quadra ideal para o seu jogo."}
+                </p>
+                <div className="mt-6">
+                  <Link href="/" className="ph-button inline-flex items-center gap-2">
+                    Buscar quadras
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
-        ) : null}
-
-        <div className="mt-6 space-y-4">
-          {bookings.map((b) => {
-            const pendingPayment = b.payments[0] ?? null;
-            const awaitingPayment = b.status === BookingStatus.PENDING && Boolean(pendingPayment);
-            const isFinished = b.status === BookingStatus.CONFIRMED && b.end_time < now;
-            const statusText = isFinished
-              ? "Finalizado"
-              : awaitingPayment
-                ? "Aguardando pagamento"
-                : b.status === BookingStatus.PENDING
-                  ? "Pagamento pendente"
-                  : statusLabel(b.status);
-            const statusClass =
-              isFinished
-                ? "bg-secondary text-foreground dark:bg-secondary dark:text-foreground"
-                : b.status === BookingStatus.CONFIRMED
-                  ? "bg-primary/15 text-primary"
-                  : b.status === BookingStatus.CANCELLED
-                    ? "bg-secondary text-foreground dark:bg-secondary dark:text-foreground"
-                    : "bg-amber-100 text-amber-900";
-
-            return (
-              <div key={b.id} className="rounded-3xl ph-surface p-6">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-foreground dark:text-foreground">
-                      {b.court.establishment.name} • {b.court.name}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {formatSportLabel(b.court.sport_type)} • {formatDateTimeBR(b.start_time)} → {formatDateTimeBR(b.end_time)}
-                    </p>
-
-                    {b.total_price_cents === 0 ? (
-                      <span className="mt-2 inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-primary dark:bg-primary/20 dark:text-primary">
-                        Mensalidade
-                      </span>
-                    ) : null}
-
-                    {b.status === BookingStatus.CANCELLED ? (
-                      <p className="mt-2 text-xs text-muted-foreground">
-                        Motivo: {b.cancel_reason ? b.cancel_reason : "Cancelado"}
-                      </p>
-                    ) : null}
-
-                    {b.status === BookingStatus.CANCELLED && b.cancel_fee_cents > 0 ? (
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Multa aplicada: {formatBRLFromCents(b.cancel_fee_cents)}
-                      </p>
-                    ) : null}
-                  </div>
-
-                  <div className="text-right">
-                    <p className="text-sm font-semibold text-foreground dark:text-foreground">
-                      {b.total_price_cents === 0 ? `${formatBRLFromCents(0)} (mensalidade)` : formatBRLFromCents(b.total_price_cents)}
-                    </p>
-                    <p className={`mt-1 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusClass}`}>{statusText}</p>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Link
-                    href={`/meus-agendamentos/${b.id}`}
-                    className="rounded-full border border-border bg-card px-4 py-2 text-xs font-bold text-foreground hover:bg-card dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-card"
-                  >
-                    Detalhes
-                  </Link>
-                  <Link
-                    href={{ pathname: `/courts/${b.court.id}`, query: { day: b.start_time.toISOString().slice(0, 10) } }}
-                    className="rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:scale-105 transition-all"
-                  >
-                    Ver quadra
-                  </Link>
-
-                  {pendingPayment ? (
-                    <Link
-                      href={`/meus-agendamentos/${b.id}?pay=1`}
-                      className="rounded-full border border-primary/30 bg-primary/10 px-4 py-2 text-xs font-bold text-primary hover:bg-primary/20 dark:border-emerald-900/50 dark:bg-primary/20 dark:text-primary"
-                    >
-                      Pagar agora
-                    </Link>
-                  ) : null}
-
-                  {b.rescheduledFromId ? (
-                    <span className="inline-flex items-center rounded-full bg-sky-100 px-3 py-2 text-xs font-semibold text-sky-900 dark:bg-sky-950/30 dark:text-sky-100">
-                      Reagendado
-                    </span>
-                  ) : null}
-
-                  {b.rescheduledTo?.id ? (
-                    <span className="inline-flex items-center rounded-full bg-violet-100 px-3 py-2 text-xs font-semibold text-violet-900 dark:bg-violet-950/30 dark:text-violet-100">
-                      Já reagendado
-                    </span>
-                  ) : null}
-                </div>
-
-                {isFinished ? (
-                  <div className="mt-4">
-                    <ReviewFormClient
-                      establishmentId={b.court.establishment.id}
-                      establishmentName={b.court.establishment.name}
-                    />
-                  </div>
-                ) : null}
-              </div>
-            );
-          })}
-
-          {bookings.length === 0 ? (
-            <div className="rounded-3xl ph-surface p-6">
-              <p className="text-sm text-muted-foreground">Você ainda não fez nenhum agendamento.</p>
-              <div className="mt-4">
-                <Link href="/" className="rounded-full bg-primary px-5 py-2 text-sm font-bold text-primary-foreground hover:scale-105 transition-all">
-                  Buscar quadras
-                </Link>
-              </div>
-            </div>
-          ) : null}
         </div>
-      </div>
       </div>
     </div>
   );

@@ -99,7 +99,7 @@ export default async function SearchPage(props: {
 
   const lat = hasCoordsFromQuery ? latFromQuery : hasCoordsFromUser ? (userLat ?? -23.55052) : -23.55052;
   const lng = hasCoordsFromQuery ? lngFromQuery : hasCoordsFromUser ? (userLng ?? -46.633308) : -46.633308;
-  const radiusKm = parseNumber(searchParams?.radiusKm, 10);
+  const radiusKm = parseNumber(searchParams?.radiusKm, 15);
   const sport = parseSport(searchParams?.sport);
   const dayFromQuery = typeof searchParams?.day === "string" && searchParams.day.trim().length > 0;
   const day = parseDay(searchParams?.day);

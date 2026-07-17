@@ -8,7 +8,7 @@ import { CustomerHeader } from "@/components/CustomerHeader";
 import { toWaMeLink } from "@/lib/utils/whatsapp";
 import { ThemedBackground } from "@/components/ThemedBackground";
 import { PhotoStrip } from "@/components/PhotoStrip";
-import { EstablishmentHeader, CourtCard } from "@/components/EstablishmentUI";
+import { EstablishmentHeader, CourtCard, CourtSidebarCard } from "@/components/EstablishmentUI";
 import { EngagementClient } from "./EngagementClient";
 import { SearchPrefillClient } from "@/components/SearchPrefillClient";
 
@@ -92,6 +92,7 @@ export default async function EstablishmentPage(props: {
           sport_type: true,
           price_per_hour: true,
           photo_urls: true,
+          amenities: true,
         },
       },
     },
@@ -178,48 +179,69 @@ export default async function EstablishmentPage(props: {
             <PhotoStrip photos={photos} altPrefix={`Foto de ${est.name}`} />
           </div>
 
-          <section className="mt-12">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">Quadras disponíveis</h2>
-            <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {est.courts.map((c) => (
-                <CourtCard
-                  key={c.id}
-                  court={c}
-                  coverUrl={photos[0] ?? null}
+          <div className="mt-10 grid gap-6 lg:grid-cols-12 lg:items-start">
+            <div className="lg:col-span-4 lg:sticky lg:top-24">
+              {est.courts.length > 0 ? (
+                <CourtSidebarCard
+                  court={est.courts[0]}
                   waLink={waLink}
+                  avgRating={stats._avg.rating ?? null}
+                  reviewsCount={stats._count.rating}
                   day={day}
                   time={time}
                   hasDayParam={hasDayParam}
                   hasTimeParam={hasTimeParam}
                 />
-              ))}
+              ) : null}
             </div>
 
-            {est.courts.length === 0 && (
-              <div className="mt-6 rounded-2xl ph-surface p-6 text-sm text-muted-foreground">
-                Nenhuma quadra ativa encontrada neste estabelecimento.
-              </div>
-            )}
-          </section>
+            <div className="lg:col-span-8 space-y-8">
+              <section>
+                <h2 className="text-xl font-bold tracking-tight text-foreground">
+                  Quadras disponíveis ({est.courts.length})
+                </h2>
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  {est.courts.map((c) => (
+                    <CourtCard
+                      key={c.id}
+                      court={c}
+                      coverUrl={photos[0] ?? null}
+                      waLink={waLink}
+                      day={day}
+                      time={time}
+                      hasDayParam={hasDayParam}
+                      hasTimeParam={hasTimeParam}
+                    />
+                  ))}
+                </div>
 
-          <section className="mt-12">
-            <EngagementClient
-              establishmentId={est.id}
-              initialIsFavorite={Boolean(favorite)}
-              avgRating={stats._avg.rating ?? 0}
-              reviewsCount={stats._count.rating}
-              isLoggedIn={Boolean(userId)}
-              signInCallbackUrl={callbackUrl}
-              reviews={reviews.map((r) => ({
-                id: r.id,
-                rating: r.rating,
-                comment: r.comment,
-                createdAt: r.createdAt.toISOString(),
-                userName: r.user?.name ?? "Cliente",
-                userId: r.userId,
-              }))}
-            />
-          </section>
+                {est.courts.length === 0 && (
+                  <div className="mt-6 rounded-2xl ph-surface p-6 text-sm text-muted-foreground">
+                    Nenhuma quadra ativa encontrada neste estabelecimento.
+                  </div>
+                )}
+              </section>
+
+              <section>
+                <EngagementClient
+                  establishmentId={est.id}
+                  initialIsFavorite={Boolean(favorite)}
+                  avgRating={stats._avg.rating ?? 0}
+                  reviewsCount={stats._count.rating}
+                  isLoggedIn={Boolean(userId)}
+                  signInCallbackUrl={callbackUrl}
+                  reviews={reviews.map((r) => ({
+                    id: r.id,
+                    rating: r.rating,
+                    comment: r.comment,
+                    createdAt: r.createdAt.toISOString(),
+                    userName: r.user?.name ?? "Cliente",
+                    userId: r.userId,
+                  }))}
+                />
+              </section>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -1190,6 +1190,24 @@ export function CourtDetailsClient(props: {
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   <div className="rounded-2xl border border-border bg-secondary/50 p-4">
+                    <p className="text-xs font-medium text-muted-foreground">Comodidades</p>
+                    <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                      {(data.court.amenities ?? []).length ? (
+                        (data.court.amenities ?? []).map((t) => (
+                          <span
+                            key={t}
+                            className="rounded-full border border-border bg-card px-3 py-1 text-foreground"
+                          >
+                            {t}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Sem comodidades informadas.</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-border bg-secondary/50 p-4">
                     <p className="text-xs font-medium text-muted-foreground">Endereço</p>
                     <p className="mt-1 text-sm text-foreground">
                       {data.court.establishment.address_text}
@@ -1211,24 +1229,6 @@ export function CourtDetailsClient(props: {
                         loading="lazy"
                         referrerPolicy="no-referrer-when-downgrade"
                       />
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl border border-border bg-secondary/50 p-4">
-                    <p className="text-xs font-medium text-muted-foreground">Comodidades</p>
-                    <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                      {(data.court.amenities ?? []).length ? (
-                        (data.court.amenities ?? []).map((t) => (
-                          <span
-                            key={t}
-                            className="rounded-full border border-border bg-card px-3 py-1 text-foreground"
-                          >
-                            {t}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-sm text-muted-foreground">Sem comodidades informadas.</span>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -1677,6 +1677,24 @@ export function CourtDetailsClient(props: {
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-2xl border border-border bg-secondary/50 p-4">
+                  <p className="text-xs font-medium text-muted-foreground">Comodidades</p>
+                  <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                    {(data.court.amenities ?? []).length ? (
+                      (data.court.amenities ?? []).map((t) => (
+                        <span
+                          key={t}
+                          className="rounded-full border border-border bg-card px-3 py-1 text-foreground"
+                        >
+                          {t}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-sm text-muted-foreground">Sem comodidades informadas.</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-border bg-secondary/50 p-4">
                   <p className="text-xs font-medium text-muted-foreground">Endereço</p>
                   <p className="mt-1 text-sm text-foreground">
                     {data.court.establishment.address_text}
@@ -1698,24 +1716,6 @@ export function CourtDetailsClient(props: {
                       loading="lazy"
                       referrerPolicy="no-referrer-when-downgrade"
                     />
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-border bg-secondary/50 p-4">
-                  <p className="text-xs font-medium text-muted-foreground">Comodidades</p>
-                  <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                    {(data.court.amenities ?? []).length ? (
-                      (data.court.amenities ?? []).map((t) => (
-                        <span
-                          key={t}
-                          className="rounded-full border border-border bg-card px-3 py-1 text-foreground"
-                        >
-                          {t}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-sm text-muted-foreground">Sem comodidades informadas.</span>
-                    )}
                   </div>
                 </div>
               </div>

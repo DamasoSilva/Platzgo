@@ -2,7 +2,7 @@ import { OptimizedImage } from "@/components/OptimizedImage";
 import { formatBRLFromCents } from "@/lib/utils/currency";
 import { formatSportLabel } from "@/lib/utils/sport";
 import { PrefilledCourtLink } from "@/components/PrefilledCourtLink";
-import { MapPin, Clock, Instagram, MessageCircle } from "lucide-react";
+import { MapPin, Clock, Instagram, MessageCircle, Star } from "lucide-react";
 
 export function CourtCard({
   court,
@@ -19,6 +19,7 @@ export function CourtCard({
     sport_type: string;
     price_per_hour: number;
     photo_urls: string[];
+    amenities?: string[];
   };
   coverUrl: string | null;
   waLink: string;
@@ -28,6 +29,7 @@ export function CourtCard({
   hasTimeParam: boolean;
 }) {
   const courtPhoto = (court.photo_urls ?? []).find((u) => (u ?? "").trim()) ?? coverUrl;
+  const amenities = (court.amenities ?? []).filter(Boolean);
 
   return (
     <div className="group relative overflow-hidden rounded-2xl bg-card border border-border/60 shadow-sm hover:shadow-md hover:border-primary/20 transition-all duration-300">
@@ -59,6 +61,21 @@ export function CourtCard({
       <div className="px-5 py-4">
         <h3 className="font-semibold text-foreground truncate">{court.name}</h3>
 
+        {amenities.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {amenities.slice(0, 4).map((a) => (
+              <span key={a} className="inline-flex rounded-full border border-border bg-secondary/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                {a}
+              </span>
+            ))}
+            {amenities.length > 4 && (
+              <span className="inline-flex rounded-full border border-border bg-secondary/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                +{amenities.length - 4}
+              </span>
+            )}
+          </div>
+        )}
+
         <div className="mt-4 flex items-center gap-2">
           <PrefilledCourtLink
             courtId={court.id}
@@ -81,6 +98,116 @@ export function CourtCard({
             <MessageCircle className="h-4 w-4" />
           </a>
         </div>
+      </div>
+    </div>
+  );
+}
+
+export function CourtSidebarCard({
+  court,
+  waLink,
+  avgRating,
+  reviewsCount,
+  day,
+  time,
+  hasDayParam,
+  hasTimeParam,
+}: {
+  court: {
+    id: string;
+    name: string;
+    sport_type: string;
+    price_per_hour: number;
+    photo_urls: string[];
+    amenities?: string[];
+  };
+  waLink: string;
+  avgRating: number | null;
+  reviewsCount: number | null;
+  day: string;
+  time: string | null;
+  hasDayParam: boolean;
+  hasTimeParam: boolean;
+}) {
+  const courtPhotos = (court.photo_urls ?? []).filter((u) => (u ?? "").trim());
+  const amenities = (court.amenities ?? []).filter(Boolean);
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <h2 className="text-xl font-bold text-foreground">{court.name}</h2>
+
+      <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+        <Star size={14} className="text-primary" />
+        {avgRating != null ? (
+          <>
+            <span className="font-semibold text-foreground">{avgRating.toFixed(1)}</span>
+            <span>•</span>
+            <span>{reviewsCount ?? 0} avaliações</span>
+          </>
+        ) : (
+          <span>Sem avaliações</span>
+        )}
+      </div>
+
+      <div className="mt-4 space-y-2 border-t border-border pt-4 text-sm">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-muted-foreground">Esporte</span>
+          <span className="font-semibold text-foreground">{formatSportLabel(court.sport_type)}</span>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-muted-foreground">Preço/hora</span>
+          <span className="font-semibold text-foreground">{formatBRLFromCents(court.price_per_hour)}</span>
+        </div>
+      </div>
+
+      {courtPhotos.length > 0 && (
+        <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-secondary/30">
+          <div className="relative aspect-[16/10] w-full">
+            <OptimizedImage
+              src={courtPhotos[0]!}
+              alt={`Foto da quadra ${court.name}`}
+              fill
+              className="object-cover"
+              sizes="400px"
+            />
+          </div>
+        </div>
+      )}
+
+      {amenities.length > 0 && (
+        <div className="mt-4 rounded-xl border border-border bg-secondary/50 p-3">
+          <p className="text-xs font-medium text-muted-foreground mb-2">Comodidades</p>
+          <div className="flex flex-wrap gap-1.5">
+            {amenities.map((a) => (
+              <span key={a} className="rounded-full border border-border bg-card px-2.5 py-1 text-[10px] text-foreground">
+                {a}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="mt-4 flex items-center gap-2">
+        <PrefilledCourtLink
+          courtId={court.id}
+          day={day}
+          time={time}
+          hasDayParam={hasDayParam}
+          hasTimeParam={hasTimeParam}
+          className="ph-button-sm flex-1"
+        >
+          Ver horários
+        </PrefilledCourtLink>
+
+        <a
+          href={waLink}
+          target="_blank"
+          rel="noreferrer"
+          className="ph-button-secondary-sm flex-shrink-0"
+          aria-label="WhatsApp"
+        >
+          <MessageCircle className="h-4 w-4" />
+        </a>
       </div>
     </div>
   );

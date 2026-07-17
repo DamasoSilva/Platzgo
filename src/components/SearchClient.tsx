@@ -254,7 +254,7 @@ export function SearchClient(props: Props) {
 
   const effectiveRadiusKm = useMemo(() => {
     if (Number.isFinite(radiusKm) && radiusKm > 0) return radiusKm;
-    return 10;
+    return 15;
   }, [radiusKm]);
 
   const effectiveMaxPrice = useMemo(() => {
@@ -657,10 +657,14 @@ export function SearchClient(props: Props) {
               <div className="lg:col-span-2">
                 <label className="block text-xs font-bold text-muted-foreground">Raio (KM)</label>
                 <input
-                  type="number"
-                  value={radiusKm}
-                  onChange={(e) => setRadiusKm(Number(e.target.value))}
-                  min={0}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={radiusKm || ""}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/\D/g, "");
+                    setRadiusKm(v === "" ? 0 : Number(v));
+                  }}
                   className="mt-2 w-full rounded-xl bg-secondary px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
@@ -668,10 +672,14 @@ export function SearchClient(props: Props) {
               <div className="lg:col-span-2">
                 <label className="block text-xs font-bold text-muted-foreground">Preço máx (R$/h)</label>
                 <input
-                  type="number"
-                  min={0}
-                  value={maxPrice}
-                  onChange={(e) => setMaxPrice(Number(e.target.value))}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={maxPrice || ""}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/\D/g, "");
+                    setMaxPrice(v === "" ? 0 : Number(v));
+                  }}
                   className="mt-2 w-full rounded-xl bg-secondary px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
