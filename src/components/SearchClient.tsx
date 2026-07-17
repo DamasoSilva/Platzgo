@@ -65,6 +65,7 @@ type Props = {
     maxPrice?: number | null;
     onlyFavorites?: boolean;
     locationSource?: "user" | "query" | "default";
+    maxCourtPriceCents?: number | null;
   };
 };
 
@@ -261,6 +262,16 @@ export function SearchClient(props: Props) {
     if (Number.isFinite(maxPrice) && maxPrice > 0) return maxPrice;
     return null;
   }, [maxPrice]);
+
+  const maxPriceOptions = useMemo(() => {
+    const maxCents = props.initial.maxCourtPriceCents;
+    if (!maxCents || maxCents <= 0) return [50, 100, 150, 200, 300, 500];
+    const maxReais = Math.ceil(maxCents / 100);
+    const ceiling = Math.ceil(maxReais / 50) * 50;
+    const opts: number[] = [];
+    for (let i = 50; i <= ceiling; i += 50) opts.push(i);
+    return opts;
+  }, [props.initial.maxCourtPriceCents]);
 
   const searchHref = useMemo(() => {
     const params = new URLSearchParams();
@@ -660,7 +671,8 @@ export function SearchClient(props: Props) {
                   type="text"
                   inputMode="numeric"
                   pattern="[0-9]*"
-                  value={radiusKm || ""}
+                  placeholder="15"
+                  value={radiusKm === 0 ? "" : radiusKm}
                   onChange={(e) => {
                     const v = e.target.value.replace(/\D/g, "");
                     setRadiusKm(v === "" ? 0 : Number(v));
@@ -671,17 +683,16 @@ export function SearchClient(props: Props) {
 
               <div className="lg:col-span-2">
                 <label className="block text-xs font-bold text-muted-foreground">Preço máx (R$/h)</label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
+                <select
                   value={maxPrice || ""}
-                  onChange={(e) => {
-                    const v = e.target.value.replace(/\D/g, "");
-                    setMaxPrice(v === "" ? 0 : Number(v));
-                  }}
+                  onChange={(e) => setMaxPrice(e.target.value === "" ? 0 : Number(e.target.value))}
                   className="mt-2 w-full rounded-xl bg-secondary px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
-                />
+                >
+                  <option value="">Todos</option>
+                  {maxPriceOptions.map((v) => (
+                    <option key={v} value={v}>{v}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="lg:col-span-12 flex flex-wrap items-center gap-4">

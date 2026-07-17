@@ -15,16 +15,12 @@ export function PhotoStrip({
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
 
   const updateScrollState = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
     const left = el.scrollLeft;
-    setCanScrollLeft(left > 4);
-    setCanScrollRight(left + el.clientWidth < el.scrollWidth - 4);
 
     const center = left + el.clientWidth / 2;
     const children = Array.from(el.children) as HTMLElement[];
@@ -74,7 +70,20 @@ export function PhotoStrip({
     if (!el) return;
     const cardWidth = el.firstElementChild?.clientWidth ?? 300;
     const gap = 16;
-    el.scrollBy({ left: direction === "left" ? -(cardWidth + gap) : cardWidth + gap, behavior: "smooth" });
+    const step = cardWidth + gap;
+    if (direction === "right") {
+      if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 4) {
+        el.scrollTo({ left: 0, behavior: "smooth" });
+      } else {
+        el.scrollBy({ left: step, behavior: "smooth" });
+      }
+    } else {
+      if (el.scrollLeft <= 4) {
+        el.scrollTo({ left: el.scrollWidth, behavior: "smooth" });
+      } else {
+        el.scrollBy({ left: -step, behavior: "smooth" });
+      }
+    }
   };
 
   const visibleRange = useMemo(() => {
@@ -166,7 +175,7 @@ export function PhotoStrip({
             ))}
       </div>
 
-      {canScrollLeft && (
+      {photos.length > 1 && (
         <button
           onClick={() => scroll("left")}
           className="absolute left-3 top-1/2 -translate-y-1/2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80 backdrop-blur-sm"
@@ -176,7 +185,7 @@ export function PhotoStrip({
         </button>
       )}
 
-      {canScrollRight && (
+      {photos.length > 1 && (
         <button
           onClick={() => scroll("right")}
           className="absolute right-3 top-1/2 -translate-y-1/2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80 backdrop-blur-sm"

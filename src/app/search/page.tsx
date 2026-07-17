@@ -106,7 +106,7 @@ export default async function SearchPage(props: {
   const time = parseTime(searchParams?.time);
   const maxPrice = parseNumber(searchParams?.maxPrice, 0);
   const onlyFavorites = searchParams?.onlyFavorites === "1";
-  const [footer, modules] = await Promise.all([getPublicSiteSettings(), getPublicModuleSettings()]);
+  const [footer, modules, maxCourtAgg] = await Promise.all([getPublicSiteSettings(), getPublicModuleSettings(), prisma.court.aggregate({ _max: { price_per_hour: true } })]);
 
   return (
     <SearchClient
@@ -137,6 +137,7 @@ export default async function SearchPage(props: {
         maxPrice: maxPrice > 0 ? maxPrice : null,
         onlyFavorites,
         locationSource: hasCoordsFromQuery ? "query" : hasCoordsFromUser ? "user" : "default",
+        maxCourtPriceCents: maxCourtAgg._max.price_per_hour ?? null,
       }}
     />
   );
