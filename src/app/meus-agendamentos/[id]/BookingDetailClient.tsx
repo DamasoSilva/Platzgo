@@ -73,6 +73,7 @@ export function BookingDetailClient(props: { booking: BookingDetail; showConfirm
   const [pixModalOpen, setPixModalOpen] = useState(Boolean(props.openPayment));
   const [countdownSeconds, setCountdownSeconds] = useState<number | null>(null);
   const [confirmationOpen, setConfirmationOpen] = useState(Boolean(props.showConfirmation) && props.booking.status === BookingStatus.CONFIRMED);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   const todayYmd = useMemo(() => toYMD(new Date()), []);
   const startDate = useMemo(() => new Date(props.booking.start_time), [props.booking.start_time]);
@@ -189,6 +190,37 @@ const canRefreshPix = Boolean(paymentExpiresAt && paymentExpiresAt.getTime() <= 
               <div className="flex justify-between gap-2"><span className="text-muted-foreground">Valor</span><span className="font-semibold">{priceLabel}</span></div>
             </div>
             <button type="button" onClick={() => { setConfirmationOpen(false); router.replace(`/meus-agendamentos/${props.booking.id}`); }} className="mt-5 w-full rounded-xl bg-emerald-600 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 transition-colors">OK</button>
+          </div>
+        </div>
+      )}
+
+      {showCancelConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4" onClick={() => setShowCancelConfirm(false)}>
+          <div className="w-full max-w-sm rounded-2xl border border-rose-500/30 bg-card p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-rose-500/15">
+              <Trash2 className="h-7 w-7 text-rose-500" />
+            </div>
+            <h3 className="mt-4 text-center text-lg font-bold text-foreground">Cancelar agendamento</h3>
+            <p className="mt-2 text-center text-sm text-muted-foreground">
+              Tem certeza que deseja cancelar este agendamento?
+            </p>
+            {isPast && (
+              <div className="mt-3 rounded-xl bg-amber-500/10 border border-amber-500/20 px-3 py-2 text-xs text-amber-600">
+                <AlertCircle className="inline h-3.5 w-3.5 mr-1" />
+                O cancelamento neste momento pode gerar uma multa conforme a política do estabelecimento.
+              </div>
+            )}
+            <p className="mt-3 text-center text-xs text-muted-foreground">
+              {props.booking.total_price_cents > 0
+                ? `O valor de ${priceLabel}${isPast ? " pode ser parcialmente retido" : " será reembolsado"} conforme política de cancelamento.`
+                : "Esta ação não pode ser desfeita."}
+            </p>
+            <div className="mt-5 flex gap-2">
+              <button type="button" onClick={() => setShowCancelConfirm(false)} className="flex-1 rounded-xl border border-border bg-card py-2.5 text-sm font-semibold text-foreground hover:bg-secondary transition-colors">Manter agendamento</button>
+              <button type="button" disabled={isPending} onClick={() => { setShowCancelConfirm(false); void onCancel(); }} className="flex-1 rounded-xl bg-rose-500 py-2.5 text-sm font-bold text-white hover:bg-rose-600 transition-colors disabled:opacity-50">
+                {isPending ? "Cancelando..." : "Sim, cancelar"}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -347,7 +379,7 @@ const canRefreshPix = Boolean(paymentExpiresAt && paymentExpiresAt.getTime() <= 
         {/* Actions */}
         <div className="flex flex-wrap gap-2">
           {canCancel && (
-            <button type="button" disabled={isPending} onClick={() => { if (!confirm("Cancelar este agendamento?")) return; void onCancel(); }}
+            <button type="button" disabled={isPending} onClick={() => setShowCancelConfirm(true)}
               className="inline-flex items-center gap-1.5 rounded-xl bg-rose-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-rose-600 transition-colors disabled:opacity-50">
               <Trash2 className="h-4 w-4" /> Cancelar agendamento
             </button>

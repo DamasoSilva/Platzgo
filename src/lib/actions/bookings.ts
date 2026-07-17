@@ -1263,14 +1263,13 @@ export async function cancelBookingAsCustomer(input: { bookingId: string }) {
     const percentFee = Math.round((booking.total_price_cents * feePercent) / 100);
     cancelFeeCents = feeFixed > 0 ? feeFixed : percentFee;
     cancelFeeCents = Math.max(0, Math.min(cancelFeeCents, booking.total_price_cents));
-    if (cancelFeeCents <= 0) {
-      throw new Error(`Cancelamento não permitido com menos de ${minHours}h de antecedência.`);
-    }
   }
 
   const cancelReason = cancelFeeCents > 0
     ? `Cancelado pelo cliente. Multa: ${formatBRLFromCents(cancelFeeCents)}.`
-    : "Cancelado pelo cliente.";
+    : withinCutoff
+      ? "Cancelado pelo cliente (dentro do prazo de carência)."
+      : "Cancelado pelo cliente.";
 
   const payment = await prisma.payment.findFirst({
     where: {

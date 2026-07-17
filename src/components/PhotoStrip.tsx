@@ -68,22 +68,12 @@ export function PhotoStrip({
   const scroll = (direction: "left" | "right") => {
     const el = scrollRef.current;
     if (!el) return;
-    const cardWidth = el.firstElementChild?.clientWidth ?? 300;
-    const gap = 16;
-    const step = cardWidth + gap;
-    if (direction === "right") {
-      if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 4) {
-        el.scrollTo({ left: 0, behavior: "smooth" });
-      } else {
-        el.scrollBy({ left: step, behavior: "smooth" });
-      }
-    } else {
-      if (el.scrollLeft <= 4) {
-        el.scrollTo({ left: el.scrollWidth, behavior: "smooth" });
-      } else {
-        el.scrollBy({ left: -step, behavior: "smooth" });
-      }
-    }
+    const total = photos.length;
+    const nextIdx = direction === "right"
+      ? (activeIndex + 1) % total
+      : (activeIndex - 1 + total) % total;
+    const child = el.children[nextIdx] as HTMLElement;
+    child?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
   };
 
   const visibleRange = useMemo(() => {

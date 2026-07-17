@@ -206,8 +206,8 @@ export async function getPublicSiteSettings(): Promise<PublicSiteSettings> {
     contactEmail: (contactEmailRaw ?? "contato@platzgo.com").trim(),
     contactInstagram: (contactInstagramRaw ?? "@platzgo").trim(),
     contactWhatsapp: (contactWhatsappRaw ?? "WhatsApp").trim(),
-    termsUrl: (termsUrlRaw ?? "/").trim(),
-    privacyUrl: (privacyUrlRaw ?? "/").trim(),
+    termsUrl: (termsUrlRaw ?? "/termos").trim(),
+    privacyUrl: (privacyUrlRaw ?? "/privacidade").trim(),
   };
 }
 

@@ -244,7 +244,7 @@ export default async function MyBookingsPage(props: { searchParams?: SearchParam
           {/* Notifications */}
           {notifications.length > 0 && (
             <details className="mt-6 rounded-2xl border border-border bg-card">
-              <summary className="cursor-pointer p-5 flex items-center justify-between gap-3">
+              <summary className="cursor-pointer p-5 flex items-center gap-3">
                 <div className="flex items-center gap-2">
                   <Bell className="h-4 w-4 text-primary" />
                   <span className="text-sm font-semibold text-foreground">Notificações</span>
@@ -253,16 +253,6 @@ export default async function MyBookingsPage(props: { searchParams?: SearchParam
                       {unreadCount}
                     </span>
                   )}
-                </div>
-                <div className="flex items-center gap-2" onClick={(e) => e.preventDefault()}>
-                  {unreadCount > 0 && (
-                    <form action={markAllMyNotificationsAsRead}>
-                      <button type="submit" className="ph-button-secondary-xs">Marcar lidas</button>
-                    </form>
-                  )}
-                  <form action={deleteAllMyReadNotifications}>
-                    <button type="submit" className="ph-button-secondary-xs">Limpar lidas</button>
-                  </form>
                 </div>
               </summary>
               <div className="px-5 pb-5 space-y-2">
@@ -296,6 +286,16 @@ export default async function MyBookingsPage(props: { searchParams?: SearchParam
                     </div>
                   </div>
                 ))}
+                <div className="flex items-center gap-2 pt-2 border-t border-border/50">
+                  {unreadCount > 0 && (
+                    <form action={markAllMyNotificationsAsRead}>
+                      <button type="submit" className="ph-button-secondary-xs">Marcar todas como lidas</button>
+                    </form>
+                  )}
+                  <form action={deleteAllMyReadNotifications}>
+                    <button type="submit" className="ph-button-secondary-xs">Excluir lidas</button>
+                  </form>
+                </div>
               </div>
             </details>
           )}

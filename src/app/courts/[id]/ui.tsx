@@ -166,10 +166,12 @@ function formatCountdown(ms: number): string {
 const TimeSlotGrid = memo(function TimeSlotGrid({
   slots,
   selectedTime,
+  selectedEndTime,
   onSelect,
 }: {
   slots: Array<{ start: Date; blocked: boolean }>;
   selectedTime: number | null;
+  selectedEndTime: number | null;
   onSelect: (start: Date) => void;
 }) {
   if (slots.length === 0) {
@@ -178,7 +180,9 @@ const TimeSlotGrid = memo(function TimeSlotGrid({
   return (
     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
       {slots.map(({ start, blocked }) => {
-        const active = selectedTime === start.getTime();
+        const t = start.getTime();
+        const active = selectedTime === t;
+        const inRange = selectedTime !== null && selectedEndTime !== null && t > selectedTime && t <= selectedEndTime;
         return (
           <button
             key={start.toISOString()}
@@ -190,7 +194,9 @@ const TimeSlotGrid = memo(function TimeSlotGrid({
                 ? "rounded-xl bg-secondary/30 py-2.5 text-sm text-muted-foreground/50 cursor-not-allowed line-through"
                 : active
                   ? "rounded-xl gradient-primary py-2.5 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25 ring-2 ring-primary/30"
-                  : "rounded-xl border border-border bg-card py-2.5 text-sm font-medium text-foreground hover:border-primary/40 hover:bg-primary/5 transition-colors active:scale-95"
+                  : inRange
+                    ? "rounded-xl bg-rose-500/20 border border-rose-500/30 py-2.5 text-sm font-medium text-rose-600 cursor-default"
+                    : "rounded-xl border border-border bg-card py-2.5 text-sm font-medium text-foreground hover:border-primary/40 hover:bg-primary/5 transition-colors active:scale-95"
             }
           >
             {formatHHMM(start)}
@@ -220,6 +226,7 @@ export function CourtDetailsClient(props: {
   const [durationMinutes, setDurationMinutes] = useState<number>(60);
   const [repeatWeeks, setRepeatWeeks] = useState<number>(0);
   const [selectedStart, setSelectedStart] = useState<Date | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [paymentOpened, setPaymentOpened] = useState(false);
@@ -1057,6 +1064,70 @@ export function CourtDetailsClient(props: {
         </div>
       ) : null}
 
+      {showConfirmModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4" onClick={() => setShowConfirmModal(false)}>
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h2 className="text-lg font-bold text-foreground text-center">Confirmar Agendamento</h2>
+
+            <div className="mt-5 space-y-3 text-sm">
+              <div className="flex justify-between gap-3 rounded-xl bg-secondary/40 px-4 py-3">
+                <span className="text-muted-foreground">Local</span>
+                <span className="font-semibold text-foreground text-right">{data.court.establishment.name}</span>
+              </div>
+              <div className="flex justify-between gap-3 rounded-xl bg-secondary/40 px-4 py-3">
+                <span className="text-muted-foreground">Quadra</span>
+                <span className="font-semibold text-foreground">{data.court.name}</span>
+              </div>
+              <div className="flex justify-between gap-3 rounded-xl bg-secondary/40 px-4 py-3">
+                <span className="text-muted-foreground">Data</span>
+                <span className="font-semibold text-foreground">
+                  {new Intl.DateTimeFormat("pt-BR", { dateStyle: "full" }).format(selectedStart!)}
+                </span>
+              </div>
+              <div className="flex justify-between gap-3 rounded-xl bg-secondary/40 px-4 py-3">
+                <span className="text-muted-foreground">Horário</span>
+                <span className="font-semibold text-foreground">
+                  {formatHHMM(selectedStart!)} – {formatHHMM(selectedEnd!)}
+                </span>
+              </div>
+              <div className="flex justify-between gap-3 rounded-xl bg-secondary/40 px-4 py-3">
+                <span className="text-muted-foreground">Duração</span>
+                <span className="font-semibold text-foreground">{durationMinutes} min</span>
+              </div>
+              {totalPriceCents !== null ? (
+                <div className="flex justify-between gap-3 rounded-xl bg-primary/10 border border-primary/20 px-4 py-3">
+                  <span className="text-muted-foreground">Valor total</span>
+                  <span className="font-bold text-foreground">{formatBRLFromCents(totalPriceCents)}</span>
+                </div>
+              ) : null}
+              {payAtCourt ? (
+                <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 px-4 py-2 text-center text-xs text-amber-600">
+                  Pagamento será realizado diretamente no estabelecimento.
+                </div>
+              ) : null}
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowConfirmModal(false)}
+                className="flex-1 rounded-xl border border-border bg-card py-3 text-sm font-bold text-foreground hover:bg-secondary transition-colors"
+              >
+                Desistir
+              </button>
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={() => { setShowConfirmModal(false); confirmBooking(); }}
+                className="flex-1 rounded-xl gradient-primary py-3 text-sm font-bold text-primary-foreground hover:opacity-90 transition-all disabled:opacity-60"
+              >
+                {isPending ? "Processando..." : "Confirmar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <div className="container pt-8 pb-16">
         <div className="flex items-center justify-center gap-3 sm:gap-4 mb-10">
           {bookingSteps.map((s, i) => (
@@ -1569,7 +1640,7 @@ export function CourtDetailsClient(props: {
                         </div>
                       ) : null}
                       <div className={isPending ? "opacity-50 pointer-events-none transition-opacity duration-150" : "transition-opacity duration-150"}>
-                        <TimeSlotGrid slots={slotOptions} selectedTime={selectedStart?.getTime() ?? null} onSelect={handleSlotSelect} />
+                        <TimeSlotGrid slots={slotOptions} selectedTime={selectedStart?.getTime() ?? null} selectedEndTime={selectedEnd?.getTime() ?? null} onSelect={handleSlotSelect} />
                       </div>
                     </div>
 
@@ -1654,8 +1725,8 @@ export function CourtDetailsClient(props: {
                     ) : null}
 
                     <button
-                      onClick={confirmBooking}
-                      disabled={isPending || isOwnerPreview}
+                      onClick={() => setShowConfirmModal(true)}
+                      disabled={isPending || isOwnerPreview || !selectedStart}
                       className="gradient-primary text-primary-foreground font-bold py-3.5 px-6 rounded-xl hover:opacity-90 transition-all disabled:opacity-60 w-full text-base shadow-lg shadow-primary/20"
                     >
                       {isPending ? "Processando..." : "Confirmar Agendamento"}
